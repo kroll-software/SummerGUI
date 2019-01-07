@@ -1,0 +1,50 @@
+SummerGUI Box Model
+
+Every GUI element inherits from SummerGUI.Widget.
+SummerGUI.Container is a Widget with a Children collection.
+A Child can be a Widget or another Container.
+
+Both are abstract types that mus be inherited.
+
+The Container is always responsible to layout it's children.
+The Child has no responsibility and should never layout itself.
+
+The entire layout in modern GUIs is highly dynamical, so there is no absolute positioning at all. However the container can layout it's children as he likes. When you want a special layout, you can always implement your own container and position the children wherever you want. The container sets the Widget Bounds, the Widget then layouts it's contents within these Bounds.
+
+The only hint that a child gives to it's container is the Docking type.
+Docking.Top | Bottom | Left | Right | Fill | None
+
+Children are layouted by the Container in this order, Docking.Top first, Fill and Non at last.
+In some rare cases you will want to have another behavior. You can fine-tune this by setting the Widget's ZIndex. Higher Z-Indices are layouted first. (Z-Indices > 9999 are shown as 'Overlays' with a very distinct functionality.)
+
+All other properties of the Widget as HAlign or VAlign are just hints for the internal content layout of the Widget, but not for the placement within the container.
+
+---------
+
+THE BOX MODEL
+
+The Widget has a Margin, Padding and Border
+
+The Widget is only interested in it's 'Bounds' and never cares about it's Margins.
+The Bounds are set by the Container. The Background-Color usually fills the Bounds, the Border is usually painted around these Bounds. The Widget layouts it's contents within the Bounds. It is responsible to respect the Padding or not. The Container does not care about Paddings.
+
+The Container cares about Child-Margins. In it's layout calculations, he always adds or substracts the Child-Margins and calculates the Widget Bounds. In some functions, he calls the Widget with these calculated Bounds.
+
+The Border has absolutely no effect on the Layout. It is normaly painted just around the Bounds. (There is also a 'BorderDistance' to offset the Border.)
+
+Don't forget that each Container will have another Container as it's Parent. In this context he acts like a child. He is only interested in his Bounds and layouts the Children respecting HIS Padding. But he does not care about his own Margins. So when a Container layouts it's children, he usually adds his own Padding plus the child's Margins as a inner distance.
+
+--------
+
+Box Calculations
+
+Each Widget implements 'PreferredSize(proposedSize)' and returns it's desired Bounds without the Margins. The Container later adds the Margins during his layout calculations.
+
+When you implement your own Widgets or Containers, it is very important to override PreferredSize(proposedSize) and return a meaningful Size, depending on the contents, otherwise your Widget will blow the screen.
+
+--------
+
+In contrast to some other GUIs, all Bounds and Locations are absolute within the main Window. The upper left corner is always Zero / Zero. The bottom-right is the Main-Window's Width and Height. Bounds are never relative to their parent container but always (call it relative or absolute) to the main window (regardless of the window-position on the screen).
+
+This means that Points with negative coordinates are not visible. Same with Points larger than the Window size. So when you draw within your self implemented Widgets, you always have to add your Widget's Bounds.Location as an offset. This makes things much easier, you will always know where you finally paint on the screen (within the main window bounds), regardless of scrolling offsets etc.
+

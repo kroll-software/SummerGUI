@@ -1,0 +1,32 @@
+SummerGUI
+
+X-Platform GUI Framework
+by John Summer, written in C#, MIT License
+
+SummerGUI offers a brand new way for you to develop your next desktop application in C# that can run on any system.
+
+It is open source and free under the MIT license, so what are you waiting for ?
+
+This is an early development release. This software is not yet ready for production.
+At this time, we want to share our development with early adopters, who might want to contribute to the code. Your help is appreciated if you are familiar with window handling on different platforms, shell dialogs and clipborad functions. Or when you have some other ideas to add..
+
+Remarks: This code can compile on Ubuntu/MonoDevelop. It will soon be fixed to compile on Windows/VisualStudio as well.
+
+
+FEATURES
+Programs can run on multiple platforms without recompilation
+Open and free, even for commercial projects (MIT license)
+Easy to extend
+Using OpenTK for the OpenGL interface
+Best text-rendering using the FreeType library through SharpFont
+Responsive forms layout and menus
+Free scalable (zoom)
+Animations
+Themes and Icon-Fonts
+Thread Safe, doesn't throw errors
+fu*** fast
+
+Licensed under the MIT License
+Copyright (c) 2015-2019 by Kroll Software-Entwicklung
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -1,0 +1,404 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{27D216F7-4999-4D06-AF9F-2B51E09C885A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SummerGUI</RootNamespace>
+    <AssemblyName>SummerGUI</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>SummerGUI.snk</AssemblyOriginatorKeyFile>
+    <UseMSBuildEngine>False</UseMSBuildEngine>
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;USE_OPENGL;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>USE_OPENGL</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="SharpFont">
+      <HintPath>..\packages\SharpFont.4.0.1\lib\net45\SharpFont.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\..\ClosedSource\ProteinFolding\packages\OpenTK.3.0.1\lib\net20\OpenTK.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="OpenTKHelpers\ColouredVertex.cs" />
+    <Compile Include="OpenTKHelpers\Matrix4Uniform.cs" />
+    <Compile Include="OpenTKHelpers\Shader.cs" />
+    <Compile Include="OpenTKHelpers\ShaderProgram.cs" />
+    <Compile Include="OpenTKHelpers\ShaderPrograms.cs" />
+    <Compile Include="OpenTKHelpers\VertexArray.cs" />
+    <Compile Include="OpenTKHelpers\VertexAttribute.cs" />
+    <Compile Include="OpenTKHelpers\VertexBuffer.cs" />
+    <Compile Include="Drawing\Drawing.cs" />
+    <Compile Include="Drawing\DrawingBuffers.cs" />
+    <Compile Include="Drawing\Extensions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Forms\Abstract\Container.cs" />
+    <Compile Include="Forms\WidgetStyles\WidgetStyle.cs" />
+    <Compile Include="Forms\WidgetStyles\WidgetStyleProvider.cs" />
+    <Compile Include="Forms\WidgetStyles\GradientWidgetStyle.cs" />
+    <Compile Include="Drawing\OpenTkExtensions.cs" />
+    <Compile Include="Drawing\Resources.cs" />
+    <Compile Include="Forms\WidgetStyles\CircleWidgetStyle.cs" />
+    <Compile Include="Forms\Abstract\Widget.cs" />
+    <Compile Include="Collections\ChildCollection.cs" />
+    <Compile Include="Forms\DataGrid\DataGridView.cs" />
+    <Compile Include="Forms\Containers\RootContainer.cs" />
+    <Compile Include="Forms\Containers\ScrollableContainer.cs" />
+    <Compile Include="Forms\Containers\SplitContainer.cs" />
+    <Compile Include="Forms\Containers\TabContainer.cs" />
+    <Compile Include="Forms\ScrollBars\ScrollBar.cs" />
+    <Compile Include="Forms\ScrollBars\ScrollBarClasses.cs" />
+    <Compile Include="Forms\Containers\Splitter.cs" />
+    <Compile Include="Drawing\BoundingBox.cs" />
+    <Compile Include="SystemSpecific\Linux\BrowseForFolderDialog.cs" />
+    <Compile Include="Drawing\ProjectionStack.cs" />
+    <Compile Include="Forms\ListBox\ListBox.cs" />
+    <Compile Include="Forms\TextBox\TextBox.cs" />
+    <Compile Include="Forms\ListView\ListView.cs" />
+    <Compile Include="Forms\ComboBox\ComboBoxItem.cs" />
+    <Compile Include="Forms\CheckBox\CheckBox.cs" />
+    <Compile Include="Forms\CheckBox\RadioButton.cs" />
+    <Compile Include="Forms\CheckBox\CheckBoxBase.cs" />
+    <Compile Include="Forms\ComboBox\ColorComboBox.cs" />
+    <Compile Include="Forms\ComboBox\FontComboBox.cs" />
+    <Compile Include="Forms\ComboBox\HatchStyleComboBox.cs" />
+    <Compile Include="Forms\WidgetStyles\TextWidgetStyles.cs" />
+    <Compile Include="Forms\WidgetStyles\ButtonWidgetStyle.cs" />
+    <Compile Include="Forms\Containers\FlexLayoutContainer.cs" />
+    <Compile Include="Theming\Theme.cs" />
+    <Compile Include="Forms\WidgetStyles\TextBoxWidgetStyle.cs" />
+    <Compile Include="Forms\Interfaces\Interfaces.cs" />
+    <Compile Include="Forms\ComboBox\ComboBoxBase.cs" />
+    <Compile Include="Forms\ComboBox\ComboBox.cs" />
+    <Compile Include="Forms\Menus\Menu.cs" />
+    <Compile Include="Forms\Menus\MenuBar.cs" />
+    <Compile Include="Forms\Menus\MenuItem.cs" />
+    <Compile Include="Forms\Menus\ToolBar.cs" />
+    <Compile Include="Forms\Status\StatusBar.cs" />
+    <Compile Include="Forms\Status\StatusMessageStack.cs" />
+    <Compile Include="Forms\Status\StatusPanels.cs" />
+    <Compile Include="Forms\Menus\SubMenuOverlay.cs" />
+    <Compile Include="Forms\ComboBox\ComboBoxDropDownOverlay.cs" />
+    <Compile Include="Forms\Dialogs\AboutScreen.cs" />
+    <Compile Include="Forms\ScrollingBox\ScrollingBox.cs" />
+    <Compile Include="Forms\ScrollingBox\ScrollingBoxCollection.cs" />
+    <Compile Include="Forms\ScrollingBox\ScrollingBoxItem.cs" />
+    <Compile Include="SystemSpecific\Linux\Common.cs" />
+    <Compile Include="SystemSpecific\Windows\Common.cs" />
+    <Compile Include="SystemSpecific\Mac\Common.cs" />
+    <Compile Include="Forms\TextBox\NumberTextBox.cs" />
+    <Compile Include="Forms\TextBox\TextBoxContainer.cs" />
+    <Compile Include="Forms\TextBox\ButtonTextBox.cs" />
+    <Compile Include="Forms\WidgetStyles\PanelWidgetStyle.cs" />
+    <Compile Include="Forms\ScrollingBox\ConsoleOutputWidget.cs" />
+    <Compile Include="Forms\Sliders\RangeSlider.cs" />
+    <Compile Include="Forms\CheckBox\ToggleCheckBox.cs" />
+    <Compile Include="Forms\DataGrid\DataGridToolBar.cs" />
+    <Compile Include="Forms\DataGrid\DataGridEnsemble.cs" />
+    <Compile Include="Theming\SolarizedTheme.cs" />
+    <Compile Include="Theming\MonokaiTheme.cs" />
+    <Compile Include="Forms\Sliders\SliderBase.cs" />
+    <Compile Include="Forms\Sliders\CircleSlider.cs" />
+    <Compile Include="Forms\Sliders\Slider.cs" />
+    <Compile Include="Forms\GraphicalWidget\GraphicalWidget.cs" />
+    <Compile Include="Theming\SummerGUITheme.cs" />
+    <Compile Include="Theming\HexColor.cs" />
+    <Compile Include="Theming\Colors\MetroColors.cs" />
+    <Compile Include="Theming\Colors\MaterialColors.cs" />
+    <Compile Include="Theming\Colors\SolarizedColors.cs" />
+    <Compile Include="Theming\Colors\RalClassicColors.cs" />
+    <Compile Include="Theming\Colors\RandomColors.cs" />
+    <Compile Include="Forms\Button\ImageButton.cs" />
+    <Compile Include="Forms\Button\Button.cs" />
+    <Compile Include="Forms\WidgetStyles\ToolBarWidgetStyles.cs" />
+    <Compile Include="Forms\Button\CircleButton.cs" />
+    <Compile Include="Forms\WidgetStyles\NotificationWidgetStyles.cs" />
+    <Compile Include="Theming\ThemeLoader.cs" />
+    <Compile Include="Forms\Status\MarqueBar.cs" />
+    <Compile Include="Drawing\GraphicObjects.cs" />
+    <Compile Include="Forms\Containers\Panel.cs" />
+    <Compile Include="Forms\Abstract\SummerGUIWindow.cs" />
+    <Compile Include="Forms\Dialogs\ApplicationWindow.cs" />
+    <Compile Include="Forms\WidgetStyles\MenuBarWidgetStyles.cs" />
+    <Compile Include="Forms\WidgetStyles\StatusBarWidgetStyles.cs" />
+    <Compile Include="Forms\Dialogs\ChildFormOverlay.cs" />
+    <Compile Include="Forms\Dialogs\ChildFormWindow.cs" />
+    <Compile Include="Forms\Animations\AnimationService.cs" />
+    <Compile Include="Forms\Dialogs\MessageBoxWindow.cs" />
+    <Compile Include="Forms\Dialogs\MessageBoxOverlay.cs" />
+    <Compile Include="Forms\Overlays\OverlayContainer.cs" />
+    <Compile Include="Forms\Overlays\OverlayWidget.cs" />
+    <Compile Include="Forms\Overlays\TooltipWidget.cs" />
+    <Compile Include="Forms\ComboBox\ComboBoxButton.cs" />
+    <Compile Include="Drawing\DpiScalingAutomat.cs" />
+    <Compile Include="Collections\CircularBuffer.cs" />
+    <Compile Include="Forms\Dialogs\ApplicationWindowDiagnostics.cs" />
+    <Compile Include="Drawing\ClipBoundStack.cs" />
+    <Compile Include="Forms\ComboBox\ComboListBox.cs" />
+    <Compile Include="Forms\Status\NotificationPanel.cs" />
+    <Compile Include="Forms\WidgetStyles\TabBarWidgetStyles.cs" />
+    <Compile Include="Drawing\TextRendering\FontAwesome.cs" />
+    <Compile Include="Drawing\TextRendering\FontManager.cs" />
+    <Compile Include="Drawing\TextRendering\TextRendering.cs" />
+    <Compile Include="Drawing\TextRendering\GuiFont.cs" />
+    <Compile Include="Drawing\TextRendering\FontFormat.cs" />
+    <Compile Include="Drawing\TextRendering\FontConfiguration.cs" />
+    <Compile Include="Drawing\TextRendering\TextRenderingExtensions.cs" />
+    <Compile Include="Forms\Menus\MenuPanel.cs" />
+    <Compile Include="Forms\Containers\TripleSplitContainer.cs" />
+    <Compile Include="Forms\Containers\QuatSplitContainer.cs" />
+    <Compile Include="Forms\Containers\ComplexSplitContainer.cs" />
+    <Compile Include="Forms\WidgetStyles\ScrollBarStyles.cs" />
+    <Compile Include="SystemSpecific\PlatformExtensions.cs" />
+    <Compile Include="Forms\Progress\ProgressBar.cs" />
+    <Compile Include="Services\ConfigurationService.cs" />
+    <Compile Include="Services\Helpers.cs" />
+    <Compile Include="Forms\Label\CaptionLabel.cs" />
+    <Compile Include="Forms\Label\MultiLineTextWidget.cs" />
+    <Compile Include="Forms\Label\TextLabel.cs" />
+    <Compile Include="Forms\Label\TextWidget.cs" />
+    <Compile Include="Forms\Label\UrlTextWidget.cs" />
+    <Compile Include="Forms\DateTime\MonthCalendar.cs" />
+    <Compile Include="Forms\Containers\GroupBox.cs" />
+    <Compile Include="Drawing\Common.cs" />
+    <Compile Include="Forms\Tests\Cube3dWidget.cs" />
+    <Compile Include="Forms\Tests\FontAlignmentTestWidget.cs" />
+    <Compile Include="Forms\Extensions\SummerGuiFormsExtensions.cs" />
+    <Compile Include="Forms\ScrollBars\AutoScrollButtons.cs" />
+    <Compile Include="Forms\Button\SplitButton.cs" />
+    <Compile Include="Forms\Panels\PanelCaption.cs" />
+    <Compile Include="Forms\Menus\SideMenuContainer.cs" />
+    <Compile Include="SystemSpecific\SystemHelpers.cs" />
+    <Compile Include="Forms\Menus\SideMenuBar.cs" />
+    <Compile Include="Forms\Menus\MenuControlItem.cs" />
+    <Compile Include="Forms\Imaging\TextureImage.cs" />
+    <Compile Include="Forms\Imaging\ImageList.cs" />
+    <Compile Include="Forms\Imaging\ImagePanel.cs" />
+    <Compile Include="Forms\DataGrid\Controllers\ColumnManager.cs" />
+    <Compile Include="Forms\DataGrid\Controllers\DataProvider.cs" />
+    <Compile Include="Forms\DataGrid\Controllers\RowManager.cs" />
+    <Compile Include="Forms\DataGrid\Controllers\SelectionManager.cs" />
+    <Compile Include="Forms\DataGrid\Classes\DataGridColumn.cs" />
+    <Compile Include="Forms\DataGrid\Classes\GroupStart.cs" />
+    <Compile Include="Forms\DataGrid\Classes\MouseControlItem.cs" />
+    <Compile Include="Forms\DataGrid\Classes\RowInfo.cs" />
+    <Compile Include="Forms\DataGrid\Styles\DataGridViewWidgetStyle.cs" />
+    <Compile Include="Forms\Timers\DelayedAction.cs" />
+    <Compile Include="Forms\Timers\TaskTimer.cs" />
+    <Compile Include="Forms\Containers\TableLayoutContainer.cs" />
+    <Compile Include="Forms\Menus\MenuManager.cs" />
+    <Compile Include="Drawing\PunktWolke.cs" />
+    <Compile Include="SystemSpecific\Mac\MacClipboard.cs" />
+    <Compile Include="SystemSpecific\Linux\X11Interface.cs" />
+    <Compile Include="Forms\DataGrid\Classes\GenericSortComparer.cs" />
+    <Compile Include="Forms\Interfaces\Attributes.cs" />
+    <Compile Include="SystemSpecific\Common.cs" />
+    <Compile Include="Forms\TextBox\CommandInputTextBox.cs" />
+    <Compile Include="Forms\Interfaces\Enumerations.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\CommandInputBar.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\MultiLineTextBox.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\MultiLineTextManager.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\Paragraph.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\TextEditorEnsemble.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\TextEditorRowColumn.cs" />
+    <Compile Include="Forms\TextBox\MultiLineTextBox\TextEditorToolBar.cs" />
+    <Compile Include="SystemSpecific\Linux\LinuxClipboard.cs" />
+    <Compile Include="SystemSpecific\Windows\WindowsClipboard.cs" />
+    <Compile Include="Forms\TextBox\UndoRedo\RoundStack.cs" />
+    <Compile Include="Forms\TextBox\UndoRedo\UndoRedoMemento.cs" />
+    <Compile Include="SystemSpecific\Linux\SystemDialogs.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\SharpFont.4.0.1\build\SharpFont.props" Condition="Exists('..\packages\SharpFont.4.0.1\build\SharpFont.props')" />
+  <Import Project="..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props" Condition="Exists('..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Deployment.LinuxDeployData scriptName="KS.Gantt.ResourceCalendar" />
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+  <ItemGroup>
+    <Folder Include="SystemSpecific\Mac\" />
+    <Folder Include="SystemSpecific\Windows\" />
+    <Folder Include="Forms\ListBox\" />
+    <Folder Include="Forms\TextBox\" />
+    <Folder Include="Forms\ListView\" />
+    <Folder Include="Forms\ComboBox\" />
+    <Folder Include="Forms\CheckBox\" />
+    <Folder Include="x86\" />
+    <Folder Include="x64\" />
+    <Folder Include="Assets\" />
+    <Folder Include="Assets\Icons\" />
+    <Folder Include="Forms\Interfaces\" />
+    <Folder Include="Forms\Menus\" />
+    <Folder Include="Forms\TreeView\" />
+    <Folder Include="Forms\Status\" />
+    <Folder Include="Forms\ScrollingBox\" />
+    <Folder Include="Forms\Button\" />
+    <Folder Include="Forms\Sliders\" />
+    <Folder Include="Forms\GraphicalWidget\" />
+    <Folder Include="Libs\" />
+    <Folder Include="Forms\Animations\" />
+    <Folder Include="Forms\Overlays\" />
+    <Folder Include="Assets\Cursors\" />
+    <Folder Include="Drawing\TextRendering\" />
+    <Folder Include="Forms\Progress\" />
+    <Folder Include="Services\" />
+    <Folder Include="Forms\Label\" />
+    <Folder Include="Forms\DateTime\" />
+    <Folder Include="Forms\Tests\" />
+    <Folder Include="Forms\Extensions\" />
+    <Folder Include="Forms\Panels\" />
+    <Folder Include="Forms\Imaging\" />
+    <Folder Include="Forms\DataGrid\Controllers\" />
+    <Folder Include="Forms\DataGrid\Classes\" />
+    <Folder Include="Forms\DataGrid\Styles\" />
+    <Folder Include="Forms\Timers\" />
+    <Folder Include="SystemSpecific\Linux\X11\" />
+    <Folder Include="Forms\TextBox\MultiLineTextBox\" />
+    <Folder Include="Forms\TextBox\UndoRedo\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Fonts\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\DejaVuSansMono.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\Lato-Bold.ttf" />
+    <None Include="Fonts\Lato-Regular.ttf" />
+    <None Include="Fonts\Roboto-Bold.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\FontAwesome.otf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SharpFont.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x64\freetype6.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x86\freetype6.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x64\FTL.TXT">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x64\README-SDL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x64\SDL2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x86\FTL.TXT">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x86\README-SDL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="x86\SDL2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SummerGUI-Credits.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ThemeColors.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Cursors\HSplit.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Cursors\VSplit.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Icons\SummerGUI256.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Icons\SummerGUI64.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\DroidSerif-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\Antonio-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\Lato-Semibold.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Fonts\readme.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Logo\kroll-software-logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Logo\kroll-software-logo_hres.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Logo\SummerGUI_96px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Logo\SummerGUI_192px.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Forms\Timers\readme.txt" />
+    <None Include="packages.config" />
+    <None Include="Assets\Cursors\Text.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Cursors\Wait.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\Cursors\CrossHairs.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="OpenTK.dll.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KS.Foundation\KS.Foundation.csproj">
+      <Project>{F10BBD4E-1DD0-4A5B-B669-CA4F03EC6EC7}</Project>
+      <Name>KS.Foundation</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
