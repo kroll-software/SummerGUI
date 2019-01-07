@@ -15,6 +15,7 @@
     <AssemblyOriginatorKeyFile>SummerGUI.snk</AssemblyOriginatorKeyFile>
     <UseMSBuildEngine>False</UseMSBuildEngine>
     <CodePage>65001</CodePage>
+    <ReleaseVersion>0.7.6</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -277,7 +278,6 @@
     <Folder Include="Forms\Button\" />
     <Folder Include="Forms\Sliders\" />
     <Folder Include="Forms\GraphicalWidget\" />
-    <Folder Include="Libs\" />
     <Folder Include="Forms\Animations\" />
     <Folder Include="Forms\Overlays\" />
     <Folder Include="Assets\Cursors\" />
