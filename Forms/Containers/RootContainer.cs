@@ -329,7 +329,7 @@ namespace SummerGUI
 				if (!Overlays.OfType<IOverlayWidget> ().Any (ov => ov.OverlayMode == OverlayModes.Modal)) {
 					Overlays.OfType<IOverlayWidget> ().ToList ().ForEach (ov => ov.OnClose ());
 					if (Overlays.Count != overlayCount) {
-						if (FocusedWidget.IsOverlay)
+						if (FocusedWidget != null && FocusedWidget.IsOverlay)
 							FocusedWidget = null;
 						Invalidate ();
 						return;
