@@ -225,7 +225,7 @@ namespace SummerGUI
 		{
 			if (Count > 0) 
 			{				
-				using (new PaintWrapper (null)) 
+				using (new PaintWrapper (RenderingFlags.HighQuality)) 
 				{					
 					GL.LineWidth (LineWidth);
 					//float hw = LineWidth / 2f;
@@ -326,7 +326,7 @@ namespace SummerGUI
 		{
 			if (Count > 0) 
 			{				
-				using (new PaintWrapper (null)) 
+				using (new PaintWrapper (RenderingFlags.HighQuality)) 
 				{					
 					//GL.Begin (PrimitiveType.Quads);
 
@@ -449,7 +449,7 @@ namespace SummerGUI
 		{
 			if (Count > 0) 
 			{
-				using (new PaintWrapper (null)) 
+				using (new PaintWrapper (RenderingFlags.HighQuality)) 
 				{
 					IGUIFont lastInitializedFont = null;
 
@@ -516,7 +516,7 @@ namespace SummerGUI
 		{
 			if (Count > 0) 
 			{							
-				using (new PaintWrapper (null)) 
+				using (new PaintWrapper (RenderingFlags.HighQuality)) 
 				{	
 					GL.Color4 (Color);
 					//GL.Begin (PrimitiveType.Polygon);

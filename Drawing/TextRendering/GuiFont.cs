@@ -523,7 +523,7 @@ namespace SummerGUI
 						}
 					}
 
-					using (new PaintWrapper (null)) {
+					using (new PaintWrapper (RenderingFlags.HighQuality)) {
 						GL.Color4 (selectionBackColor);
 						GL.Rect (bounds.Left + wStart + offsetX, bounds.Top, bounds.Left + w + offsetX, bounds.Bottom);
 					}

@@ -23,11 +23,11 @@ namespace SummerGUI
 	{					
 		// Ensure to always call it with a parameter
 		// e.g. new PaintWrapper(null)
-		public PaintWrapper(object dummy = null, bool highquality = true)
+		public PaintWrapper(RenderingFlags flags = RenderingFlags.HighQuality)
 		{
 			GL.PushMatrix();
 			GL.LoadIdentity();
-			OpenTkExtensions.SetDefaultRenderingOptions (highquality);
+			OpenTkExtensions.SetDefaultRenderingOptions (flags);
 		}
 
 		public void Dispose()
@@ -66,7 +66,7 @@ namespace SummerGUI
 
 		public static void DrawLine(this IGUIContext ctx, Pen pen, float x1, float y1, float x2, float y2)
 		{
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				pen.DoGL ();
 					
 				if (Math.Abs(y1 - y2) < float.Epsilon) {
@@ -120,7 +120,7 @@ namespace SummerGUI
 			Vector2 four = new Vector2();
 			Vector2.Add(ref leftSide, ref end, out four);
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				pen.DoGL ();
 				GL.Color4 (pen.Color.R, pen.Color.G, pen.Color.B, pen.Color.A);
 				GL.Begin (PrimitiveType.Quads);
@@ -257,7 +257,7 @@ namespace SummerGUI
 			if (points == null || points.Length == 0)
 				return;
 
-			using (new PaintWrapper(null)) {
+			using (new PaintWrapper(RenderingFlags.HighQuality)) {
 				GL.Color4 (brush.Color);
 				GL.Begin (PrimitiveType.Polygon);
 				foreach (PointF p in points) {
@@ -279,7 +279,7 @@ namespace SummerGUI
 
 		public static void FillRectangle(this IGUIContext ctx, HatchBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(null)) {
+			using (new PaintWrapper(RenderingFlags.HighQuality)) {
 				GL.Color4 (brush.Color);
 				GL.Rect (r);
 			}
@@ -318,7 +318,7 @@ namespace SummerGUI
 
 		private static void FillRectangleHorizontal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(null, false)) {
+			using (new PaintWrapper(RenderingFlags.None)) {
 				GL.Color4 (brush.Color);
 				GL.Begin (PrimitiveType.Polygon);
 				GL.Vertex2 (r.Left, r.Bottom);
@@ -333,7 +333,7 @@ namespace SummerGUI
 			
 		private static void FillRectangleVertical(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(null, false)) {
+			using (new PaintWrapper(RenderingFlags.None)) {
 				GL.Color4 (brush.GradientColor);
 				GL.Begin (PrimitiveType.Polygon);
 				GL.Vertex2 (r.Left, r.Bottom);
@@ -347,7 +347,7 @@ namespace SummerGUI
 
 		private static void FillRectangleTopLeft(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{	
-			using (new PaintWrapper(null, false)) {
+			using (new PaintWrapper(RenderingFlags.None)) {
 				GL.Begin (PrimitiveType.Polygon);
 				GL.Color4 (brush.Color);
 				GL.Vertex2 (r.Left, r.Bottom);
@@ -361,7 +361,7 @@ namespace SummerGUI
 
 		private static void FillRectangleForwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(null, false)) {
+			using (new PaintWrapper(RenderingFlags.None)) {
 				GL.Color4 (brush.Color);
 				GL.Begin (PrimitiveType.Polygon);
 				GL.Vertex2 (r.Left, r.Bottom);
@@ -375,7 +375,7 @@ namespace SummerGUI
 
 		private static void FillRectangleBackwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{	
-			using (new PaintWrapper(null, false)) {
+			using (new PaintWrapper(RenderingFlags.None)) {
 				GL.Color4 (brush.GradientColor);
 				GL.Begin (PrimitiveType.Polygon);
 				GL.Vertex2 (r.Left, r.Bottom);
@@ -407,7 +407,7 @@ namespace SummerGUI
 			if (r.Width < 0 || r.Height < 0)
 				return;
 
-			using (new PaintWrapper (null, false)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
                 GL.Color4 (brush.Color);
 				GL.Rect (r);
             }
@@ -418,7 +418,7 @@ namespace SummerGUI
 			if (r.Width < 0 || r.Height < 0)
 				return;
 
-			using (new PaintWrapper (null, false)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
 				GL.Color4 (brush.Color.ToRGBA (alpha));
 				GL.Rect (r);
 			}
@@ -429,7 +429,7 @@ namespace SummerGUI
 			if (width < 0 || height < 0)
 				return;
 
-			using (new PaintWrapper (null, false)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
 				GL.Color4 (brush.Color);
 				GL.Rect (x, y, x + width, y + height);
 			}
@@ -440,7 +440,7 @@ namespace SummerGUI
 			if (width < 0 || height < 0)
 				return;
 
-			using (new PaintWrapper (null, false)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
 				GL.Color4 (brush.Color);		
 				GL.Rect (x, y, x + width, y + height);
 			}
@@ -471,7 +471,7 @@ namespace SummerGUI
 			r.Height -= pen.Width;
 			***/
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				GL.Color4 (pen.Color);
 
 				if (pen.Width > 2) {
@@ -522,7 +522,7 @@ namespace SummerGUI
 			if (numSteps < 1 || da < float.Epsilon)
 				return;
 
-			using (new PaintWrapper (null)) {	
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {	
 				GL.Color4 (pen.Color);
 				pen.DoGL ();
 				GL.LineWidth (pen.Width);
@@ -548,7 +548,7 @@ namespace SummerGUI
 			if (numSteps < 1 || da < float.Epsilon)
 				return;
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
 				GL.Color4 (brush.Color);
 				GL.Begin (PrimitiveType.TriangleFan);
 				float angle = 0;
@@ -579,7 +579,7 @@ namespace SummerGUI
 
 			startAngle -= 90f;
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				GL.Color4 (pen.Color);
 				pen.DoGL ();
 
@@ -622,7 +622,7 @@ namespace SummerGUI
 
 			startAngle -= 90f;
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.None)) {
 				GL.Color4 (brush.Color);
 
 				GL.Begin (PrimitiveType.TriangleFan);

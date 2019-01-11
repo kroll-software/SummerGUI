@@ -126,7 +126,7 @@ namespace SummerGUI
 
 		static int LoadTexture(Bitmap bmp, IGUIContext ctx, int id = -1)
 		{	
-			using (new PaintWrapper (null)) {				
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {				
 				GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
 				GL.Enable (EnableCap.Texture2D);
 
@@ -196,7 +196,7 @@ namespace SummerGUI
 			if (dest.Width < 0 || dest.Height < 0 || !ctx.ClipBoundStack.IsOnScreen (dest))
 				return;
 
-			using (new PaintWrapper (null)) {
+			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				GL.Enable(EnableCap.Blend);
 				BlendingFactor srcBlend = BlendingFactor.SrcAlpha;
 				BlendingFactor destBlend = BlendingFactor.OneMinusSrcAlpha;

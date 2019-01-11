@@ -6,7 +6,16 @@ using OpenTK.Graphics.OpenGL;
 
 namespace SummerGUI
 {
-	public static class OpenTkExtensions
+    [Flags]
+    public enum RenderingFlags
+    {
+        None = 0,
+        MultiSample = 1,
+        Smooth = 2,
+        HighQuality = MultiSample | Smooth
+    }
+
+    public static class OpenTkExtensions
 	{
 		/***
 		private static Rectangle m_ClipRectangle = Rectangle.Empty;
@@ -81,9 +90,9 @@ namespace SummerGUI
 			return (int)(value * ctx.ScaleFactor + 0.5f);
 		}
 
-		public static bool HighQuality = true;
+		//public static bool HighQuality = true;
 
-		public static void SetDefaultRenderingOptions(bool highquality = true)
+        public static void SetDefaultRenderingOptions(RenderingFlags flags = RenderingFlags.HighQuality)
 		{			
 			//GL.Translate (0, 0, 0);
 
@@ -102,9 +111,13 @@ namespace SummerGUI
 
             // high quality
 
-            if (highquality)
-            {
+            if (flags.HasFlag(RenderingFlags.MultiSample))
                 GL.Enable(EnableCap.Multisample);
+            else
+                GL.Disable(EnableCap.Multisample);
+
+            if (flags.HasFlag(RenderingFlags.Smooth))
+            {
                 GL.ShadeModel(ShadingModel.Smooth);
 
                 GL.Enable(EnableCap.PointSmooth);
@@ -118,7 +131,14 @@ namespace SummerGUI
             }
             else
             {
+                GL.Disable(EnableCap.PointSmooth);
+                //GL.Hint(HintTarget.PointSmoothHint, HintMode.Nicest);
+
+                GL.Disable(EnableCap.LineSmooth);
+                //GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);
+
                 GL.Disable(EnableCap.PolygonSmooth);
+                //GL.Hint(HintTarget.PolygonSmoothHint, HintMode.Nicest);
             }
 		}
 	}
