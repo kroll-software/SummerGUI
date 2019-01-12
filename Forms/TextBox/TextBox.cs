@@ -23,11 +23,10 @@ namespace SummerGUI
 		public void OnTextChanged()
 		{
 			ResetCachedLayout ();
-			if (TextChanged != null)
-				TextChanged(this, EventArgs.Empty);
-		}
+            TextChanged?.Invoke(this, EventArgs.Empty);
+        }
 
-		private string m_Text;
+        private string m_Text;
 		public string Text 
 		{ 
 			get {
@@ -656,19 +655,20 @@ namespace SummerGUI
 			} else {
 				// Select Word
 				int pos = Font.CharPos (DisplayText, e.X - Bounds.Left - TextOffsetX - TextMargin.Width);
-				if (pos >= Text.Length)
-					return;				
-				int start = pos;
-				while (start >= 0 && Text [start] != ' ')
-					start--;
-				int end = pos;
-				while (end < Text.Length && Text [end] != ' ')
-					end++;
-				SelStart = start + 1;
-				SelLength = end - start - 1;
-				CursorPosition = SelStart + SelLength;
+                if (pos < Text.Length)
+                {
+    				int start = pos;
+    				while (start >= 0 && Text [start] != ' ')
+    					start--;
+    				int end = pos;
+    				while (end < Text.Length && Text [end] != ' ')
+    					end++;
+    				SelStart = start + 1;
+    				SelLength = Math.Max(0, end - start - 1);
+    				CursorPosition = SelStart + SelLength;
+                }
 
-				lastDoubleClickTicks = Environment.TickCount;
+                lastDoubleClickTicks = Environment.TickCount;
 				Invalidate ();
 			}
 		}

@@ -1,18 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Xml.Serialization;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Diagnostics;
 using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
 
 namespace SummerGUI.DataGrid
@@ -102,7 +94,7 @@ namespace SummerGUI.DataGrid
 				elem.ColumnCollection = this;
 		}			
 
-		[XmlIgnore]    
+		//[XmlIgnore]    
 		public IEnumerable<DataGridColumn> SortedVisibleColumns
 		{
 			get
@@ -111,7 +103,7 @@ namespace SummerGUI.DataGrid
 			}
 		}
 
-		[XmlIgnore]
+		//[XmlIgnore]
 		public DataGridColumn TreeColumn
 		{
 			get
@@ -244,12 +236,12 @@ namespace SummerGUI.DataGrid
 			}
 		}
 
-		[XmlIgnore]        
+		//[XmlIgnore]        
 		public Type ValueType { get; set; }
 
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
-		[XmlElement("ValueType")]
+		//[XmlElement("ValueType")]
 		[DefaultValue("")]        
 		public string ValueTypeXml 
 		{
@@ -455,7 +447,7 @@ namespace SummerGUI.DataGrid
 			}
 		}
 
-		[XmlIgnore]        
+		//[XmlIgnore]        
 		public string Caption
 		{
 			get

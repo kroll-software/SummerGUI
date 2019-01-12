@@ -102,7 +102,7 @@ namespace SummerGUI
 
 	public abstract class SummerGUIWindow : OpenTK.NativeWindow, IGUIContext
 	{		
-		/**
+		/***
 		private VertexBuffer<ColouredVertex> vertexBuffer;
 		private ShaderProgram shaderProgram;
 		private VertexArray<ColouredVertex> vertexArray;

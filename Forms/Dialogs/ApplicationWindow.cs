@@ -267,16 +267,16 @@ namespace SummerGUI
 			}
 		}
 
-		protected override void OnUpdateFrame (double elapsedTime)
+		protected override void OnUpdateFrame (double elapsedSeconds)
 		{			
 			if (IsDiagnosticsRunning)
 				Diagnostics.PulseLayout ();
-			base.OnUpdateFrame (elapsedTime);
+			base.OnUpdateFrame (elapsedSeconds);
 		}
 
-		protected override void OnRenderFrame (double elapsedTime)
+		protected override void OnRenderFrame (double elapsedSeconds)
 		{						
-			base.OnRenderFrame (elapsedTime);
+			base.OnRenderFrame (elapsedSeconds);
 			if (IsDiagnosticsRunning)
 				Diagnostics.PulsePaint ();
 		}			
