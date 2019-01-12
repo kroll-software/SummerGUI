@@ -789,6 +789,23 @@ namespace SummerGUI.Editor
 			return sb.ToString ();
 		}
 
+        public int Length
+        {
+            get
+            {
+                return Paragraphs.Sum(p => p.Length);
+            }
+        }
+
+        public bool HasText
+        {
+            get
+            {
+                return !IsEmpty;
+                //return Paragraphs.Any(p => p.Length > 1);
+            }
+        }
+
 		public void OnScalingChanged(float breakWidth)
 		{
 			BreakWidth = breakWidth;
@@ -1107,14 +1124,16 @@ namespace SummerGUI.Editor
 				return '\r';			
 			return AutoDetectLineBreakChar (s, start + len, len);
 		}
-
-		bool TestMode = true;
+        		
+        public bool GroupParagraphs { get; set; }
 
 		public void LoadTextAsync (string value, float breakWidth)
 		{
 			BreakWidth = breakWidth;
+            if (value == null)
+                value = String.Empty;
 
-			Task.Factory.StartNew (() => {
+            Task.Factory.StartNew (() => {
 				Stopwatch sw = Stopwatch.StartNew();
 
 				int index = 0;
@@ -1122,8 +1141,8 @@ namespace SummerGUI.Editor
 				ParagraphList paragraphs = new ParagraphList(LineHeight, BreakWidth);
 				char splitChar = AutoDetectLineBreakChar(value);
 
-				if (!TestMode) {					
-					Strings.Split (value, splitChar).ForEach (line =>
+				if (!GroupParagraphs) {
+                    Strings.Split (value, splitChar).ForEach (line =>
 						paragraphs.AddLast (new Paragraph (index++, BreakWidth, line, Font, Flags))
 					);
 				} else {

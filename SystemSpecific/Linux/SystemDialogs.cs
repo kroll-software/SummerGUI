@@ -8,9 +8,9 @@ namespace SummerGUI.SystemSpecific.Linux
 {
 	public class SystemDialogs
 	{
-		const string GtkLib = "libgtk-3.so";	// "gtk-3"
+        const string GtkLib = "libgtk-3.so.0";    // "gtk-3"
 
-		[DllImport (GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport (GtkLib, CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr gtk_file_chooser_dialog_new(IntPtr title, IntPtr parent, int action, 
 			IntPtr btn1,
 			int response1,
@@ -83,27 +83,32 @@ namespace SummerGUI.SystemSpecific.Linux
 			parent = root_pointer;
 
 
-			//parent = parentWindow.WindowInfo.Handle
+            // ToDo: gtk_window_set_transient_for()
 
-			//XSetTransientForHint
+            // Unfortunately our GameWindow is not a GTK-Window :(
 
-			//var info = (OpenTK.Platform.X11.X11WindowInfo)parentWindow.WindowInfo;
 
-			//parent = parentWindow.WindowInfo.Handle;
+            //parent = parentWindow.WindowInfo.Handle
 
-			//OpenTK.Platform.Utilities.
+            //XSetTransientForHint
 
-			/***
+            //var info = (OpenTK.Platform.X11.X11WindowInfo)parentWindow.WindowInfo;
+
+            //parent = parentWindow.WindowInfo.Handle;
+
+            //OpenTK.Platform.Utilities.
+
+            /***
 			Utilities.CreateX11WindowInfo(IntPtr.Zero, 0,
 				parentWindow.WindowInfo.Handle,
 				IntPtr.Zero,
 				IntPtr.Zero
 			);
 			***/
-			//Utilities.CreateX11WindowInfo(
-			//IntPtr GtkWindow = (this.GlWindow.WindowInfo as OpenTK.Platform.X11.).Visual;
+            //Utilities.CreateX11WindowInfo(
+            //IntPtr GtkWindow = (this.GlWindow.WindowInfo as OpenTK.Platform.X11.).Visual;
 
-			GtkFileChooserAction action = GtkFileChooserAction.GTK_FILE_CHOOSER_ACTION_OPEN;
+            GtkFileChooserAction action = GtkFileChooserAction.GTK_FILE_CHOOSER_ACTION_OPEN;
 
 			if (String.IsNullOrEmpty(caption))
 				caption = "Open File";

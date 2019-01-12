@@ -218,12 +218,14 @@ namespace SummerGUI
 		{						
 			IGuiMenuItem mnuFile = MainMenu.Add ("File", "&File");
 
-			IGuiMenuItem mnuOpen = mnuFile.AddChild ("Open", "&Open..", (char)FontAwesomeIcons.fa_folder_open_o)
+            IGuiMenuItem mnuNew = mnuFile.AddChild("New", "&New..", (char)FontAwesomeIcons.fa_file_o)
+                .SetHotKey(KeyModifiers.Control, Key.N);
+            IGuiMenuItem mnuOpen = mnuFile.AddChild ("Open", "&Open..", (char)FontAwesomeIcons.fa_folder_open_o)
 				.SetHotKey(KeyModifiers.Alt, Key.O);
-			IGuiMenuItem mnuNew = mnuFile.AddChild ("New", "&New..", (char)FontAwesomeIcons.fa_file_o)
-				.SetHotKey(KeyModifiers.Control, Key.N);
+            IGuiMenuItem mnuSave = mnuFile.AddChild("Save", "&Save..", (char)FontAwesomeIcons.fa_save)
+                .SetHotKey(KeyModifiers.Control, Key.S);
 
-			mnuFile.AddSeparator ();
+            mnuFile.AddSeparator ();
 
 			IGuiMenuItem mnuExit = mnuFile.AddChild ("Exit", "E&xit").SetHotKey(KeyModifiers.Alt, Key.F4);
 			mnuExit.Click += delegate {

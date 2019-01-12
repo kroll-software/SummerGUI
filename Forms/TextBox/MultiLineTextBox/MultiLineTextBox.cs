@@ -26,8 +26,8 @@ namespace SummerGUI
 		}
 	}
 
-	public class MultiLineTextBox : ScrollableContainer, ITextBox, ISupportsFind, ISupportsClipboard, ISupportsSelection, ISupportsNonPrintingCharactersDisplay, ISupportsUndoRedo
-	{				
+	public class MultiLineTextBox : ScrollableContainer, ITextBox, ISupportsFind, ISupportsClipboard, ISupportsSelection, ISupportsNonPrintingCharactersDisplay, ISupportsUndoRedo, ISupportsPersistency
+    {				
 		public MultiLineTextManager RowManager { get; private set; }
 		public UndoRedoStack UndoRedoManager { get; private set; }
 
@@ -94,12 +94,11 @@ namespace SummerGUI
 
 		public event EventHandler<EventArgs> TextChanged;
 		public void OnTextChanged()
-		{						
-			if (TextChanged != null)
-				TextChanged(this, EventArgs.Empty);			
-		}
+        {
+            TextChanged?.Invoke(this, EventArgs.Empty);
+        }
 
-		public bool ReadOnly { get; set; }
+        public bool ReadOnly { get; set; }
 		public bool Modified { get; set; }
 		public bool AllowTabKey { get; set; }			
 
@@ -145,9 +144,7 @@ namespace SummerGUI
 		}						
 			
 		public override void Focus ()
-		{			
-			//if (Text != null)
-			//	RowManager.CursorPosition = Text.Length;
+		{						
 			CursorOn = true;
 			base.Focus ();
 			RowManager.Active = true;
@@ -180,7 +177,7 @@ namespace SummerGUI
 			}
 		}
 
-		public bool BreakWidthRulerVisible { get; set; }
+        public bool BreakWidthRulerVisible { get; set; }
 
 		public MultiLineTextBox (string name) : this(name, new MultiLineTextEditWidgetStyle()) {}
 		public MultiLineTextBox (string name, IWidgetStyle style)
@@ -202,9 +199,13 @@ namespace SummerGUI
 			BreakWidthRulerVisible = true;
 
 			RowManager.LoadingCompleted += delegate {
-				IsLoading = false;
+                RowManager.MoveHome();
+                ScrollOffsetX = 0;
+                ScrollOffsetY = 0;
+                IsLoading = false;
 				OnEnabledChanged ();
-				RowManager.Paragraphs.UpdateCompleted += delegate {
+
+                RowManager.Paragraphs.UpdateCompleted += delegate {
 					try {
 						EnsureCurrentRowVisible ();
 						Invalidate(1);
@@ -977,10 +978,25 @@ namespace SummerGUI
 			}
 		}
 
-		// *** Clipboard ***
+
+        // ISupportsPersistency
+        public virtual bool CanOpen { get; set; }
+        public virtual bool CanClose { get; set; }
+        public virtual bool CanSave { get; set; }
+        public virtual bool CanSaveAs { get; set; }
+
+        public virtual bool CanNew
+        {
+            get
+            {
+                return RowManager.HasText;
+            }
+        }
 
 
-		public void Cut()
+        // *** Clipboard ***
+
+        public void Cut()
 		{
 			if (!CanCut)
 				return;

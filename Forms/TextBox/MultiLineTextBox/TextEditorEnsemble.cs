@@ -24,6 +24,8 @@ namespace SummerGUI
 			}
 		}
 
+        public string FilePath { get; set; }
+
 		public TextEditorEnsemble (string name)
 			: base(name, Docking.Fill, new EmptyWidgetStyle())
 		{			

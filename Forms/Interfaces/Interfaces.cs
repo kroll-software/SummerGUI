@@ -184,11 +184,13 @@ namespace SummerGUI
 		bool CanSave { get; }
 		bool CanSaveAs { get; }
 
+        /***
 		void New ();
 		void Open ();
 		void Close ();
 		void Save ();
 		void SaveAs ();
+		***/       
 	}
 
 	[GuiMenuInterface]
