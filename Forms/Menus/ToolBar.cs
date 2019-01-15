@@ -30,12 +30,11 @@ namespace SummerGUI
 		protected override void OnParentChanged ()
 		{
 			base.OnParentChanged ();
-			ToolBarBase tb = Parent as ToolBarBase;
-			if (tb != null)
-				ImageList = tb.Images;
-		}
-			
-		public override Widget HitTest (float x, float y)
+            if (Parent is ToolBarBase tb)
+                ImageList = tb.Images;
+        }
+
+        public override Widget HitTest (float x, float y)
 		{
 			if (base.HitTest (x, y) != null)
 				return this;
@@ -61,12 +60,11 @@ namespace SummerGUI
 		protected override void OnParentChanged ()
 		{
 			base.OnParentChanged ();
-			ToolBarBase tb = Parent as ToolBarBase;
-			if (tb != null)
-				ImageList = tb.Images;
-		}
+            if (Parent is ToolBarBase tb)
+                ImageList = tb.Images;
+        }
 
-		public override Widget HitTest (float x, float y)
+        public override Widget HitTest (float x, float y)
 		{
 			if (base.HitTest (x, y) != null)
 				return this;
@@ -85,8 +83,8 @@ namespace SummerGUI
 				else
 					return base.Enabled;
 			}
-			set {				
-				if (MenuItem != null)
+			set {
+                if (MenuItem != null)
 					MenuItem.Enabled = value;
 				base.Enabled = value;
 			}

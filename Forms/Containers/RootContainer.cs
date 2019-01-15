@@ -89,7 +89,8 @@ namespace SummerGUI
 
 		public void ClearOverlays()
 		{
-			Overlays.Clear ();
+            // Overlays.DisposeListObjects();
+            Overlays.Clear ();
 		}
 			
 		public new void Invalidate(int frames = 0)
@@ -707,7 +708,8 @@ namespace SummerGUI
 			ClearOverlays();
 
 			TooltipDelayAction.Dispose ();
-			HeartbeatTimer.Dispose ();
+
+            HeartbeatTimer.Dispose ();
 			HeartbeatSubscriptions.Clear ();
 
 			if (m_Tooltip != null)

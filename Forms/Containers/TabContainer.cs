@@ -473,17 +473,9 @@ namespace SummerGUI
 		}			
 			
 		public override void Update (IGUIContext ctx)
-		{
-			var teb = Bounds;
-
+		{			
 			base.Update (ctx);
-			TabPage tp = SelectedTab;
-
-			var teb2 = tp.Bounds;
-			var name = tp.Name;
-
-			if (tp != null)
-				tp.Update (ctx);
+            SelectedTab?.Update(ctx);
 		}
 
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
