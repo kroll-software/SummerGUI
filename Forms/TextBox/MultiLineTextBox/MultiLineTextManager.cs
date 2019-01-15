@@ -111,7 +111,7 @@ namespace SummerGUI.Editor
 					TokenScalingWordWrapSource.Cancel ();				
 			}				
 
-			this.LogDebug ("Word-Break Job #{0} started.", count++);
+			//this.LogDebug ("Word-Break Job #{0} started.", count++);
 
 			try {				
 				TokenScalingWordWrapSource = new CancellationTokenSource ();
@@ -137,7 +137,7 @@ namespace SummerGUI.Editor
 			LineHeight = lineHeight;
 			RepeatAsyncUpdateWidth = breakWidth;
 
-			this.LogDebug ("Word-Break Job #{0} started (scaling).", count++);
+			// this.LogDebug ("Word-Break Job #{0} started (scaling).", count++);
 
 			try {				
 				TokenScalingWordWrapSource = new CancellationTokenSource ();

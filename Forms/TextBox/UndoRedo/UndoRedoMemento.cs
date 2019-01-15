@@ -69,19 +69,20 @@ namespace SummerGUI.Editor
 		}
 
 		public override void PerformUndo (ITextBox textbox)
-		{		
-			textbox.DeleteRange (SelStart, DataLength);
+		{
+            textbox.DeleteRange(Position, DataLength);
 
-			if (SelLength > 0) {
-				textbox.SetCursorPosition (SelStart);
-				textbox.InsertRange (SelectedText);
-			}				
+            if (SelLength > 0)
+            {
+                textbox.SetCursorPosition(SelStart);
+                textbox.InsertRange(SelectedText);
+            }
 
-			textbox.SelStart = SelStart;
+            textbox.SelStart = SelStart;
 			textbox.SelLength = SelLength;
-			textbox.SetCursorPosition (Position);
+            textbox.SetCursorPosition(Position);
 
-			base.PerformUndo (textbox);
+            base.PerformUndo (textbox);
 		}
 
 		public override void PerformRedo (ITextBox textbox)

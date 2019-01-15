@@ -410,7 +410,7 @@ namespace SummerGUI
 			if (ModifierKeys.AltPressed || !IsFocused)
 				return false;
 
-			Console.WriteLine (e.Key);
+			//Console.WriteLine (e.Key);
 
 			//if (base.OnKeyDown (e))
 			//	return false;

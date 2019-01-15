@@ -107,8 +107,7 @@ namespace SummerGUI
 			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
 			MaxSize = new SizeF (MaxSize.Width, Font.TextBoxHeight);
 			Format = DefaultSingleLineFontFormat;
-
-			//TextMargin = new Size (6, 2);
+            			
 			TextMargin = new Size (6, 2);
 
 			CursorLineWidth = 1f;
@@ -582,7 +581,8 @@ namespace SummerGUI
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
 			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
-				SetUndoInsert (e.KeyChar.ToString ());
+                //SelStart = CursorPosition;
+                SetUndoInsert (e.KeyChar.ToString ());
 				if (SelLength > 0) {
 					DeleteSelection ();
 					SelLength = 0;
