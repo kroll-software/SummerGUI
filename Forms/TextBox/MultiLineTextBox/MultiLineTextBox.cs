@@ -482,7 +482,7 @@ namespace SummerGUI
 				break;
 			case Key.BackSpace:				
 				if (SelLength > 0) {					
-					this.SetUndoDelete (RowManager.AbsCursorPosition, 0);
+					//this.SetUndoDelete (RowManager.AbsCursorPosition, 0);
 					Delete ();
 				} else {
 					int pos = RowManager.AbsCursorPosition;
@@ -644,7 +644,9 @@ namespace SummerGUI
 					SelLength = 0;
 				}
 				RowManager.InsertChar(e.KeyChar);
-				EnsureCurrentRowVisible ();
+                SelStart = RowManager.CursorPosition;
+
+                EnsureCurrentRowVisible ();
 				CursorOn = true;
 				Invalidate ();
 				return true;

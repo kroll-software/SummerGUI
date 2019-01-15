@@ -70,33 +70,44 @@ namespace SummerGUI.Editor
 
 		public override void PerformUndo (ITextBox textbox)
 		{
-            textbox.DeleteRange(Position, DataLength);
+            textbox.DeleteRange(SelStart, DataLength);
 
             if (SelLength > 0)
             {
                 textbox.SetCursorPosition(SelStart);
                 textbox.InsertRange(SelectedText);
+                textbox.SelStart = SelStart;
+                textbox.SelLength = SelLength;
             }
-
-            textbox.SelStart = SelStart;
-			textbox.SelLength = SelLength;
-            textbox.SetCursorPosition(Position);
+            else
+            {
+                textbox.SetCursorPosition(Position);
+                textbox.SelStart = Position;
+                textbox.SelLength = 0;
+            }
 
             base.PerformUndo (textbox);
 		}
 
 		public override void PerformRedo (ITextBox textbox)
-		{	
-			textbox.SetCursorPosition (Position);
-			textbox.InsertRange (Data);
-
-			if (SelLength > 0) {				
-				textbox.DeleteRange (SelStart, SelLength);
-				textbox.SetCursorPosition (SelStart + DataLength);
-			}				
-
-			textbox.SelStart = SelStart;
-			textbox.SelLength = 0;
+		{				
+            if (SelLength > 0)
+            {
+                textbox.DeleteRange(SelStart, SelLength);
+                textbox.SelLength = 0;
+                textbox.SetCursorPosition(Position);
+                textbox.InsertRange(Data);
+                textbox.SetCursorPosition(Position + DataLength);
+                textbox.SelStart = Position + DataLength;
+            }
+            else
+            {
+                textbox.SetCursorPosition(Position);
+                textbox.InsertRange(Data);
+                textbox.SetCursorPosition(Position + DataLength);
+                textbox.SelStart = Position + DataLength;
+                textbox.SelLength = 0;
+            }
 
 			base.PerformRedo (textbox);
 		}

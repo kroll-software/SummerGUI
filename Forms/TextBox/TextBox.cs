@@ -476,7 +476,7 @@ namespace SummerGUI
 				return true;
 			case Key.BackSpace:
 				if (SelLength > 0) {
-					this.SetUndoDelete (CursorPosition, 0);
+					//this.SetUndoDelete (CursorPosition, 0);
 					Delete ();
 				} else if (CursorPosition > 0) {					
 					UndoRedoManager.Do (new UndoRedoBackspaceMemento{
@@ -581,14 +581,15 @@ namespace SummerGUI
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
 			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
-                //SelStart = CursorPosition;
                 SetUndoInsert (e.KeyChar.ToString ());
 				if (SelLength > 0) {
 					DeleteSelection ();
 					SelLength = 0;
 				}
 				InsertChar(CursorPosition++, e.KeyChar);
-				EnsureCursorVisible ();
+                SelStart = CursorPosition;
+
+                EnsureCursorVisible ();
 				CursorOn = true;
 				Invalidate ();
 				return true;
