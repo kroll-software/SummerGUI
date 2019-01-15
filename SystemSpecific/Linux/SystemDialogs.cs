@@ -70,10 +70,10 @@ namespace SummerGUI.SystemSpecific.Linux
 
 		public string OpenFileDialog(string caption, INativeWindow parentWindow)
 		{
-			IntPtr parent = IntPtr.Zero;
+            IntPtr parent = IntPtr.Zero;
+            //IntPtr display = parentWindow.WindowInfo.Handle;
 
-			//IntPtr display = parentWindow.WindowInfo.Handle;
-
+            /***
 			object display = KS.Foundation.ReflectionUtils.GetPropertyValue (parentWindow.WindowInfo, "Display");
 			IntPtr disp_pointer = new IntPtr (display.SafeInt());
 
@@ -81,6 +81,7 @@ namespace SummerGUI.SystemSpecific.Linux
 			IntPtr root_pointer = new IntPtr (RootWindow.SafeInt());
 
 			parent = root_pointer;
+			***/
 
 
             // ToDo: gtk_window_set_transient_for()
