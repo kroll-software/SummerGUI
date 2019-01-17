@@ -200,7 +200,19 @@ namespace SummerGUI
 			base.LayoutChild (ctx, child, bounds);
 		}
 
-		protected virtual void SetUpScrollbars(IGUIContext ctx)
+        public EventHandler<EventArgs> VScrollbarVisibleChanged;
+        protected virtual void OnVScrollbarVisibleChanged()
+        {
+            VScrollbarVisibleChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public EventHandler<EventArgs> HScrollbarVisibleChanged;
+        protected virtual void OnHScrollbarVisibleChanged()
+        {
+            HScrollbarVisibleChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual void SetUpScrollbars(IGUIContext ctx)
 		{			
 			try {
 				if (AutoScroll && Visible && Parent != null)
@@ -210,8 +222,8 @@ namespace SummerGUI
 						if (HScrollBar.Visible != visible) {
 							HScrollBar.Visible = visible;
 							LayoutChildren (ctx, PaddingBounds);
-							//LayoutChildren (ctx, Bounds);
-						}						
+                            OnHScrollbarVisibleChanged();
+                        }						
 						if (HScrollBar.Visible)
 							HScrollBar.SetUp (Width - VScrollBarWidth, DocumentSize.Width);
 					}
@@ -221,8 +233,8 @@ namespace SummerGUI
 						if (VScrollBar.Visible != visible) {
 							VScrollBar.Visible = visible;
 							LayoutChildren (ctx, PaddingBounds);
-							//LayoutChildren (ctx, Bounds);
-						}
+                            OnVScrollbarVisibleChanged();
+                        }
 						if (VScrollBar.Visible)
 							VScrollBar.SetUp (Height - HScrollBarHeight, DocumentSize.Height);
 					}

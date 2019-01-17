@@ -349,14 +349,13 @@ namespace SummerGUI.Editor
 					currentWidth += curr.Value.Width;
 					totalWidth += currentWidth;
 
-					if (currentWidth > BreakWidth && curr.Next != null) {
-						int lineBreakPos;
+					if (currentWidth > BreakWidth && curr.Next != null) {						
 						if (prevBreakCharPos == 0) {
-							lineBreakPos = pos;
-							currentWidth = 0;
+                            lineBreaks.AddLast(pos);
+							currentWidth = curr.Value.Width;
 							prev = curr;
 						} else {
-							lineBreakPos = prevBreakCharPos;
+                            lineBreaks.AddLast(prevBreakCharPos);
 							prevBreakCharPos = 0;
 							currentWidth = 0;
 							while (prev != curr) {
@@ -364,7 +363,6 @@ namespace SummerGUI.Editor
 								prev = prev.Next;
 							}								
 						}
-						lineBreaks.AddLast (lineBreakPos);					
 					} else if (IsSpaceWrapCharacter (curr.Value.Char) || (IsWrapCharacter (curr.Value.Char) && curr.Next != null && !IsSpaceWrapCharacter (curr.Next.Value.Char))) {
 							prevBreakCharPos = pos + 1;
 							prev = curr;

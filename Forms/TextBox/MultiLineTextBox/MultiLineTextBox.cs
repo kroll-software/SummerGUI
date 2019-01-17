@@ -589,7 +589,7 @@ namespace SummerGUI
 			get{		
 				return Math.Max(20, Width - Padding.Width - VScrollBarWidth);
 			}
-		}			
+		}
 
 		public override void OnResize ()
 		{			
@@ -597,7 +597,13 @@ namespace SummerGUI
 			base.OnResize ();
 		}
 
-		protected virtual bool IsDefaultInputChar(char c)
+        protected override void OnVScrollbarVisibleChanged()
+        {
+            RowManager.OnResize(BreakWidth);
+            base.OnVScrollbarVisibleChanged();
+        }
+
+        protected virtual bool IsDefaultInputChar(char c)
 		{
 			return (int)c > 31;
 		}
@@ -638,7 +644,9 @@ namespace SummerGUI
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
 			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
+                //if (e.KeyChar == ' ' || e.KeyChar == '\n')
 				SetUndoInsert (e.KeyChar.ToString ());
+
 				if (SelLength > 0) {
 					DeleteSelection ();
 					SelLength = 0;
