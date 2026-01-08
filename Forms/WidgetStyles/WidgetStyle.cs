@@ -124,7 +124,7 @@ namespace SummerGUI
 				RectangleF rBorder = widget.Bounds;
 				if (Math.Abs(BorderDistance) > float.Epsilon)
 					rBorder.Inflate (BorderDistance, BorderDistance);
-				rBorder = rBorder.Ceil ();
+				rBorder = rBorder.Ceil ();				
 				rBorder.Offset (-0.5f, -0.5f);
 				ctx.DrawRectangle (BorderColorPen, rBorder);
 			}

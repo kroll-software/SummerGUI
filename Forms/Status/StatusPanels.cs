@@ -21,7 +21,7 @@ namespace SummerGUI
 			Format = FontFormat.DefaultSingleLine;
 			Margin = Padding.Empty;
 			InvalidateOnHeartBeat = true;
-		}			
+		}
 
 		public override void OnResize ()
 		{

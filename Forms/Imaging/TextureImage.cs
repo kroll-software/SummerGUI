@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Drawing;
-using System.Drawing.Imaging;
+using StbImageSharp;
+//using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -30,18 +31,18 @@ namespace SummerGUI
 		public int TextureID  { get; private set; }
 		public string URI { get; private set; }
 		public string Key { get; private set; }
-		public Size Size { get; private set; }
+		public Size Size { get; private set; } // System.Drawing.Size
 
 		//public BlendModes BlendMode { get; set; }
 		public float Opacity { get; set; }
-		public Color BlendColor { get; set; }
+		public Color BlendColor { get; set; } // Auskommentiert, da Color-Typ unklar
 
 		public TextureImage(string key)
 		{
 			Key = key;
 			TextureID = -1;
 			Opacity = 1;
-			//BlendColor = Color.FromArgb (255, 255, 255, 255);
+			BlendColor = Color.FromArgb (255, 255, 255, 255);
 		}
 
 		public int Width 
@@ -59,18 +60,19 @@ namespace SummerGUI
 		}
 
 		public byte BPP { get; private set; }
-		public System.Drawing.Imaging.PixelFormat PixFormat  { get; private set; }
+		// System.Drawing.Imaging.PixelFormat PixFormat wird nicht mehr benötigt
 
+		// FromFile lädt das Bild und ruft dann die interne Ladefunktion auf
 		public static TextureImage FromFile(string filePath, IGUIContext ctx, string key = null, Size size = default(Size))
 		{
 			if (String.IsNullOrEmpty (filePath))
-				throw new ArgumentException ("filePath");
+				throw new ArgumentException ("filePath must not be null.");
 
 			if (!File.Exists (filePath))
 				throw new ArgumentException ("{0} does not exist", filePath);
 
 			if (String.IsNullOrEmpty (key)) {
-				// set key to relative Path below /assets with unix filenames
+				// Ihre Pfad-Logik bleibt unberührt, da sie String-basiert ist
 				if (filePath.IndexOf ("Assets") < 0) {
 					key = filePath;
 				}
@@ -88,69 +90,81 @@ namespace SummerGUI
 			}
 
 			try {
-				using (Bitmap bmp = new Bitmap(filePath))
-				{
-					return FromBitmap(bmp, ctx, key, size);
-				}				
+				// Verwenden Sie StbImageSharp direkt, keine Bitmap(filePath) Instanziierung
+				return LoadTextureFromFile(filePath, ctx, key, size);
 			} catch (Exception ex) {
 				ex.LogError ();
 				throw;
 			}
-		}			
-
-		public static TextureImage FromBitmap(Bitmap bmp, IGUIContext ctx, string key, Size size = default(Size))
+		}
+		
+		// FromBitmap und LoadTexture(Bitmap bmp...) werden durch eine einzige, neue Methode ersetzt:
+		public static TextureImage LoadTextureFromFile(string filePath, IGUIContext ctx, string key, Size size = default(Size))
 		{
-			if (bmp == null || bmp.Width < 1 || bmp.Height < 1)
-				return null;
+			try
+			{
+				// --- Bild mit StbImageSharp laden ---
+				using (Stream stream = File.OpenRead(filePath))
+				{
+					// Fordert RGBA (4 Komponenten) an, was für OpenGL am besten ist
+					ImageResult image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 
-			try {
-				TextureImage retVal = new TextureImage(key);
-				if (size != Size.Empty && size != bmp.Size) {
-					using (Bitmap bmpScaled = new Bitmap (bmp, size))
-					{
-						retVal.TextureID = LoadTexture(bmpScaled, ctx);
-						retVal.Size = bmpScaled.Size;
-						retVal.PixFormat = bmpScaled.PixelFormat;
-					}
-				} else {
-					retVal.TextureID = LoadTexture(bmp, ctx);
-					retVal.Size = bmp.Size;
-					retVal.PixFormat = bmp.PixelFormat;
+					if (size != Size.Empty && (size.Width != image.Width || size.Height != image.Height))
+                    {
+                        var scaledBytes = ImageScaler.ScaleImageData(image.Data, image.Width, image.Height, size.Width, size.Height);
+						image.Data = scaledBytes;
+						image.Width = size.Width;
+						image.Height = size.Height;
+                    }
+
+					TextureImage retVal = new TextureImage(key);
+					retVal.TextureID = UploadTextureToOpenGL(image, ctx);
+					retVal.Size = new Size(image.Width, image.Height);
+					// BPP und PixelFormat werden nicht mehr explizit gesetzt
+
+					return retVal;
 				}
-				return retVal;
-			} catch (Exception ex) {
-				ex.LogError ();
+			}
+			catch (Exception ex)
+			{
+				ex.LogError();
 				throw;
 			}
-		}			
+		}
 
-		static int LoadTexture(Bitmap bmp, IGUIContext ctx, int id = -1)
+		// Die neue Methode, die das Bild an OpenGL übergibt
+		static int UploadTextureToOpenGL(ImageResult image, IGUIContext ctx, int id = -1)
 		{	
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {				
+			using (new PaintWrapper(RenderingFlags.HighQuality)) 
+			{				
 				GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
-				GL.Enable (EnableCap.Texture2D);
+				GL.Enable(EnableCap.Texture2D);
 
 				if (id < 0)
-					id = GL.GenTexture ();
-				GL.BindTexture (TextureTarget.Texture2D, id);
+					id = GL.GenTexture();
+				GL.BindTexture(TextureTarget.Texture2D, id);
 
-				// We will not upload mipmaps, so disable mipmapping (otherwise the texture will not appear).
-				// We can use GL.GenerateMipmaps() or GL.Ext.GenerateMipmaps() to create
-				// mipmaps automatically. In that case, use TextureMinFilter.LinearMipmapLinear to enable them.
-				GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-				GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+				GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
-				BitmapData data = null;
-				try {
-					data = bmp.LockBits (new Rectangle (0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-					GL.TexImage2D (TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
-						OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-				} catch (Exception ex) {
-					ex.LogError ();
-				} finally {
-					bmp.UnlockBits (data);
-				}					
+				// --- Datenübergabe an OpenGL (kein LockBits mehr nötig) ---
+				
+				// image.Data ist bereits ein byte[] Array mit RGBA Bytes
+				byte[] pixels = image.Data;
 
+				GL.TexImage2D(
+					TextureTarget.Texture2D, 
+					0, 
+					PixelInternalFormat.Rgba, 
+					image.Width, 
+					image.Height, 
+					0,
+					// Format ist RGBA, Typ ist Unsigned Byte
+					OpenTK.Graphics.OpenGL.PixelFormat.Rgba, 
+					PixelType.UnsignedByte, 
+					pixels 
+				);
+				
 				return id;
 			}				
 		}			
@@ -178,6 +192,7 @@ namespace SummerGUI
 			base.CleanupManagedResources ();
 		}
 	}
+
 
 	public static class TextureImageExtensions
 	{		

@@ -7,30 +7,65 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using Pfz.Collections;	// TreadSafeDictionary
+using FreeTypeSharp;
+using static FreeTypeSharp.FT;
 using KS.Foundation;
-using SharpFont;
 
 namespace SummerGUI
 {	
-	public class FontManager : DisposableObject
+	public unsafe class FontManager : DisposableObject
 	{
 		public static float DPI = 96;
+		
+		// Korrekt: Den Pointer in der threadsafe Lazy-Instanz speichern
+		private static readonly Lazy<IntPtr> s_lazyLibrary = new Lazy<IntPtr>(
+			// Der Code, der nur einmal ausgeführt werden soll
+			() => 
+			{
+				FT_Error error;
+				// Lokale Pointer-Variable (muss innerhalb des unsafe-Blocks deklariert werden)
+				FT_LibraryRec_* libPtr = null; 
 
-		public static SharpFont.Library Library
+				unsafe 
+				{
+					// FT_Init_FreeType erwartet einen Pointer auf den Pointer der Library (FT_Library**)
+					// Wir müssen die Adresse der lokalen Variable libPtr übergeben.
+					FT_LibraryRec_** libPtrAddress = &libPtr; 
+
+					error = FT_Init_FreeType(libPtrAddress); 
+				}
+
+				if (error != FT_Error.FT_Err_Ok)
+				{
+					throw new InvalidOperationException("Failed to initialize FreeType library: " + error.ToString());
+				}
+				
+				// Den nativen Pointer (FT_LibraryRec_*) in den verwalteten IntPtr umwandeln
+				return (IntPtr)libPtr; 
+			}, 
+			System.Threading.LazyThreadSafetyMode.ExecutionAndPublication
+		);
+
+		// Statische Eigenschaft, die den initialisierten Pointer zurückgibt
+		public static FT_LibraryRec_* Library
 		{
 			get {
-				return Singleton<SharpFont.Library>.Instance;
+				return (FT_LibraryRec_*)s_lazyLibrary.Value;
+			}
+		}
+
+		public static FontManager Manager
+		{
+			get {
+				return Singleton<FontManager>.Instance;
 			}
 		}
 			
 		public Dictionary<string, IGUIFont> Fonts { get; private set; }
-		public Dictionary<string, GUIFontConfiguration> FontConfigs { get; private set; }
+		public Dictionary<string, GUIFontConfiguration> FontConfigs { get; private set; }		
 
-		public SummerGUIWindow Owner { get; private set; }
-
-		public FontManager(SummerGUIWindow owner)
-		{
-			Owner = owner;
+		public FontManager()
+		{			
 			FontManager.DPI = 96;
 			Fonts = new Dictionary<string, IGUIFont> ();
 			FontConfigs = new Dictionary<string, GUIFontConfiguration> ();
@@ -329,10 +364,10 @@ namespace SummerGUI
 			}
 		}
 
-		public void ReScaleFonts()
+		public void ReScaleFonts(float ScaleFactor)
 		{
 			try {
-				Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Rescale(Owner.ScaleFactor));	
+				Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Rescale(ScaleFactor));	
 			} catch (Exception ex) {
 				ex.LogError ("ReScaleFonts");
 			}
@@ -347,11 +382,11 @@ namespace SummerGUI
 				throw new ArgumentException ("config.Tag must not be null or empty.");
 
 			if (Fonts.ContainsKey (config.Tag)) {
-				this.LogWarning ("Font was already loaded: {0}", config.Tag);
+				//this.LogWarning ("Font was already loaded: {0}", config.Tag);
 				return;
 			}
 
-			config.ScaleFactor = Owner.ScaleFactor;
+			//config.ScaleFactor = Owner.ScaleFactor;
 
 			IGUIFont font = null;
 			if (!String.IsNullOrEmpty (config.Path)) {
@@ -487,7 +522,7 @@ namespace SummerGUI
 			if (font == null)
 				return SizeF.Empty;
 
-			font.Begin (ctx);
+			font.Begin ();
 			try {
 				return font.Print (text, bounds, format, color);	
 			} catch (Exception ex) {
@@ -510,7 +545,7 @@ namespace SummerGUI
 			IGUIFont font = FontByTag (fontTag);
 			if (font == null)
 				return SizeF.Empty;
-			font.Begin (ctx);
+			font.Begin ();
 			try {
 				return font.PrintSelectedString (text, selStart, selLength, bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
 			} catch (Exception ex) {
@@ -532,7 +567,7 @@ namespace SummerGUI
 			IGUIFont font = FontByTag (fontTag);
 			if (font == null)
 				return;			
-			font.Begin (ctx);
+			font.Begin ();
 			try {
 				font.PrintTextLine (glyphs, bounds, foreColor);
 			} catch (Exception ex) {
@@ -544,10 +579,18 @@ namespace SummerGUI
 		}
 
 		protected override void CleanupUnmanagedResources ()
-		{
-			Owner = null;
+		{			
 			Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Dispose());
 			Fonts.Clear ();
+
+			FT_LibraryRec_* libPtr = (FT_LibraryRec_*)s_lazyLibrary.Value;
+			if (libPtr != null)
+			{
+				FT_Done_FreeType(libPtr);					
+				// Wichtig: Wir können den Lazy-Value nicht auf null setzen, aber wir können ihn ignorieren.
+				// Die Ressourcen sind freigegeben.
+			}
+			
 			base.CleanupUnmanagedResources ();
 		}
 	}		

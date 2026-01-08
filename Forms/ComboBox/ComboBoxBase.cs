@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -331,9 +333,9 @@ namespace SummerGUI
 				return false;
 
 			switch (e.Key) {
-			case Key.Enter:
-			case Key.Down:
-			case Key.PageDown:
+			case Keys.Enter:
+			case Keys.Down:
+			case Keys.PageDown:
 				if (!IsDropedDown) {
 					DropDown ();
 					return true;

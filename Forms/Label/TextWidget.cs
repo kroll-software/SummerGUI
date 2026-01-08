@@ -29,11 +29,11 @@ namespace SummerGUI
 				m_Text = text;
 
 			if (font == null)
-				m_Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+				m_Font = FontManager.Manager.DefaultFont;
 			else
 				m_Font = font;
 
-			m_IconFont = SummerGUIWindow.CurrentContext.FontManager.SmallIcons;
+			m_IconFont = FontManager.Manager.SmallIcons;
 			Format = FontFormat.DefaultSingleLineCentered;
 			CanFocus = false;
 		}
@@ -81,9 +81,7 @@ namespace SummerGUI
 		private IGUIFont m_Font;
 		public IGUIFont Font
 		{
-			get{
-				//if (m_Font == null && _FontTag != null)
-				//	this.SetFontByTag (_FontTag);
+			get{				
 				return m_Font;
 			}
 			set{
@@ -102,9 +100,7 @@ namespace SummerGUI
 		IGUIFont m_IconFont;
 		public IGUIFont IconFont
 		{
-			get{
-				//if (m_IconFont == null && _IconFontTag != null)
-				//	this.SetIconFontByTag (_IconFontTag);
+			get{			
 				return m_IconFont;
 			}
 			set{
@@ -179,29 +175,8 @@ namespace SummerGUI
 		{		
 			bounds = PaddingBounds;
 
-			if (IconFont != null && Icon != 0) {
-				// this is quick and dirty
-				// a more complete solution should respect HAlign and VAlign
-
-				RectangleF iconRect = bounds;
-				//iconRect.Offset (0, 1);
-
-				/******
-				// Icon sollte rotieren, aber da dreht sich nix .. vorerst aufgegeben..
-				//
-				// .. das wäre dann ja aber auch das "SpinningIconTextWidget" ..
-				// denn es soll sich ja nicht jedes Icon drehen..
-
-				double radians = Math.Atan2(iconRect.X + -10, iconRect.Y + 0);
-				double angle = radians * (80 / Math.PI);
-					
-				m_IconFont.Begin(ctx);
-				//GL.Rotate(angle, 0, 0, 1);
-				GL.Rotate(angle, 0, 0, 1);
-				SizeF iconWidth = m_IconFont.Print(m_Icon.ToString(), iconRect, FontFormat.DefaultIconFontFormatLeft, ForeColor);
-				m_IconFont.End();
-				Invalidate (1);
-				*************/
+			if (IconFont != null && Icon != 0) {				
+				RectangleF iconRect = bounds;				
 				SizeF iconWidth;
 				if (String.IsNullOrEmpty (Text)) {					
 					iconWidth = ctx.DrawString (Icon.ToString (), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatCenter);

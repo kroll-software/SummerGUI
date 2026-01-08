@@ -3,6 +3,10 @@ using KS.Foundation;
 using OpenTK;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Mathematics;
 
 namespace SummerGUI.SystemSpecific.Windows
 {	
@@ -24,6 +28,8 @@ namespace SummerGUI.SystemSpecific.Windows
 			return !String.IsNullOrEmpty (_ClipboardText);
 		}
 
+		[DllImport("user32.dll", SetLastError = true)]
+    	public static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
 
 		[DllImport("user32.dll", SetLastError = true)]
 		internal static extern bool ShowWindowAsync(IntPtr windowHandle, int nCmdShow);
@@ -40,12 +46,82 @@ namespace SummerGUI.SystemSpecific.Windows
 		[DllImport("User32.dll")]
 		public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
+		[DllImport("user32.dll", SetLastError = true)]
+		static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+		[DllImport("user32.dll")]
+    	public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
+
+		[DllImport("user32.dll", SetLastError = true)]
+		public static extern IntPtr SetActiveWindow(IntPtr hWnd);
+
+		// 1. Die Win32 MSG-Struktur
+        // Sie repräsentiert eine Nachricht in der Windows-Warteschlange.
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MSG
+        {
+            public IntPtr hwnd;
+            public uint message;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            // Point Struktur ist OpenTK.Mathematics.Point oder System.Drawing.Point, 
+            // je nachdem, was Du in Deinem Namespace verwendest. 
+            // Hier verwenden wir die native Win32-Definition, die 2 int-Felder sind.
+            public int ptX; 
+            public int ptY;
+            // Die lPrivate Variable wird manchmal weggelassen, ist aber Teil der vollen Struktur.
+        }
+
+        // --- Die drei Hauptfunktionen zur Nachrichtenverarbeitung ---
+
+        // 2. PeekMessage: Prüft auf Nachrichten und entfernt sie optional
+        // wRemoveMsg: PM_REMOVE (1) = Nachricht aus der Queue entfernen
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool PeekMessage(
+            out MSG lpMsg, 
+            IntPtr hWnd, 
+            uint wMsgFilterMin, 
+            uint wMsgFilterMax, 
+            uint wRemoveMsg
+        );
+        
+        // Konstante für wRemoveMsg
+        public const uint PM_REMOVE = 0x0001; 
+
+        // 3. TranslateMessage: Übersetzt virtuelle Tastencodes in Zeichen-Nachrichten
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool TranslateMessage(ref MSG lpMsg);
+
+        // 4. DispatchMessage: Sendet die Nachricht an die entsprechende Fensterprozedur
+        [DllImport("user32.dll")]
+        public static extern IntPtr DispatchMessage(ref MSG lpMsg);
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr GetForegroundWindow();
+
+		[DllImport("user32.dll")]
+		public static extern IntPtr GetActiveWindow();
+
+		[DllImport("user32.dll", SetLastError=true)]
+		public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+		// Win32 Konstanten für Keyboard Events
+		const uint WM_SETFOCUS = 0x0007; // Setzt den Fokus
+		const uint WM_ACTIVATE = 0x0006; // Aktiviert das Fenster
+		const int WA_ACTIVE = 1; // Zustand für WM_ACTIVATE
+
+		const int WM_LBUTTONDOWN = 0x0201;
+		const int WM_LBUTTONUP = 0x0202;
+
 		const int SW_HIDE = 0;
 		const int SW_SHOW = 5;
 		const int SW_RESTORE = 9;
 		const int SW_SHOWDEFAULT = 10;
 		const int WS_EX_APPWINDOW = 0x40000;
-		const int GWL_EXSTYLE = -0x14;
+		public const int GWL_EXSTYLE = -0x14;
+		public const int WS_EX_NOACTIVATE = 0x08000000;
 		const int GWL_HWNDPARENT = -8;
 		const int WS_EX_TOOLWINDOW = 0x00000080;
 
@@ -62,20 +138,78 @@ namespace SummerGUI.SystemSpecific.Windows
         [DllImport("user32.dll")]
         static extern bool GetCursorPos(out POINT lpPoint);        
 
-		public static void BringToFront(INativeWindow window)
-		{
-			try {
-				if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
-					return;
+		public static unsafe void SetParent(NativeWindow window, NativeWindow parent)
+        {
+            if (window == null | true)
+				return;
+				
+			// 1. Hole die Handles
+			IntPtr childHandle = IntPtr.Zero;
+			IntPtr parentHandle = IntPtr.Zero;
 
-				IntPtr windowHandle = window.WindowInfo.Handle;
+			// Hole den Win32 HWND-Handle des Kind-Fensters
+			if (window.WindowPtr != null)
+			{
+				childHandle = GLFW.GetWin32Window(window.WindowPtr);
+			}
 
-				window.WindowState = WindowState.Minimized;
-				SetForegroundWindow(windowHandle);	
-				window.WindowState = WindowState.Normal;
-			} catch (Exception ex) {
-				ex.LogError ();
-			}				
+			// Hole den Win32 HWND-Handle des Eltern-Fensters
+			if (parent != null && parent.WindowPtr != null)
+			{
+				parentHandle = GLFW.GetWin32Window(parent.WindowPtr);
+			}
+
+			if (childHandle == IntPtr.Zero)
+			{
+				Debug.WriteLine("SetParent: Child HWND konnte nicht abgerufen werden.");
+				return;
+			}
+
+			// 2. Setze die Parent-Beziehung
+			// Der Rückgabewert ist der Handle des alten Parent-Fensters oder 0 bei Fehler.
+			IntPtr oldParent = SetParent(childHandle, parentHandle);
+
+			if (oldParent == IntPtr.Zero && Marshal.GetLastWin32Error() != 0)
+			{
+				Debug.WriteLine($"SetParent fehlgeschlagen. Win32 Error: {Marshal.GetLastWin32Error()}");
+			}
+			
+			// 3. Optionaler Fix: Setze den WS_EX_TOOLWINDOW Stil, um das Kind-Fenster 
+			// aus der Taskleiste zu entfernen (da es ein Child ist).
+			if (parentHandle != IntPtr.Zero)
+			{
+				// Hole die aktuellen erweiterten Stile
+				int exStyle = GetWindowLong(childHandle, GWL_EXSTYLE);
+				
+				// Füge den WS_EX_TOOLWINDOW Stil hinzu
+				exStyle |= WS_EX_TOOLWINDOW;
+
+				// Setze die neuen Stile
+				SetWindowLong(childHandle, GWL_EXSTYLE, exStyle);
+			}
+        }
+
+		public static void BringToFront(NativeWindow window)
+		{			
+			try{
+				unsafe // Fügen Sie unsafe zur Methode hinzu
+				{
+					Window* windowPointer = window.WindowPtr;
+					IntPtr windowHandle = GLFW.GetWin32Window(windowPointer);		
+
+					GLFW.FocusWindow(windowPointer);
+										
+					//IntPtr lParam = (IntPtr)((-1 << 16) | (-1 & 0xFFFF));
+					IntPtr negativeCoords = (IntPtr)((-1 << 16) | (0xFFFF));
+					SendMessage(windowHandle, WM_LBUTTONDOWN, IntPtr.Zero, negativeCoords);
+					SendMessage(windowHandle, WM_LBUTTONUP, IntPtr.Zero, negativeCoords);					
+				}
+			}
+			catch (Exception ex) 
+			{
+				ex.LogError(); 
+				// Logik für die Fehlerprotokollierung
+			}               
 		}
 
 		public static void BringProcessToFront(Process process)
@@ -90,14 +224,36 @@ namespace SummerGUI.SystemSpecific.Windows
 			SetForegroundWindow(handle);
 		}
 
-		public static void HideFromTaskbar(INativeWindow window)
+		public static unsafe void HideFromTaskbar(NativeWindow window)
 		{
-			if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
-				return;
+			// 1. Hole den GLFW Window Pointer (Window*)
+			void* windowPointer = window.WindowPtr;
 			
-			IntPtr Handle = window.WindowInfo.Handle;
-			int windowStyle = GetWindowLong(Handle, GWL_EXSTYLE);
-			SetWindowLong(Handle, GWL_EXSTYLE, windowStyle | WS_EX_TOOLWINDOW);
+			try 
+			{
+				// 2. Handle-Prüfung
+				if (window == null || (nint)windowPointer == IntPtr.Zero)
+					return;
+
+				// 3. HWND abrufen
+				// GLFW.GetWin32Window erwartet Window* und gibt den HWND (IntPtr) zurück.
+				IntPtr windowHandle = GLFW.GetWin32Window((Window*)windowPointer);
+
+				if (windowHandle == IntPtr.Zero)
+					return;
+					
+				// 4. Win32 Aufrufe
+				// Die Logik zur Modifizierung der Fensterstile bleibt unverändert.
+				int windowStyle = GetWindowLong(windowHandle, GWL_EXSTYLE);
+				
+				// Fügt den WS_EX_TOOLWINDOW-Stil hinzu
+				SetWindowLong(windowHandle, GWL_EXSTYLE, windowStyle | WS_EX_TOOLWINDOW);
+			} 
+			catch (Exception ex) 
+			{
+				ex.LogError();
+				// Logik für die Fehlerprotokollierung
+			}               
 		}
 
         public static void RefreshCursor()

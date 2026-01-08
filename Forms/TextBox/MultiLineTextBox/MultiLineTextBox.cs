@@ -9,6 +9,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 using SummerGUI.Editor;
@@ -153,7 +155,7 @@ namespace SummerGUI
 		public void TabInto()
 		{	
 			Focus ();
-			SelectAll ();
+			//SelectAll ();
 		}
 
 		public bool HideSelection { get; set; }
@@ -183,7 +185,7 @@ namespace SummerGUI
 		public MultiLineTextBox (string name, IWidgetStyle style)
 			: base (name, Docking.Fill, style)
 		{
-			m_Font = SummerGUIWindow.CurrentContext.FontManager.MonoFont;
+			m_Font = FontManager.Manager.MonoFont;
 			RowManager = new MultiLineTextManager(this, SpecialCharacterFlags.All);
 			UndoRedoManager = new UndoRedoStack (this, 100);
 			CursorOptions = CursorFlags.Default;
@@ -416,27 +418,27 @@ namespace SummerGUI
 			//	return false;
 
 			switch (e.Key) {
-			case Key.ShiftLeft:
-			case Key.ShiftRight:
+			case Keys.LeftShift:
+			case Keys.RightShift:
 				//if (SelLength == 0)
 				//	SelStart = RowManager.AbsCursorPosition;
 				return true;
 
-			case Key.Left:
+			case Keys.Left:
 				if (e.Control)
 					RowManager.MovePrevWord ();
 				else
 					RowManager.MovePrevChar ();
 				SetSelection (e.Shift);
 				break;
-			case Key.Right:
+			case Keys.Right:
 				if (e.Control)
 					RowManager.MoveNextWord ();
 				else
 					RowManager.MoveNextChar ();
 				SetSelection (e.Shift);
 				break;
-			case Key.Up:
+			case Keys.Up:
 				if (e.Control) {
 					ScrollLineUp ();
 					return true;
@@ -445,7 +447,7 @@ namespace SummerGUI
 					SetSelection (e.Shift);
 				}
 				break;
-			case Key.Down:
+			case Keys.Down:
 				if (e.Control) {
 					ScrollLineDown ();
 					return true;
@@ -454,36 +456,35 @@ namespace SummerGUI
 					SetSelection (e.Shift);
 				}
 				break;
-			case Key.Home:
+			case Keys.Home:
 				if (e.Control)
 					RowManager.MoveHome ();
 				else
 					RowManager.MoveParagraphHome ();
 				SetSelection (e.Shift);
 				break;
-			case Key.End:
+			case Keys.End:
 				if (e.Control)
 					RowManager.MoveEnd ();
 				else
 					RowManager.MoveParagraphEnd ();
 				SetSelection (e.Shift);
 				break;
-			case Key.PageUp:
+			case Keys.PageUp:
 				if (e.Control)
 					return false;
 				RowManager.MovePageUp ((int)((Height - Padding.Height) / RowManager.LineHeight));
 				SetSelection (e.Shift);
 				break;
-			case Key.PageDown:
+			case Keys.PageDown:
 				if (e.Control)
 					return false;
 				RowManager.MovePageDown ((int)((Height - Padding.Height) / RowManager.LineHeight));
 				SetSelection (e.Shift);
 				break;
-			case Key.BackSpace:				
+			case Keys.Backspace:				
 				if (SelLength > 0) {					
-					//this.SetUndoDelete (RowManager.AbsCursorPosition, 0);
-					Delete ();
+					DeleteBack ();
 				} else {
 					int pos = RowManager.AbsCursorPosition;
 					UndoRedoManager.Do (new UndoRedoBackspaceMemento{
@@ -499,7 +500,15 @@ namespace SummerGUI
 				ResetSelection ();
 				SetupDocumentSize ();
 				break;
-			case Key.Enter:
+			case Keys.Delete:
+				if (e.Shift)
+					Cut ();
+				else
+					Delete ();
+				ResetSelection ();
+				SetupDocumentSize ();
+				break;
+			case Keys.Enter:
                 SetUndoInsert("\n");
                 if (SelLength > 0)
                 {
@@ -509,59 +518,53 @@ namespace SummerGUI
 				RowManager.InsertLineBreak ();
 				SetupDocumentSize ();
                 break;
-			case Key.C:
+			case Keys.C:
 				if (e.Control)
 					Copy ();
 				break;
-			case Key.V:
+			case Keys.V:
 				if (e.Control)
 					Paste ();
 				break;
-			case Key.X:
+			case Keys.X:
 				if (e.Control)
 					Cut ();
-				break;
-			case Key.Delete:
-				if (e.Shift)
-					Cut ();
-				else
-					Delete ();
-				SetupDocumentSize ();
-				break;
-			case Key.Insert:
+				break;			
+			case Keys.Insert:
 				if (e.Control)
 					Copy ();
 				else if (e.Shift)
 					Paste ();
 				break;
-			case Key.A:
+			case Keys.A:
 				if (e.Control)
 					SelectAll ();
 				break;
-			case Key.F:
+			case Keys.F:
 				if (e.Control)
 					Find ();
 				break;
-			case Key.Y:	// OpenTK sends an Y for a Z
+			case Keys.Y:	// OpenTK sends an Y for a Z
 				if (e.Control)
 					Undo ();				
 				break;
-			case Key.Z: // OpenTK sends an Z for a Y
+			case Keys.Z: // OpenTK sends an Z for a Y
 				if (e.Control)
 					Redo ();				
 				break;
-			case Key.Escape:
+			case Keys.Escape:
 				if (HideSelection)
 					SelectNone ();
-				return false;			
-				/***
-			case Key.Tab:
-				if (!AllowTabKey)
-					return false;
-				InsertString (CursorPosition++, new String (' ', 4));
-				CursorPosition += 3;
-				break;
-			***/
+				return false;							
+			case Keys.Tab:
+				return false;
+				//if (!AllowTabKey)
+				//	return false;
+				//InsertString (CursorPosition++, new String (' ', 4));
+				//CursorPosition += 3;
+				//break;			
+			case Keys.F10:
+				return false;
 			default:
 				//this.LogDebug ("OnKeyDown not handled: {0}", e.Key.ToString ());
 				// F10
@@ -576,7 +579,13 @@ namespace SummerGUI
 		}
 			
 		public override bool OnHeartBeat ()
-		{
+		{			
+			if (!IsVisibleEnabled || !IsFocused)
+			{
+				CursorOn = false;
+				return false;
+			}
+
 			if (!IsMouseOrKeyDown) {
 				CursorOn = !CursorOn;
 				return true;
@@ -605,7 +614,7 @@ namespace SummerGUI
 
         protected virtual bool IsDefaultInputChar(char c)
 		{
-			return (int)c > 31;
+			return c > 31 || c == 10;
 		}
 
 		public Func<char, bool> IsInputCharCallBack { get; set; }
@@ -652,7 +661,8 @@ namespace SummerGUI
 					SelLength = 0;
 				}
 				RowManager.InsertChar(e.KeyChar);
-                SelStart = RowManager.CursorPosition;
+                //SelStart = RowManager.CursorPosition;
+				SetSelection(false);
 
                 EnsureCurrentRowVisible ();
 				CursorOn = true;
@@ -823,7 +833,7 @@ namespace SummerGUI
 			base.OnLayout (ctx, bounds);
 		}
 			
-		readonly Lazy<RectangleDrawingBuffer> painter = new Lazy<RectangleDrawingBuffer> (() => new RectangleDrawingBuffer (SummerGUIWindow.CurrentContext), false);
+		readonly Lazy<RectangleDrawingBuffer> painter = new Lazy<RectangleDrawingBuffer> (() => new RectangleDrawingBuffer (), false);
 		public Brush SelectionBrush { get; set; }
 
 		public override void Update (IGUIContext ctx)
@@ -961,7 +971,7 @@ namespace SummerGUI
 
 					foreach (var line in glyphLines) {
 						if (rowBounds.Bottom > bounds.Top) {							
-							font.Begin(ctx);
+							font.Begin();
 							font.PrintTextLine (line.Select(g => g.Glyph).ToArray(), rowBounds, Style.ForeColorBrush.Color);
 							font.End();
 						}
@@ -1047,7 +1057,7 @@ namespace SummerGUI
 				if (SelLength > 0)
 					DeleteSelection ();
 				SelLength = 0;
-				RowManager.InsertRange (PlatformExtensions.GetClipboardText ());
+				RowManager.InsertRange (content);
 				EnsureCurrentRowVisible ();
 				ResetSelection ();
 				Modified = true;
@@ -1072,13 +1082,37 @@ namespace SummerGUI
 
 			int pos = RowManager.AbsCursorPosition;
 			if (SelLength > 0) {
-				this.SetUndoDelete (pos, 0);
-				DeleteSelection ();
+				// Speichere die exakte zu löschende Region (Start und Length)
+				// SelStart ist die absolute Startposition der Selection
+				SetUndoDelete(SelStart, SelLength);
+				DeleteSelection();
 			} else {
-				this.SetUndoDelete (pos, 1);
+				// keine Auswahl: entferne das aktuelle Zeichen
+				// hier war bereits Do(new UndoRedoBackspaceMemento{ Position = pos - 1, ... })
+				SetUndoDelete(pos, 1); // oder wie dein BackspaceMemento es erwartet
 				RowManager.DeleteCurrentChar ();
 			}
 		}
+
+		public void DeleteBack()
+		{
+			if (!CanDelete)
+				return;
+
+			int pos = RowManager.AbsCursorPosition;
+			if (SelLength > 0) {
+				// Speichere die exakte zu löschende Region (Start und Length)
+				// SelStart ist die absolute Startposition der Selection
+				SetUndoDelete(SelStart, SelLength);
+				DeleteSelection();
+			} else {
+				// keine Auswahl: entferne das vorhergehende Zeichen
+				// hier war bereits Do(new UndoRedoBackspaceMemento{ Position = pos - 1, ... })
+				SetUndoDelete(pos - 1, 1); // oder wie dein BackspaceMemento es erwartet
+				RowManager.DeleteCurrentChar ();
+			}
+		}
+
 
 		public virtual bool CanCut
 		{
@@ -1201,8 +1235,8 @@ namespace SummerGUI
 
 		public void Find()
 		{
-			if (Parent as TextEditorEnsemble != null) {
-				(Parent as TextEditorEnsemble).Find ();
+			if (Parent as ISupportsFindCall != null) {
+				(Parent as ISupportsFindCall).Find ();
 			} else {
 				// ToDo:
 			}

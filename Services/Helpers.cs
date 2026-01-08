@@ -34,13 +34,13 @@ namespace SummerGUI
 			}
 		}
 
-		public static void OpenURL(string url, ApplicationWindow parent)
+		public static void OpenURL(string url, SummerGUIWindow parent)
 		{
 			if (!String.IsNullOrEmpty(url))
 			{
 				try
-				{
-					Process.Start(url);
+				{					
+					Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 				}
 				catch (Exception ex)
 				{

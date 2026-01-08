@@ -45,6 +45,7 @@ namespace SummerGUI
 		{			
 			YOffset = 0;
 			LineSpacing = 1f;
+			ScaleFactor = 1f;
 		}
 
 		public GUIFontConfiguration(string tag, string path, float size, GlyphFilterFlags filter = GlyphFilterFlags.All)

@@ -156,7 +156,7 @@ namespace SummerGUI.Editor
 			: this (index, maxWidth)
 		{			
 			this.ParseString (text, font, flags);
-		}			
+		}
 
 		public Paragraph (int index, float maxWidth)
 		{			
@@ -287,17 +287,78 @@ namespace SummerGUI.Editor
 			}
 			return false;
 		}
-			
+
+		public Paragraph SplitAt(int index)
+		{
+			// left = dieser Paragraph (bis index)
+			// right = neuer Paragraph (ab index)
+
+			Paragraph right = new Paragraph(-1, this.BreakWidth);			
+			index = index.Clamp(0, Glyphs.Count);			
+
+			var current = this.Glyphs.Retrieve(index);
+			while (current != null)
+            {
+                right.Glyphs.AddLast(current.Value);
+				current = current.Next;
+            }
+			right.NeedsWordWrap = true;
+						
+			// Copy right side glyphs
+			/***
+			for (int i = index; i < Glyphs.Count; i++)
+			{
+				right.Glyphs.Append(Glyphs[i]);
+			}
+			***/
+
+			// Remove right side glyphs from this paragraph
+			Glyphs.RemoveRange(index, Glyphs.Count - index);
+			this.NeedsWordWrap = true;
+
+			return right;
+		}
+
+		public static void Merge(Paragraph para1, Paragraph para2)
+		{
+			if (para2 == null || para2.Glyphs.Count == 0)
+				return;
+
+			// Falls para1 mit '\n' endet, entferne diesen,
+			// damit kein doppelter Absatz entsteht.
+			if (para1.Glyphs.Count > 0 && para1.Glyphs.Last.Char == '\n')
+			{				
+				para1.Glyphs.RemoveLast();
+			}
+
+			// Falls para2 mit '\n' beginnt, entferne das,
+			// es ist der Absatztrenner zwischen beiden.
+			if (para2.Glyphs.Count > 0 && para2.Glyphs.First.Char == '\n')
+			{
+				para2.Glyphs.RemoveFirst();
+			}
+
+			// jetzt einfach Glyphs anfügen
+			para1.Glyphs.AppendRange(para2.Glyphs);
+			//para1.Glyphs.AddRange(para2.Glyphs);
+		}
+
+		public bool StartsWithNewline()
+		{		
+			return Glyphs.First.Char == '\n';		
+		}
+
+		public bool EndsWithNewline()
+		{			
+			return Glyphs.Last.Char == '\n';		
+		}
+					
 		public int RemoveRange(int start, int len, IGUIFont font, SpecialCharacterFlags flags)
 		{
 			lock (SyncObject) {				
 				try {
 					int count = Glyphs.RemoveRange(start, len);
 					if (count > 0) {
-						if (Glyphs.Count > 0 && Glyphs.Last.Char != '\n') {
-							AppendChar ('\n', font, flags);
-							count -= 1;
-						}
 						NeedsWordWrap = true;
 						WordWrap();
 					}
@@ -307,7 +368,7 @@ namespace SummerGUI.Editor
 					return -1;
 				}
 			}
-		}
+		}		
 
 		private void WordWrap()
 		{

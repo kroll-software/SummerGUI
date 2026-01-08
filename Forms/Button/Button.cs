@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -113,7 +115,7 @@ namespace SummerGUI
 		}	
 
 		public Button (string name, string text, char icon, IWidgetStyle style)
-			: base(name, Docking.Left, style, text, SummerGUIWindow.CurrentContext.GetFont(CommonFontTags.Status))
+			: base(name, Docking.Left, style, text, WidgetExtensions.GetFont(CommonFontTags.Status))
 		{			
 			Padding = new Padding (10, 4, 10, 4);
 
@@ -129,7 +131,7 @@ namespace SummerGUI
 			HandlesEnterKey = true;
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			if (IsToggleButton) {
 				Checked = !Checked;
@@ -204,7 +206,7 @@ namespace SummerGUI
 		}
 
 		protected bool IsMouseDown { get; private set; }
-		public override void OnMouseDown (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnMouseDown (MouseButtonEventArgs e)
 		{
 			IsMouseDown = true;
 			base.OnMouseDown (e);
@@ -247,7 +249,7 @@ namespace SummerGUI
 			if (base.OnKeyDown (e))
 				return true;
 
-			if ((e.Key == Key.Enter && (IsFocused || Selected || IsDefaultButton)) || ModifierKeys.AltPressed && e.Key.ToString ().FirstOrDefault () == Mnemonic) {
+			if ((e.Key == Keys.Enter && (IsFocused || Selected || IsDefaultButton)) || ModifierKeys.AltPressed && e.Key.ToString ().FirstOrDefault () == Mnemonic) {
 				OnClick (null);
 				return true;
 			}

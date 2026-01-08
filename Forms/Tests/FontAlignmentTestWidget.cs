@@ -28,7 +28,7 @@ namespace SummerGUI
 			Padding = Padding.Empty;
 			//Padding = new Padding(16);
 
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 
 			Format = new FontFormat (Alignment.Center, Alignment.Center, FontFormatFlags.None);
 		}

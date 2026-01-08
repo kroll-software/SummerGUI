@@ -21,7 +21,7 @@ namespace SummerGUI
 			//IconOffsetY = -1f;
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			if (Enabled)
 				Checked = !Checked;

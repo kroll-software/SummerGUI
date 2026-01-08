@@ -9,7 +9,15 @@ using System.Diagnostics;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Mathematics; // Für Vector2i (wenn für Image-Größe benötigt)
+using OpenTK.Windowing.Common.Input;
+
+
 using KS.Foundation;
+using StbImageSharp; // Für ImageResult
 
 namespace SummerGUI
 {	
@@ -25,12 +33,21 @@ namespace SummerGUI
 
 	public class WindowResourceManager : DisposableObject
 	{		
+		public static WindowResourceManager Manager
+		{
+			get {
+				return Singleton<WindowResourceManager>.Instance;
+			}
+		}
+
+		readonly Dictionary<string, MouseCursor> DictCursors;
+
 		public WindowResourceManager()
 		{
 			DictCursors = new Dictionary<string, MouseCursor> ();
 		}
 
-		public void LoadWindowIcon(INativeWindow wnd, string pngPath)
+		public void LoadWindowIcon(NativeWindow wnd, string pngPath)
 		{
 			if (String.IsNullOrEmpty (pngPath)) {
 				this.LogWarning ("LoadWindowIcon: empty path specified.");
@@ -42,16 +59,14 @@ namespace SummerGUI
 				if (System.IO.File.Exists(pngPath))
 				{
 					// ToDo: Remove System.Drawing reference
-					wnd.Icon = new System.Drawing.Icon(pngPath);
+					// wnd.Icon = new System.Drawing.Icon(pngPath);
 				} else {
 					this.LogWarning ("LoadWindowIcon: path not found.");
 				}
 			} catch (Exception ex) {
 				ex.LogError ();
 			}
-		}
-
-		readonly Dictionary<string, MouseCursor> DictCursors;
+		}		
 
 		public void SetCursor(IGUIContext ctx, Cursors cursor)
 		{
@@ -62,7 +77,8 @@ namespace SummerGUI
 		{
             if (String.IsNullOrEmpty(name) || name == Cursors.Default.ToString())
             {
-                ctx.GlWindow.Cursor = MouseCursor.Default;
+                //ctx.GlWindow.Cursor = Cursor.Default;
+				ctx.GlWindow.Cursor = MouseCursor.Default;
             }
             else
             {
@@ -77,77 +93,86 @@ namespace SummerGUI
             PlatformExtensions.RefreshCursor();
 		}
 
-		public void LoadCursorFromFile(SummerGUIWindow wnd, string pngPath, Cursors cursor)
+		public void LoadCursorFromFile(string pngPath, Cursors cursor)
 		{			
-			LoadCursorFromFile (wnd, pngPath, cursor.ToString ());
+			LoadCursorFromFile (pngPath, cursor.ToString ());
 		}
 
 		// ToDo: Let user specify the cursor size.
 		// ToDo: scale to 32x32 rather than 24x24
 		// ToDo: how to scale cursors for HiRes?
-		// ToDo: add more standard cursors to enum above (and to assets)
+		// ToDo: add more standard cursors to enum above (and to assets)		
 
-		public void LoadCursorFromFile(SummerGUIWindow wnd, string pngPath, string name)
-		{			
+		// Fügen Sie das 'unsafe' Schlüsselwort zur Methodensignatur hinzu
+		public unsafe void LoadCursorFromFile(string pngPath, string name)
+		{
 			try {
 				if (String.IsNullOrEmpty(name)) {
-					this.LogWarning ("LoadCursorFromFile: invalid/empty name specified.");
-				}
-
-				if (DictCursors.ContainsKey(name)) {
-					this.LogWarning("Cursor '{0}' was already loaded", name);
+					this.LogWarning("LoadCursorFromFile: invalid/empty name specified.");
 					return;
 				}
 
-				if (String.IsNullOrEmpty (pngPath)) {
-					this.LogWarning ("LoadCursorFromFile: empty path specified.");
+				if (DictCursors.ContainsKey(name))
+				{
+					//this.LogWarning($"Cursor '{name}' was already loaded.");
 					return;
 				}
-				pngPath = pngPath.FixedExpandedPath ();
 
+				if (String.IsNullOrEmpty(pngPath)) {
+					this.LogWarning("LoadCursorFromFile: empty path specified.");
+					return;
+				}
+
+				pngPath = pngPath.FixedExpandedPath();
+				
 				if (System.IO.File.Exists(pngPath))
 				{
-					using (Bitmap bmp = new Bitmap (pngPath))
-					using (Bitmap bmpScaled = new Bitmap (bmp, new Size(24, 24)))
-					{						
-						int w = bmpScaled.Width;
-						int h = bmpScaled.Height;
-						int len = w * h;
+					using (Stream stream = File.OpenRead(pngPath))
+					{
+						ImageResult image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+						
+						int originalWidth = image.Width;
+						int originalHeight = image.Height;
+						byte[] originalBytes = image.Data;
 
-						//System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, w, h), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+						int targetWidth = 24;
+						int targetHeight = 24;
+						byte[] scaledBytes;
 
-						byte[] bytes = new byte[len * 4];
-						int bp = 0;
-
-						for (int k = 0; k < len; k++)
+						if (originalWidth == targetWidth && originalHeight == targetHeight)
 						{
-							int x = k % w;
-							int y = k / w;
-
-							/**
-							Debug.Write(x, "X");
-							Debug.Write(y, "\tY");
-							Debug.WriteLine(k, "\tk");
-							**/
-
-							Color c = bmpScaled.GetPixel(x, y);						
-
-							bytes[bp++] = (byte)c.B;
-							bytes[bp++] = (byte)c.G;
-							bytes[bp++] = (byte)c.R;
-							bytes[bp++] = (byte)c.A;
+							scaledBytes = originalBytes;
 						}
-						//bmp.UnlockBits(data);
+						else
+						{
+							// Verwenden Sie die neue UnsafeImageScaler Klasse
+							scaledBytes = ImageScaler.ScaleImageData(
+								originalBytes, 
+								originalWidth, 
+								originalHeight, 
+								targetWidth, 
+								targetHeight
+							);
+						}
 
-						DictCursors.Add(name, new MouseCursor(w / 2, h / 2, w, h, bytes));
+						MouseCursor cursor = new MouseCursor(
+							targetWidth / 2, // Hotspot X
+							targetHeight / 2, // Hotspot Y
+							targetWidth,
+							targetHeight,
+							scaledBytes
+						);
+
+						DictCursors.Add(name, cursor);
 					}
 				} else {
-					this.LogWarning ("LoadCursorFromFile: path not found.");
+					this.LogWarning("LoadCursorFromFile: path not found.");
 				}
 			} catch (Exception ex) {
-				ex.LogError ();
+				ex.LogError();
 			}				
 		}
+
 
 		protected override void CleanupManagedResources ()
 		{			

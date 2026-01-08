@@ -11,6 +11,10 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+
+
 using KS.Foundation;
 
 namespace SummerGUI
@@ -159,10 +163,10 @@ namespace SummerGUI
 		{
 			base.OnMouseMove (e);
 
-			if (CheckArrows (e.X, e.Y))
+			if (CheckArrows ((int)e.X, (int)e.Y))
 				return;
 
-			DateTime dthover = MouseToDate(e.X, e.Y);
+			DateTime dthover = MouseToDate((int)e.X, (int)e.Y);
 			if (dthover != HoverDate)
 			{
 				HoverDate = dthover;

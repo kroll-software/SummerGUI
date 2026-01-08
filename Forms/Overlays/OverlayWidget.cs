@@ -40,6 +40,16 @@ namespace SummerGUI
 		{
 			ZIndex = 10000;
 		}
+
+		public override bool OnMouseWheel (MouseWheelEventArgs e)
+		{			
+			// allways return true
+			//if (Visible && (OverlayMode == OverlayModes.Modal || OverlayMode == OverlayModes.Window || OverlayMode == OverlayModes.Timer))
+			if (OverlayMode == OverlayModes.Modal || OverlayMode == OverlayModes.Window)
+				return true;
+
+			return base.OnMouseWheel (e);
+		}
 	}
 }
 

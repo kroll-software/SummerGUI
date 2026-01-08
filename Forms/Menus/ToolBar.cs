@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -146,7 +148,7 @@ namespace SummerGUI
 		public ToolBarButton(string name, string text, char icon, ButtonDisplayStyles displayStyle, Color iconColor)
 			: base(name, text, icon, new ComponentToolBarButtonStyle())
 		{
-			IsMenu = true;
+			IsMenu = false;
 
 			DisplayStyle = displayStyle;
 			IconColor = iconColor;
@@ -170,7 +172,7 @@ namespace SummerGUI
 			return null;
 		}			
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{		
 			base.OnClick (e);
 			if (Parent as ToolBarBase != null)
@@ -236,7 +238,7 @@ namespace SummerGUI
 		protected ToolBarBase (string name, IGuiMenu menu, IWidgetStyle style) 
 			: base(name, Docking.Top, style)
 		{
-			IsMenu = true;
+			IsMenu = false;
 			Menu = menu;
 			if (Menu == null)
 				Menu = new GuiMenu (name + "_menu");
@@ -480,7 +482,7 @@ namespace SummerGUI
 		public ComponentToolBar(string name, IGuiMenu menu)
 			: base(name, menu, new ComponentToolBarStyle())
 		{
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			Margin = Padding.Empty;
 			Padding = new Padding (5, 1, 5, 1);
 		}

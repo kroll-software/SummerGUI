@@ -16,7 +16,7 @@ namespace SummerGUI
 		public GuiMenu MainMenu { get; protected set; } 
 
 		public MenuBar MenuBar { get; protected set; }
-		public ToolBar ToolBar { get; protected set; }
+		public ApplicationToolBar ToolBar { get; protected set; }
 		public NotificationPanel Notifications  { get; protected set; }
 		public StatusBar StatusBar { get; protected set; }
 
@@ -62,7 +62,7 @@ namespace SummerGUI
 
 			MainMenu = new GuiMenu ("mainmenu");
 			MenuBar = new MenuBar ("mainmenubar", MainMenu);
-			ToolBar = new ToolBar ("maintoolbar", MainMenu);
+			ToolBar = new ApplicationToolBar ("maintoolbar", MainMenu);
 
 			MenuPanel.AddChild (MenuBar);
 			MenuPanel.AddChild (ToolBar);

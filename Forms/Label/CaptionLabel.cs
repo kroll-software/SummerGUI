@@ -16,11 +16,11 @@ namespace SummerGUI
 		}
 
 		public CaptionLabel (string name, string text = null)
-			: base (name, Docking.Top, new DefaultTextWidgetStyle(), text, SummerGUIWindow.CurrentContext.FontManager.DefaultFont)
+			: base (name, Docking.Top, new DefaultTextWidgetStyle(), text, FontManager.Manager.DefaultFont)
 		{
 			Styles.SetStyle (new DisabledTextWidgetStyle (), WidgetStates.Disabled);
-			//Format = FontFormat.DefaultSingleLineCentered;
-			Format = FontFormat.DefaultMultiLineCentered;
+			Format = FontFormat.DefaultSingleLineCentered;
+			//Format = FontFormat.DefaultMultiLineCentered;
 
 			m_Margin = Padding.Empty;
 			//m_Padding = new Padding (5, 0, 3, 0);

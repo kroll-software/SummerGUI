@@ -5,6 +5,8 @@ using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 using SummerGUI.Scrolling;
 
@@ -284,12 +286,11 @@ namespace SummerGUI
 			}				
 		}
 			
-		public override bool OnMouseWheel (OpenTK.Input.MouseWheelEventArgs e)
-		{			
+		public override bool OnMouseWheel (MouseWheelEventArgs e)
+		{						
 			if (HitTest (e.X, e.Y) == null)
 				return false;
 			return base.OnMouseWheel (e);
-		}
+		}		
 	}
 }
-

@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 
@@ -25,8 +27,8 @@ namespace SummerGUI
 			Padding = new Padding (6, 1, 10, 1);
 
 			//Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
-			Font = SummerGUIWindow.CurrentContext.FontManager.StatusFont;
-			IconFont = SummerGUIWindow.CurrentContext.FontManager.SmallIcons;
+			Font = FontManager.Manager.StatusFont;
+			IconFont = FontManager.Manager.SmallIcons;
 
 			Styles.SetStyle (new SubMenuDisabledItemStyle (), WidgetStates.Disabled);
 			Styles.SetStyle (new SubMenuSelectedItemStyle (), WidgetStates.Selected);
@@ -54,7 +56,7 @@ namespace SummerGUI
 			
 		protected string ModifierString(IGuiMenuItem item)
 		{
-			if (item.HotKey == Key.Unknown)
+			if (item.HotKey == Keys.Unknown)
 				return null;
 			
 			string modifier = String.Empty;
@@ -191,7 +193,13 @@ namespace SummerGUI
 			base.OnMouseEnter (ctx);
 			if (SubMenu != null)
 				SubMenu.ActiveItem = null;	// this closes next level submenu
-		}			
+		}
+
+        public override bool OnMouseWheel(MouseWheelEventArgs e)
+        {
+            //return base.OnMouseWheel(e);
+			return true;	// Handle the event
+        }
 
 		private QuadTree Tree = null;
 
@@ -422,29 +430,32 @@ namespace SummerGUI
 			if (base.OnKeyDown (e))
 				return true;
 
+			if (SubMenu != null && SubMenu.Visible && SubMenu.Enabled && SubMenu.Selected)
+				return SubMenu.OnKeyDown(e);
+
 			if (!(Visible && Enabled && Selected))
 				return false;
 
 			switch (e.Key) {
-			case Key.Escape:
+			case Keys.Escape:
 				OnClose ();
 				return true;
-			case Key.Up:
+			case Keys.Up:
 				MovePrev ();
 				return true;
-			case Key.Down:
+			case Keys.Down:
 				MoveNext ();
 				return true;
-			case Key.PageDown:
-			case Key.End:
+			case Keys.PageDown:
+			case Keys.End:
 				MoveLast ();
 				return true;
-			case Key.PageUp:
-			case Key.Home:
+			case Keys.PageUp:
+			case Keys.Home:
 				MoveFirst ();
 				return true;
 				
-			case Key.Left:
+			case Keys.Left:
 				if (Parent as SubMenuOverlay != null) {
 					Parent.Select ();
 					(Parent as SubMenuOverlay).CloseSubMenu ();
@@ -456,7 +467,7 @@ namespace SummerGUI
 					return true;
 				}					
 				break;
-			case Key.Right:
+			case Keys.Right:
 				if (m_ActiveItem != null && !m_ActiveItem.Children.IsNullOrEmpty ()) {
 					ShowSubMenu (m_ActiveItem);
 					if (SubMenu != null) {
@@ -472,14 +483,14 @@ namespace SummerGUI
 					return true;
 				}
 				break;
-			case Key.Space:
+			case Keys.Space:
 				if (m_ActiveItem != null) {
 					if (m_ActiveItem.OnClick ())
 						Invalidate ();
 					return true;
 				}
 				break;
-			case Key.Enter:
+			case Keys.Enter:
 				if (m_ActiveItem != null && !m_ActiveItem.Children.IsNullOrEmpty ()) {
 					ShowSubMenu (m_ActiveItem);
 					if (SubMenu != null) {
@@ -497,7 +508,7 @@ namespace SummerGUI
 				}
 				break;
 			default:
-				if (Menu != null && e.Key != Key.AltLeft) {
+				if (Menu != null && e.Key != Keys.LeftAlt) {
 					char keyChar = e.Key.ToString () [0];
 					//this.LogVerbose ("{0}, {1}", e.Key.ToString(), ModifierKeys.AltPressed.ToString());
 
@@ -547,7 +558,7 @@ namespace SummerGUI
 				return;
 
 			if (SubMenu != null)				
-				CloseSubMenu ();			
+				CloseSubMenu ();
 
 			SubMenu = AddChild (new SubMenuOverlay ("sub" + (Children.Count + 1).ToString(), mainmenuItem.Children));
 			SubMenu.SetBounds (GetSubMenuBounds(SubMenu));

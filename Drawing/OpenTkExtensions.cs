@@ -3,6 +3,7 @@ using System.Drawing;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 
 namespace SummerGUI
 {
@@ -95,7 +96,7 @@ namespace SummerGUI
         public static void SetDefaultRenderingOptions(RenderingFlags flags = RenderingFlags.HighQuality)
 		{			
 			//GL.Translate (0, 0, 0);
-
+			//GL.Enable(EnableCap.ScissorTest);
 			GL.Disable(EnableCap.DepthTest);
 			GL.Disable(EnableCap.CullFace);		
 			//GL.Disable(EnableCap.LineStipple);

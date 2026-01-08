@@ -2,6 +2,8 @@
 using System.Drawing;
 using System.Linq;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI.Editor

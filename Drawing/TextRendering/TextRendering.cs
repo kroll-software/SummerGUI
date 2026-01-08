@@ -34,7 +34,7 @@ namespace SummerGUI
 
 		GlyphChar GetGlyph (char c, SpecialCharacterFlags flags);
 
-		void Begin(IGUIContext ctx);
+		void Begin();
 		void End();
 
 		void Rescale (float scaleFactor);

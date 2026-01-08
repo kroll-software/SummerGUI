@@ -6,7 +6,12 @@ using SummerGUI.Editor;
 
 namespace SummerGUI
 {
-	public class TextEditorEnsemble : Container
+	public interface ISupportsFindCall
+    {
+        public void Find();
+    }
+
+	public class TextEditorEnsemble : Container, ISupportsFindCall
 	{
 		public TextEditorToolBar Tools { get; private set; }
 		public TextEditorRowColumn RowColumn { get; private set; }

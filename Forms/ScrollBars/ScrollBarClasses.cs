@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI.Scrolling
@@ -241,7 +243,7 @@ namespace SummerGUI.Scrolling
 		{
 			base.OnPaint (ctx, bounds);		
 
-			using (LineDrawingBuffer buffer = new LineDrawingBuffer (ctx)) {
+			using (LineDrawingBuffer buffer = new LineDrawingBuffer ()) {
 				float iMax = 0, x = 0, y = 0;
 
 				switch (ScrollOrientation) {

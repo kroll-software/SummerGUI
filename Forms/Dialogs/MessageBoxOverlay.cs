@@ -3,6 +3,8 @@ using System.Linq;
 using System.Drawing;
 using System.Threading;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -152,7 +154,7 @@ namespace SummerGUI
 		protected virtual void InitIconImage(char icon, ColorContexts colorContext)
 		{				
 			IconText = new TextWidget ("icon", Docking.Top, new EmptyWidgetStyle (), null, null);
-			IconText.IconFont = CTX.FontManager.FontByTag (CommonFontTags.LargeIcons);
+			IconText.IconFont = FontManager.Manager.FontByTag (CommonFontTags.LargeIcons);
 			IconText.Icon = icon;
 			IconText.ForeColor = Color.White;
 			ContentPanel.AddChild (IconText);
@@ -203,10 +205,10 @@ namespace SummerGUI
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			switch (e.Key) {
-			case Key.Escape:				
+			case Keys.Escape:				
 				OnCancel();
 				return true;
-			case Key.Enter:
+			case Keys.Enter:
 				OnOK ();
 				return true;
 			default:
@@ -265,14 +267,15 @@ namespace SummerGUI
 			/*** ***/				
 
 			box.Show (parent);
-			box.Focus ();
+			box.Focus ();			
 
-			return DialogResults.OK;
+            return DialogResults.OK;
 
 			/***
-			if (box != null)
-				box.Dispose ();			
-			return box.Result;
+			var result = box.Result;
+            box?.Dispose ();
+            box = null;
+            return result;			
 			***/
 		}			
 			

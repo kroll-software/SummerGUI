@@ -5,9 +5,45 @@ using System.Runtime.InteropServices;
 
 namespace SummerGUI
 {
-
 	public class X11Interface
 	{
+		// Die Definition der XClientMessageEvent, die wir für _NET_WM_STATE benötigen    
+
+		[StructLayout(LayoutKind.Sequential)]
+		public struct XClientMessageEvent
+		{
+			public int type; // Muss 33 (ClientMessage) sein
+			public IntPtr serial;
+			public bool send_event;
+			public IntPtr display;
+			public IntPtr window;
+			public IntPtr message_type; // Das Atom, das die Nachricht identifiziert (z.B. _NET_WM_STATE)
+			public int format; // Muss 32 sein (für 32-Bit-Daten)
+
+			// Die Daten-Union der XClientMessageEvent: 5x long/IntPtr
+			public IntPtr data0; 
+			public IntPtr data1;
+			public IntPtr data2;
+			public IntPtr data3;
+			public IntPtr data4;
+		}
+
+		// Die XEvent-Union (wir brauchen nur den Teil der ClientMessage)
+		[StructLayout(LayoutKind.Explicit)]
+		public struct XEvent
+		{
+			[FieldOffset(0)]
+			public int type;
+
+			[FieldOffset(0)]
+			public XClientMessageEvent xclient;
+
+			// XEvent ist mindestens 192 Bytes groß (48 * 4-Byte-Longs), wir brauchen nur den ClientMessage-Teil
+			// Der Rest des Speichers muss in C# reserviert werden, um Pufferüberläufe zu vermeiden.
+			// Ein typischer Wert ist 200 Bytes.
+			[FieldOffset(0)]
+			private unsafe fixed byte padding[200];
+		}
 
 		/// <summary> Change the parent window of the specified window. </summary>
 		/// <param name="x11display"> The display pointer, that specifies the connection to the X server. <see cref="IntPtr"/> </param>
@@ -23,9 +59,46 @@ namespace SummerGUI
 		///   originally mapped, the X server automatically performs a MapWindow request on it.
 		/// * The X server performs normal exposure processing on formerly obscured windows. The X server might not generate Expose
 		///   events for regions from the initial UnmapWindow request that are immediately obscured by the final MapWindow request. </remarks>
-		[DllImport("libX11")]
+		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
 		extern public static void XReparentWindow (IntPtr x11display, IntPtr x11window, IntPtr x11parentWindow, int x, int y);
 
-	}
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static IntPtr XOpenDisplay(IntPtr display_name);
+        //char *display_name;
+
+		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static void XSetTransientForHint(IntPtr display, IntPtr window, IntPtr propWindow);
+
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static void XRaiseWindow(IntPtr display, IntPtr w);
+        //Display* display;
+        //Window w;
+
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static void XSetInputFocus(IntPtr display, IntPtr focus, int revert_to, uint time);
+        //Display* display;
+        //Window focus;
+        //int revert_to;
+        //Time time;
+
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static void XMapRaised(IntPtr display, IntPtr window);
+
+		// NEU: Übersetzt einen String-Namen in ein X-Atom (XID-Typ)
+        // Benötigt für EWMH-Properties wie "_NET_WM_STATE"
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static IntPtr XInternAtom(IntPtr display, string atom_name, bool only_if_exists);
+
+        // NEU: Erzwingt die sofortige Ausführung aller gepufferten X11-Befehle
+        // Wichtig, nachdem man Eigenschaften gesetzt oder Events gesendet hat.
+        [DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static int XFlush(IntPtr display);        
+
+		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static int XSendEvent(IntPtr display, IntPtr window, bool propagate, IntPtr event_mask, ref XEvent event_send);
+
+		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+        extern public static IntPtr XRootWindow(IntPtr display, int screen_number);
+    }
 }
 

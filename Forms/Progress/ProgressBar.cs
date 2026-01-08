@@ -134,7 +134,7 @@ namespace SummerGUI
 			Padding = new Padding (6);
 			ProgressPadding = 3;
 			Autosize = true;
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			ProgressColorBrush = new SolidBrush (Theme.Colors.Orange);
 			InvalidateOnHeartBeat = true;
 		}			

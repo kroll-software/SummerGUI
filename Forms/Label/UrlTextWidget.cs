@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -101,7 +103,7 @@ namespace SummerGUI
 			}
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			base.OnClick (e);
 			if (IsVisibleEnabled) {
@@ -109,7 +111,7 @@ namespace SummerGUI
 			}
 		}			
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			if (base.OnKeyDown (e))
 				return true;
@@ -117,7 +119,7 @@ namespace SummerGUI
 			if (!IsFocused)
 				return false;
 
-			if (e.Key == OpenTK.Input.Key.Enter) {
+			if (e.Key == Keys.Enter) {
 				OnClick (null);
 				return true;
 			}

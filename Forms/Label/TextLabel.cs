@@ -18,7 +18,7 @@ namespace SummerGUI
 		public float OffsetY { get; set; }
 
 		public TextLabel (string name, string text = null)
-			: base (name, Docking.Fill, new DefaultFormLabelWidgetStyle(), text, SummerGUIWindow.CurrentContext.FontManager.DefaultFont)
+			: base (name, Docking.Fill, new DefaultFormLabelWidgetStyle(), text, FontManager.Manager.DefaultFont)
 		{
 			Styles.SetStyle (new DisabledFormLabelWidgetStyle (), WidgetStates.Disabled);
 			Format = FontFormat.DefaultSingleLine;

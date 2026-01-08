@@ -54,7 +54,7 @@ namespace SummerGUI
 			InsertButton ();
 			Button.Dock = Docking.Fill;
 
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			TextMargin = new Size (6, 2);
 
 			ItemHeight = Font.TextBoxHeight;

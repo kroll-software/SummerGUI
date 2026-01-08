@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using OpenTK.Input;
 using KS.Foundation;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using SummerGUI.Scrolling;
 
 namespace SummerGUI
@@ -178,7 +180,7 @@ namespace SummerGUI
 			if (!Enabled)
 				return true;
 
-			Value -= SmallChange * e.Delta;
+			Value -= SmallChange * e.OffsetY;
 			return true;
 		}
 
@@ -206,7 +208,7 @@ namespace SummerGUI
 				Value += LargeChange;
 		}			
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			if (!IsVisibleEnabled)
 				return false;
@@ -214,27 +216,27 @@ namespace SummerGUI
 			bool handled = false;
 
 			switch (e.Key) {
-			case Key.Down:
+			case Keys.Down:
 				Value += SmallChange;
 				handled = true;
 				break;
-			case Key.Up:
+			case Keys.Up:
 				Value -= SmallChange;
 				handled = true;
 				break;
-			case Key.PageDown:
+			case Keys.PageDown:
 				Value += LargeChange;
 				handled = true;
 				break;
-			case Key.PageUp:
+			case Keys.PageUp:
 				Value -= LargeChange;
 				handled = true;
 				break;
-			case Key.Home:
+			case Keys.Home:
 				Value = Minimum;
 				handled = true;
 				break;
-			case Key.End:
+			case Keys.End:
 				Value = Maximum;
 				handled = true;
 				break;

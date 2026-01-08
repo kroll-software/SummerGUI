@@ -2,6 +2,11 @@
 using System.Diagnostics;
 using KS.Foundation;
 using OpenTK;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Mathematics;
+
 
 namespace SummerGUI.SystemSpecific.Mac
 {	
@@ -61,16 +66,21 @@ namespace SummerGUI.SystemSpecific.Mac
 			return true;
 		}
 
-		public static void BringToFront(INativeWindow window)
-		{
-			if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
-				return;
-		}
+		public static void SetParent(NativeWindow window, NativeWindow parent)
+        {
+            
+        }
 
-		public static void HideFromTaskbar(INativeWindow window)
+		public static void BringToFront(NativeWindow window)
 		{
-			if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
-				return;
+			//if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
+			//	return;
+		}		
+
+		public static void HideFromTaskbar(NativeWindow window)
+		{
+			//if (window == null || window.WindowInfo.Handle == IntPtr.Zero)
+			//	return;
 		}
 	}
 }

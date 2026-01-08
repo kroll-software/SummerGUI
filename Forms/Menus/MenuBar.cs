@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -32,8 +34,8 @@ namespace SummerGUI
 			Styles.SetStyle (new MenuBarSelectedStyle (), WidgetStates.Selected);
 
 			//Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
-			Font = SummerGUIWindow.CurrentContext.FontManager.StatusFont;
-			IconFont = SummerGUIWindow.CurrentContext.FontManager.SmallIcons;
+			Font = FontManager.Manager.StatusFont;
+			IconFont = FontManager.Manager.SmallIcons;
 			CanFocus = false;
 			TabIndex = -1;
 		}
@@ -117,7 +119,7 @@ namespace SummerGUI
 		{			
 			base.OnMouseMove (e);
 
-			if (SetActiveIcon (e.X, e.Y) && Expanded)
+			if (SetActiveIcon ((int)e.Position.X, (int)e.Position.Y) && Expanded)
 				ShowSubMenu (ActiveItem);
 			else
 				Invalidate ();
@@ -137,7 +139,7 @@ namespace SummerGUI
 			base.OnMouseLeave (ctx);
 		}
 
-		public override void OnMouseDown (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnMouseDown (MouseButtonEventArgs e)
 		{
 			base.OnMouseDown (e);
 
@@ -270,7 +272,7 @@ namespace SummerGUI
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{			
 			float x = bounds.Left;
-			float y = Padding.Top;
+			float y = bounds.Top + Padding.Top;
 			float line = 0;
 			float lineHeight = LineHeight;
 			//int lineHeight = Bounds.Height;
@@ -423,7 +425,7 @@ namespace SummerGUI
 			Root.SelectedMenu = this;
 		}			
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			/***
 			if (base.OnKeyDown (e))
@@ -431,46 +433,45 @@ namespace SummerGUI
 			***/
 
 			switch (e.Key) {
-			case Key.Home:
+			case Keys.Home:
 				if (Selected) {
 					MoveFirst ();
 					return true;
 				}
 				break;
-			case Key.End:
+			case Keys.End:
 				if (Selected) {
 					MoveLast ();
 					return true;
 				}
 				break;
-			case Key.Left:
+			case Keys.Left:
 				if (Selected) {
 					MovePrev ();
 					return true;
 				}
 				break;
-			case Key.Right:
+			case Keys.Right:
 				if (Selected) {
 					MoveNext ();
 					return true;
 				}
 				break;
-			case Key.Down:
-			case Key.PageDown:
-			case Key.PageUp:
-			case Key.Enter:
-				//if (Selected && Expanded && SubMenu != null) {
+			case Keys.Down:
+			case Keys.PageDown:
+			case Keys.PageUp:
+			case Keys.Enter:				
 				if (Selected && SubMenu != null) {
 					SubMenu.Select ();
 					Expanded = true;
-					if (e.Key == Key.PageDown)
+					if (e.Key == Keys.PageDown)
 						SubMenu.MoveLast ();
 					else
 						SubMenu.MoveFirst ();
 					return true;
 				}
 				break;
-			case Key.F10:
+			case Keys.F10:
 				if (Selected) {
 					return false;
 				}
@@ -487,7 +488,7 @@ namespace SummerGUI
 				MovePrev ();
 				this.Update ();
 				return true;
-			case Key.Escape:
+			case Keys.Escape:
 				CloseSubMenu ();
 				FocusPreviouseWidget ();
 				return true;

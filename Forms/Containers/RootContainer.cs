@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -16,7 +18,7 @@ namespace SummerGUI
 		public const string UpdateMenus = "UpdateMenus";
 	}
 
-	public sealed class RootContainer : Container, IObservable<EventMessage>
+	public class RootContainer : Container, IObservable<EventMessage>
 	{
 		public IGUIContext CTX { get; private set; }
 		readonly BinarySortedList<Widget> Overlays;
@@ -40,7 +42,7 @@ namespace SummerGUI
 			AddChild (m_Tooltip);
 			CanFocus = false;
 			TabIndex = -1;
-			TooltipDelayAction = new DelayedAction (500, TooltipAction);
+			TooltipDelayAction = new DelayedAction (250, TooltipAction);
 			HeartbeatTimer = new TaskTimer (500, Heartbeat);
 			HeartbeatTimer.Start ();
 			HeartbeatSubscriptions = new HashSet<Widget> ();
@@ -159,28 +161,15 @@ namespace SummerGUI
 			//Console.WriteLine (e.Key);
 
 			if (SelectedMenu != null) {
-				if (e.Key == Key.Escape) {
+				if (e.Key == Keys.Escape) {
 					SelectedMenu = null;
-				} else {
-					if (ModifierKeys.AltPressed && SelectedMenu.OnKeyDown (e)) {
+				} else {					
+					if (SelectedMenu.OnKeyDown (e)) {
 						Invalidate ();
 						return true;
 					}
 				}
-			} 
-
-			/***
-			else if (e.Key == Key.F10) {
-				Widget wmenu = MainMenuWidget;
-				if (wmenu != null) {					
-					wmenu.Select ();
-				}
-				if (base.OnKeyDown (e)) {
-					Invalidate ();
-					return true;
-				}
 			}
-			***/
 
 			Widget formerlyFocusedWidget = FocusedWidget;
 
@@ -188,7 +177,7 @@ namespace SummerGUI
 				if (FocusedWidget != null && FocusedWidget != this && FocusedWidget.OnKeyDown (e))
 					return true;
 
-				if (e.Key == OpenTK.Input.Key.Tab) {				
+				if (e.Key == Keys.Tab) {				
 					if (e.Shift)
 						SelectPrevWidget ();
 					else
@@ -235,7 +224,7 @@ namespace SummerGUI
 		}
 
 		public override bool OnMouseWheel (MouseWheelEventArgs e)
-		{
+		{			
 			Widget w = HitTest (e.X, e.Y);
 			if (w != null && w.OnMouseWheel (e))
 				return true;
@@ -310,7 +299,7 @@ namespace SummerGUI
 				m_Enabled = value;
 			}
 		}
-
+        
 		public void ResetLastMouseDownWidget()
 		{
 			m_LastMouseDownWidget = null;
@@ -338,14 +327,12 @@ namespace SummerGUI
 				}
 			}
 
-			if (!c.IsDisposed && c != m_LastMouseDownWidget) {
-				m_LastMouseDownWidget = c;
-				if (c != null) {
-					if (c != FocusedWidget)
-						c.Focus ();
-					c.InvokeMouseDown (e);
-				}
-			}
+			m_LastMouseDownWidget = c;
+			if (c != null && !c.IsDisposed) {				
+				if (c != FocusedWidget)
+					c.Focus ();
+				c.InvokeMouseDown (e);
+			}			
 		}
 
 		public override void OnMouseUp (MouseButtonEventArgs e)
@@ -372,6 +359,7 @@ namespace SummerGUI
 							} else {
 								if (w != FocusedWidget && w.CanFocus)
 									w.Focus ();
+								//ShowContextMenu (e.Position.ToPointF (), menu);
 								ShowContextMenu (e.Position.ToPointF (), menu);
 							}
 
@@ -405,13 +393,14 @@ namespace SummerGUI
 			if (String.IsNullOrEmpty (text)) {
 				HideTooltip ();
 				return;
-			}								
+			}
 				
 			m_Tooltip.Text = text;
 			SetTooltipLocation (location);
 
-			if (TooltipDelayAction.Enabled) {				
-				TooltipDelayAction.Start ();
+			if (TooltipDelayAction.Enabled) {
+				TooltipDelayAction.Stop();
+				TooltipDelayAction.Start();
 			}
 		}
 
@@ -485,7 +474,15 @@ namespace SummerGUI
 			invalidateFlag = FocusedWidget != null && FocusedWidget.OnHeartBeat ();
 			foreach (Widget w in HeartbeatSubscriptions) {
 				if (w.Visible && w != FocusedWidget)
-					invalidateFlag |= w.OnHeartBeat ();
+				{
+					bool b = w.OnHeartBeat ();
+					if (b)
+					{
+						string test = w.Name;
+					}
+
+					invalidateFlag |= b;
+				}
 			}
 			if (invalidateFlag) {
 				Invalidate (1);

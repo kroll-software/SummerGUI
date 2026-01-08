@@ -3,7 +3,12 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Windowing.Desktop;
 using KS.Foundation;
+using System.Runtime.CompilerServices;
 
 namespace SummerGUI
 {	
@@ -30,7 +35,7 @@ namespace SummerGUI
 		Repeat
 	}
 		
-	public class ChildFormWindow : SummerGUIWindow, IChildFormHost, IComparable<ChildFormWindow>
+	public abstract class ChildFormWindow : SummerGUIWindow, IChildFormHost, IComparable<ChildFormWindow>
 	{			
 		// IChildFormHost Interface
 		public bool IsModal { get; private set; }
@@ -40,23 +45,63 @@ namespace SummerGUI
 
 		public DialogResults Result { get; protected set; }
 
-		public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, GameWindowFlags flags = GameWindowFlags.Default, WindowPositions position = WindowPositions.CenterParent)
-			: base(caption, width, height, parent, flags)
-		{		
+		//public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, WindowPositions position = WindowPositions.CenterParent)
+		//	: base(caption, width, height, parent)
+
+		public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, bool sizable = false, WindowPositions position = WindowPositions.CenterParent, int frameRate = 30)
+			: base(new NativeWindowSettings()
+			{
+				Title = caption,
+				ClientSize = new Vector2i(width, height),
+				StartVisible = false,
+				StartFocused = false,				
+				//IsEventDriven = false,
+				//Location = new Vector2i(parent.Location.X, parent.Location.Y),
+				//MinimumClientSize = new Vector2i(100, 100),
+				//MaximumClientSize = new Vector2i(100, 100),
+				
+				AutoLoadBindings = true,
+				WindowState = WindowState.Normal,				
+				//API = ContextAPI.OpenGL,
+				//APIVersion = new Version(3, 3), 				
+				Profile = ContextProfile.Compatability,				
+				WindowBorder = sizable ? WindowBorder.Resizable : WindowBorder.Fixed,
+				SharedContext = parent.Context,
+			}, parent, frameRate)
+		{
 			if (String.IsNullOrEmpty (name))
 				name = "ChildWindow";
 			
+			//NativeWindowSettings test = new NativeWindowSettings();
+			//test.StartVisible = false
+			
 			Name = name;
 			IsModal = modal;
+			ParentWindow = parent;
 
 			if (!IsModal) {
 				ShowInTaskBar = true;
-				AllowMinimize = flags == GameWindowFlags.Default;
-				AllowMaximize = flags == GameWindowFlags.Default;
+				AllowMinimize = true;
+				AllowMaximize = true;
 			} else {	
+				ShowInTaskBar = false;
+				AllowMinimize = false;
+				AllowMaximize = false;
 				// ToDo: FixMe:
 				this.HideFromTaskbar ();
 			}
+
+			if (position == WindowPositions.CenterParent)
+			{
+				CenterWindowOnParent(ParentWindow, this);
+			}
+			
+			if (parent != null){
+				//this.SetModalState(parent, modal);
+				this.SetParent(parent);
+			}
+
+			ParentWindow?.AddChildWindow (this);
 
 			// ToDo: Set Window Modal State on Platform
 			/**	ToDo:
@@ -71,6 +116,18 @@ namespace SummerGUI
 			return TRUE;  // return TRUE  unless you set 
 			//    the focus to a control
 			**/
+		}
+
+		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
+		{
+			Vector2i parentLocation = parent.Location;
+			Vector2i parentSize = parent.Size;
+			Vector2i childSize = child.Size;
+
+			int newX = parentLocation.X + (parentSize.X - childSize.X) / 2;
+			int newY = parentLocation.Y + (parentSize.Y - childSize.Y) / 2 + (parent.TitleBarHeight / 2);
+
+			child.Location = new Vector2i(newX, newY);
 		}
 
 		public override void DetectDPI ()
@@ -180,25 +237,30 @@ namespace SummerGUI
 		{
 			if (ParentWindow != parent)
 				this.LogWarning ("Parent should equal ParentWindow");
-
-			if (ParentWindow != null)
-				ParentWindow.AddChildWindow (this);			
+						
+			this.IsVisible = true;
+			this.Focus();
+			this.BringToFront();
 			this.Run ();
-		}			
+		}        
 
 		public override void OnProcessEvents ()
 		{
-			base.OnProcessEvents ();
-			if (ParentWindow != null) {				
-				ParentWindow.OnProcessEvents ();
-			}
-		}			
+			base.OnProcessEvents ();			
+			ParentWindow?.OnProcessEvents ();
+		}
+
+		public override void OnDispatchUpdateAndRenderFrame()
+		{
+			base.OnDispatchUpdateAndRenderFrame ();			
+			ParentWindow?.OnDispatchUpdateAndRenderFrame ();
+		}
 
 		protected override void OnUnload (EventArgs e)
 		{				
 			if (ParentWindow != null) {
 				ParentWindow.RemoveChildWindow (this);
-				ParentWindow.MakeCurrent ();
+				//ParentWindow.MakeCurrent ();
 				ParentWindow.Focus ();
 			}
 

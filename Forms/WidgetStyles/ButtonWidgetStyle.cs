@@ -91,9 +91,9 @@ namespace SummerGUI
 		{
 			//SetBackColor (Color.FromArgb(Theme.DefaultButtonAlpha, Theme.GetContextDisabledColor(ColorContext)), Color.FromArgb(Theme.DefaultButtonAlpha, Theme.GetContextDisabledColor(ColorContext)));
 			SetBackColor (Color.FromArgb(Theme.DefaultButtonAlpha, Theme.GetContextColor(ColorContext)), Color.FromArgb(Theme.DefaultButtonAlpha, Theme.GetContextGradientColor(ColorContext)));
-			SetForeColor(Theme.Colors.Base1);
-			//SetBorderColor (Theme.GetContextDisabledBorderColor(ColorContext));
-			SetBorderColor (Theme.GetContextBorderColor(ColorContext));
+            SetForeColor(Theme.Colors.Base1);
+            //SetBorderColor (Theme.GetContextDisabledBorderColor(ColorContext));
+            SetBorderColor (Theme.GetContextBorderColor(ColorContext));
 			ButtonStyle = Theme.ButtonStyle;
 		}
 	}

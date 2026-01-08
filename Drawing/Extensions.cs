@@ -146,9 +146,19 @@ namespace SummerGUI
 			return (int)Math.Ceiling(val);
 		}
 
+		public static int Floor(this float val)
+		{			
+			return (int)Math.Floor(val);
+		}
+
 		public static int Ceil(this double val)
 		{			
 			return (int)Math.Ceiling(val);
+		}
+
+		public static int Floor(this double val)
+		{			
+			return (int)Math.Floor(val);
 		}
 			
 		public static Size Ceil(this SizeF val)
@@ -157,9 +167,20 @@ namespace SummerGUI
 			return new Size(val.Width.Ceil(), val.Height.Ceil());
 		}
 
+		public static Size Floor(this SizeF val)
+		{
+			// about 30% Faster than the Dotnet Version..
+			return new Size(val.Width.Floor(), val.Height.Floor());
+		}
+
 		public static Rectangle Ceil(this RectangleF val)
 		{			
 			return Rectangle.Ceiling(val);
+		}
+
+		public static Rectangle Floor(this RectangleF val)
+		{			
+			return new Rectangle(val.X.Floor(), val.Y.Floor(), val.Width.Floor(), val.Height.Floor());
 		}
 
 		public static Point Add(this Point left, Point right)

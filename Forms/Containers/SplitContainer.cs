@@ -187,8 +187,11 @@ namespace SummerGUI
 				else if (Panel2Collapsed)
 					Panel1.OnLayout (ctx, bounds);
 				else {
+					//Panel1.OnLayout (ctx, new RectangleF (bounds.Left, bounds.Top, Splitter.Left - bounds.Left, bounds.Height));
+					//Panel2.OnLayout (ctx, new RectangleF (Splitter.Right, bounds.Top, bounds.Right - Splitter.Right, bounds.Height));
+
 					Panel1.OnLayout (ctx, new RectangleF (bounds.Left, bounds.Top, Splitter.Left - bounds.Left, bounds.Height));
-					Panel2.OnLayout (ctx, new RectangleF (Splitter.Right, bounds.Top, bounds.Right - Splitter.Right, bounds.Height));
+					Panel2.OnLayout (ctx, new RectangleF (Splitter.Right, bounds.Top, bounds.Right - Splitter.Right - Splitter.Width, bounds.Height));
 				}
 				break;
 

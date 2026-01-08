@@ -2,6 +2,8 @@
 using System.Reflection;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -29,7 +31,7 @@ namespace SummerGUI
 
 
 		public AboutScreen (string name, string caption, int width, int height, SummerGUIWindow parent)
-			: base(name, caption, width, height, parent, true, GameWindowFlags.FixedWindow)
+			: base(name, caption, width, height, parent, true)
 		{						
 			ShowInTaskBar = false;
 
@@ -88,6 +90,10 @@ namespace SummerGUI
 			UrlCaptionWidget.Visible = false;
 
 			UrlWidget = Table.AddChild (new UrlTextWidget ("url", ""), 4, 2);
+			UrlWidget.Click += (sender, e) => 
+			{				
+				Helpers.OpenURL(UrlWidget.Url, this);
+			};
 
 			CreditsWidget = Table.AddChild (new ScrollingBox ("credits"), 5, 0, 1, 3);
 			CreditsWidget.SetFontByTag(CommonFontTags.Serif);
@@ -261,17 +267,17 @@ namespace SummerGUI
 		protected override void OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			switch (e.Key) {
-			case Key.Space:
+			case Keys.Space:
 				CreditsWidget.ToggleAnimation ();
 				break;
-			case Key.Enter:
-			case Key.Escape:
+			case Keys.Enter:
+			case Keys.Escape:
 				Close();
 				break;
 			default:
 				base.OnKeyDown (e);
 				break;
-			}				
+			}
 		}
 	}
 }

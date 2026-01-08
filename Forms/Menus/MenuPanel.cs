@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -34,7 +36,7 @@ namespace SummerGUI
 			IsMenu = true;
 			MainMenu = menu;
 
-			MenuBar = AddChild (new MenuBar ("mainmenubar", MainMenu));
+			MenuBar = AddChild (new MenuBar ("mainmenubar", MainMenu));			
 			ToolBar = AddChild (new ApplicationToolBar ("maintoolbar", MainMenu));
 			Notifications = AddChild (new NotificationPanel ("notifications"));
 			Notifications.MaxNotifications = 3;
@@ -219,15 +221,15 @@ namespace SummerGUI
 			IGuiMenuItem mnuFile = MainMenu.Add ("File", "&File");
 
             IGuiMenuItem mnuNew = mnuFile.AddChild("New", "&New..", (char)FontAwesomeIcons.fa_file_o)
-                .SetHotKey(KeyModifiers.Control, Key.N);
+                .SetHotKey(KeyModifiers.Control, Keys.N);
             IGuiMenuItem mnuOpen = mnuFile.AddChild ("Open", "&Open..", (char)FontAwesomeIcons.fa_folder_open_o)
-				.SetHotKey(KeyModifiers.Alt, Key.O);
+				.SetHotKey(KeyModifiers.Alt, Keys.O);
             IGuiMenuItem mnuSave = mnuFile.AddChild("Save", "&Save..", (char)FontAwesomeIcons.fa_save)
-                .SetHotKey(KeyModifiers.Control, Key.S);
+                .SetHotKey(KeyModifiers.Control, Keys.S);
 
             mnuFile.AddSeparator ();
 
-			IGuiMenuItem mnuExit = mnuFile.AddChild ("Exit", "E&xit").SetHotKey(KeyModifiers.Alt, Key.F4);
+			IGuiMenuItem mnuExit = mnuFile.AddChild ("Exit", "E&xit").SetHotKey(KeyModifiers.Alt, Keys.F4);
 			mnuExit.Click += delegate {
 				AppWin.Close ();
 			};
@@ -236,21 +238,21 @@ namespace SummerGUI
 
 			IGuiMenuItem mnuEdit = MainMenu.Add ("Edit", "&Edit");
 			IGuiMenuItem mnuCopy = mnuEdit.AddChild ("Copy", "Copy", (char)FontAwesomeIcons.fa_copy)
-				.SetHotKey(KeyModifiers.Control, Key.C);
+				.SetHotKey(KeyModifiers.Control, Keys.C);
 			IGuiMenuItem mnuPaste = mnuEdit.AddChild ("Paste", "Paste", (char)FontAwesomeIcons.fa_paste)
-				.SetHotKey(KeyModifiers.Control, Key.V);
+				.SetHotKey(KeyModifiers.Control, Keys.V);
 			IGuiMenuItem mnuCut = mnuEdit.AddChild ("Cut", "Cut", (char)FontAwesomeIcons.fa_cut)
-				.SetHotKey(KeyModifiers.Control, Key.X);
+				.SetHotKey(KeyModifiers.Control, Keys.X);
 			mnuEdit.AddSeparator ();
 			IGuiMenuItem mnuUndo = mnuEdit.AddChild ("Undo", "Undo", (char)FontAwesomeIcons.fa_undo)
-				.SetHotKey(KeyModifiers.Control, Key.Z);
+				.SetHotKey(KeyModifiers.Control, Keys.Z);
 			IGuiMenuItem mnuRedo = mnuEdit.AddChild ("Redo", "Redo", (char)FontAwesomeIcons.fa_repeat)
-				.SetHotKey(KeyModifiers.Control, Key.Y);
+				.SetHotKey(KeyModifiers.Control, Keys.Y);
 			mnuEdit.AddSeparator ();
 			IGuiMenuItem mnuSelectAll = mnuEdit.AddChild ("SelectAll", "Select All", (char)0)
-				.SetHotKey(KeyModifiers.Control, Key.A);
+				.SetHotKey(KeyModifiers.Control, Keys.A);
 			IGuiMenuItem mnuInvertSelection = mnuEdit.AddChild ("InvertSelection", "Invert Selection", (char)0)
-				.SetHotKey(KeyModifiers.Control, Key.I);
+				.SetHotKey(KeyModifiers.Control, Keys.I);
 
 			// Test: Disable something
 			mnuCopy.Enabled = false;
@@ -262,7 +264,7 @@ namespace SummerGUI
 			IGuiMenuItem mnuView = MainMenu.Add ("View", "&View");
 			mnuView.AddChild ("ZoomIn", "Zoom In", (char)FontAwesomeIcons.fa_search_plus).SetFireButton();
 			mnuView.AddChild ("ZoomOut", "Zoom Out", (char)FontAwesomeIcons.fa_search_minus).SetFireButton();
-			mnuView.AddChild ("Find", "Find..", (char)FontAwesomeIcons.fa_binoculars).SetHotKey(KeyModifiers.Control, Key.F).HideFromToolbar();
+			mnuView.AddChild ("Find", "Find..", (char)FontAwesomeIcons.fa_binoculars).SetHotKey(KeyModifiers.Control, Keys.F).HideFromToolbar();
 
 			IGuiMenuItem mnuShowMenus = mnuView.AddChild ("ShowMenus", "Menus");
 
@@ -274,7 +276,7 @@ namespace SummerGUI
 			};
 
 			mnuShowToolBar = mnuShowMenus.AddChild ("ShowToolBar", "Toolbar", (char)FontAwesomeIcons.fa_ellipsis_h)
-				.SetChecked(ToolBar.Visible).SetHotKey(KeyModifiers.Control, Key.F9);
+				.SetChecked(ToolBar.Visible).SetHotKey(KeyModifiers.Control, Keys.F9);
 			mnuShowToolBar.CheckedChanged += delegate {
 				ToolBar.Visible = mnuShowToolBar.Checked;
 				EnsureAnyMenu ();
@@ -288,7 +290,7 @@ namespace SummerGUI
 			};
 
 			mnuShowStatusBar = mnuShowMenus.AddChild ("ShowStatusBar", "Statusbar", (char)FontAwesomeIcons.fa_hand_o_right)
-				.SetChecked (AppWin.StatusBar.Visible).SetHotKey(KeyModifiers.Shift, Key.F9);
+				.SetChecked (AppWin.StatusBar.Visible).SetHotKey(KeyModifiers.Shift, Keys.F9);
 			mnuShowStatusBar.CheckedChanged += delegate {
 				AppWin.StatusBar.Visible = mnuShowStatusBar.Checked;
 			};
@@ -376,7 +378,7 @@ namespace SummerGUI
 			};
 
 			mnuFullScreen = mnuView.AddChild ("FullScreen", "Full Screen")
-				.SetHotKey (Key.F11).SetChecked (false);
+				.SetHotKey (Keys.F11).SetChecked (false);
 			mnuFullScreen.Click += delegate {
 				AppWin.ToggleFullScreen();
 			};
@@ -426,7 +428,7 @@ namespace SummerGUI
 
 			IGuiMenuItem mnuHelp = MainMenu.Add ("Help", "?");
 			IGuiMenuItem mnuHelpContents = mnuHelp.AddChild ("HelpContents", "&Help Contents..", (char)FontAwesomeIcons.fa_question_circle_o)
-				.SetHotKey(0, Key.F1);
+				.SetHotKey(0, Keys.F1);
 
 			mnuHelp.AddSeparator ();
 

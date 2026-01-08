@@ -3,12 +3,17 @@ using System.Drawing;
 using OpenTK;
 using OpenTK.Graphics;
 using KS.Foundation;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Graphics.OpenGL; // Für IGLContext
 
 namespace SummerGUI
 {
 	public interface IGUIContext
 	{
-		INativeWindow GlWindow { get; }
+		NativeWindow GlWindow { get; }
+		//GL GL { get; }
+
 		Devices Device { get; set; }
 		int DPI { get; }
 		float ScaleFactor { get; }
@@ -22,8 +27,7 @@ namespace SummerGUI
 		void Invalidate (int frames);
 		void SetCursor (Cursors cursor);
 		void SetCustomCursor (string name);
-		Rectangle Bounds { get; }
-		FontManager FontManager { get; }
+		Rectangle Bounds { get; }		
 		AnimationService Animator { get; }
 
 		ClipBoundStackClass ClipBoundStack { get; }

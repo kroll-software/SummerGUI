@@ -12,6 +12,8 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI.DataGrid
@@ -70,7 +72,7 @@ namespace SummerGUI.DataGrid
 			// ***********
 			//RowManagerObserver = new Observable<EventMessage>.Observer (OnNext, OnError, OnCompleted);
 
-			Enabled = false;
+			Enabled = false;			
 		}
 			
 		void CmdFirst_Click (object sender, EventArgs e)
@@ -168,7 +170,7 @@ namespace SummerGUI.DataGrid
 			if (base.OnKeyDown (e))
 				return true;
 			switch (e.Key) {
-			case Key.Delete:
+			case Keys.Delete:
 				CmdDelete.OnClick ();
 				return true;
 			}

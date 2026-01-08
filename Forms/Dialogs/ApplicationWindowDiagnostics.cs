@@ -106,11 +106,11 @@ namespace SummerGUI
 			PanelPaint.InvalidateOnHeartBeat = true;
 			PanelLayout.InvalidateOnHeartBeat = true;
 
-			Owner.Controls.SubscribeHeartbeat (PanelPaint);
-			Owner.Controls.SubscribeHeartbeat (PanelLayout);
+			//Owner.Controls.SubscribeHeartbeat (PanelPaint);
+			//Owner.Controls.SubscribeHeartbeat (PanelLayout);
 		}
 
-		void Panel_Click (object sender, OpenTK.Input.MouseButtonEventArgs e)
+		void Panel_Click (object sender, MouseButtonEventArgs e)
 		{
 			if (DiagnoseMode == DiagnoseModes.AbsoluteInterval)
 				DiagnoseMode = DiagnoseModes.RelativeFrameDelay;

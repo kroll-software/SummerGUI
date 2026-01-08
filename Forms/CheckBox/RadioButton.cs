@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -47,7 +49,7 @@ namespace SummerGUI
 			//IconOffsetY = -0.25f;
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			if (!Checked) {
 				Checked = true;

@@ -18,11 +18,10 @@ namespace SummerGUI
 		public event EventHandler<EventArgs> CheckedChanged;
 		protected void OnCheckedChanged()
 		{
-			if (CheckedChanged != null)
-				CheckedChanged (this, EventArgs.Empty);
-		}
+            CheckedChanged?.Invoke(this, EventArgs.Empty);
+        }
 
-		public ImagePanel Image { get; private set; }
+        public ImagePanel Image { get; private set; }
 		public TextWidget Text { get; private set; }
 		public bool IsToggleButton  { get; set; }
 
@@ -35,15 +34,21 @@ namespace SummerGUI
 			set {
 				if (m_Checked != value) {
 					m_Checked = value;
-					OnCheckedChanged ();
-
-					if (value)
-						WidgetState = WidgetStates.Pressed;
-				}
+                    UpdateStyle();
+                    OnCheckedChanged();
+                }
 			}
 		}
 
-		public string ImageKey
+        public override void UpdateStyle()
+        {
+            if (m_Checked)
+                WidgetState = WidgetStates.Pressed;
+            else
+                base.UpdateStyle();
+        }
+
+        public string ImageKey
 		{
 			get{
 				return Image.ImageKey;
@@ -88,7 +93,7 @@ namespace SummerGUI
 			Text = new TextWidget ("text", Docking.Fill, 
 				new WidgetStyle (Color.Empty, style.ForeColorPen.Color, Color.Empty),
 				text,
-				SummerGUIWindow.CurrentContext.FontManager.StatusFont);
+				FontManager.Manager.StatusFont);
 		
 			Text.HAlign = Alignment.Center;
 			Text.VAlign = Alignment.Center;
@@ -106,7 +111,7 @@ namespace SummerGUI
 			return base.HitTest (x, y) != null ? this : null;
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			if (IsToggleButton) {
 				Checked = !Checked;

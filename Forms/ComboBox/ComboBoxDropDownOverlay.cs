@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -85,7 +87,12 @@ namespace SummerGUI
 
 			OnItemSelected();
 			OnClose ();
-		}			
+		}
+
+        public override bool OnMouseWheel(MouseWheelEventArgs e)
+        {
+            return true;	// handle the event
+        }
 			
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{
@@ -149,32 +156,32 @@ namespace SummerGUI
 			bool handled = false;
 
 			switch (e.Key) {
-			case Key.Up:
+			case Keys.Up:
 				SeekIndex (SelectedIndex - 1);
 				return true;
-			case Key.Down:
+			case Keys.Down:
 				SeekIndex (SelectedIndex + 1);
 				return true;
-			case Key.PageUp:
+			case Keys.PageUp:
 				SeekIndex (SelectedIndex - (int)(Bounds.Height / parent.ItemHeight));
 				return true;
-			case Key.PageDown:
+			case Keys.PageDown:
 				SeekIndex (SelectedIndex + (int)(Bounds.Height / parent.ItemHeight));
 				return true;
-			case Key.Home:
+			case Keys.Home:
 				SeekIndex (0);
 				return true;
-			case Key.End:
+			case Keys.End:
 				SeekIndex (parent.Count - 1);
 				return true;
-			case Key.Enter:
+			case Keys.Enter:
 				if (SelectedIndex >= 0 && SelectedIndex < parent.Count) {					
 					OnItemSelected();
 					OnClose ();
 					return true;
 				}
 				break;
-			case Key.Escape:
+			case Keys.Escape:
 				OnClose ();
 				return true;
 			}

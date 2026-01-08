@@ -1,0 +1,30 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SummerGUI", "SummerGUI.csproj", "{C8DA35ED-0153-1613-16C9-B6BD6CDE0742}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KS.Foundation", "..\KS.Foundation\KS.Foundation.csproj", "{1C3EE20E-B967-4F40-8372-4ABE888889EC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C8DA35ED-0153-1613-16C9-B6BD6CDE0742}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8DA35ED-0153-1613-16C9-B6BD6CDE0742}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8DA35ED-0153-1613-16C9-B6BD6CDE0742}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8DA35ED-0153-1613-16C9-B6BD6CDE0742}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C3EE20E-B967-4F40-8372-4ABE888889EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C3EE20E-B967-4F40-8372-4ABE888889EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C3EE20E-B967-4F40-8372-4ABE888889EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C3EE20E-B967-4F40-8372-4ABE888889EC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8D2D29E3-7CAC-4A7D-9323-4CE9B6D80076}
+	EndGlobalSection
+EndGlobal

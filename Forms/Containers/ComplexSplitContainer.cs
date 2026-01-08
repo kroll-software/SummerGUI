@@ -177,8 +177,8 @@ namespace SummerGUI
 				float left = bounds.Left;
 				float right = bounds.Right;
 				float bottom = bounds.Bottom;
-				if (!PanelLeftCollapsed && SplitterLeft.Visible)
-					left = SplitterLeft.Right;
+				if (!PanelLeftCollapsed && SplitterLeft.Visible)				
+					left = SplitterLeft.Right;				
 				if (!PanelRightCollapsed && SplitterRight.Visible)
 					right = SplitterRight.Left;
 				if (!PanelBottomCollapsed && SplitterBottom.Visible)

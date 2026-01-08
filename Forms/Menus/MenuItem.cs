@@ -3,6 +3,8 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -44,7 +46,7 @@ namespace SummerGUI
 		event EventHandler<EventArgs> CheckedChanged;
 		event EventHandler<EventArgs> Expanding;
 
-		Key HotKey { get; set; }
+		Keys HotKey { get; set; }
 		KeyModifiers ModifierKey { get; set; }
 
 		IGuiMenuItem AddChild (string key, string text, char icon = (char)0);
@@ -91,7 +93,7 @@ namespace SummerGUI
 		public bool IsOptionGroup { get; set; }
 		public bool IsFireButton { get; set; }
 
-		public Key HotKey { get; set; }
+		public Keys HotKey { get; set; }
 		public KeyModifiers ModifierKey { get; set; }
 		public char Mnemonic { get; private set; }
 
@@ -206,6 +208,7 @@ namespace SummerGUI
 			Enabled = true;
 			ShowOnToolBar = true;
 			Rank = _rank++;
+			HotKey = Keys.Unknown;
 			//Collapsed = true;
 		}	
 
@@ -356,14 +359,14 @@ namespace SummerGUI
 
 	public static class IGuiMenuItemExtensions
 	{
-		public static IGuiMenuItem SetHotKey (this IGuiMenuItem item, OpenTK.Input.KeyModifiers modifierKey, OpenTK.Input.Key hotKey)
+		public static IGuiMenuItem SetHotKey (this IGuiMenuItem item, KeyModifiers modifierKey, Keys hotKey)
 		{
 			item.ModifierKey = modifierKey;
 			item.HotKey = hotKey;
 			return item;
 		}
 
-		public static IGuiMenuItem SetHotKey (this IGuiMenuItem item, OpenTK.Input.Key hotKey)
+		public static IGuiMenuItem SetHotKey (this IGuiMenuItem item, Keys hotKey)
 		{
 			item.ModifierKey = 0;
 			item.HotKey = hotKey;
@@ -396,7 +399,7 @@ namespace SummerGUI
 			return item;
 		}
 
-		public static bool ProcessInputKey(this IGuiMenuItem item, OpenTK.Input.KeyboardKeyEventArgs e)
+		public static bool ProcessInputKey(this IGuiMenuItem item, KeyboardKeyEventArgs e)
 		{
 			if (!(item.Visible && item.Enabled))
 				return false;

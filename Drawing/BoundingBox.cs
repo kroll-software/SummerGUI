@@ -2,6 +2,7 @@
 using OpenTK;
 using System.Linq;
 using KS.Foundation;
+using OpenTK.Mathematics;
 
 namespace SummerGUI
 {
@@ -179,7 +180,15 @@ namespace SummerGUI
 			}
 		}
 
-		public double MaxSize
+        public double DiagonalLength
+        {
+            get
+            {
+                return Size.Length;
+            }
+        }
+
+        public double MaxSize
 		{
 			get{
 				return Math.Max((XMax - XMin), Math.Max((YMax - YMin), (ZMax - ZMin)));
@@ -193,7 +202,15 @@ namespace SummerGUI
 			}
 		}
 
-		public double CubicSize
+        public double AverageSize
+        {
+            get
+            {
+                return ((XMax - XMin) + (YMax - YMin) + (ZMax - ZMin)) / 3d;
+            }
+        }
+
+        public double CubicSize
 		{
 			get{
 				return (XMax - XMin) * (YMax - YMin) * (ZMax - ZMin);

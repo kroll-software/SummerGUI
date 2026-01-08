@@ -156,11 +156,11 @@ namespace SummerGUI.DataGrid
 			return this.GetHashCode() == m_UnchangedHash;
 		}
 
-		protected override void OnDeserialized()
-		{
-			base.OnDeserialized ();
+        protected override void OnDeserialized(StreamingContext context)
+        {
+            base.OnDeserialized(context);
 			SetDefault();
-		}
+        }		
 	}
 		
 	public class DataGridColumn : FoundationItemText, IComparable<DataGridColumn>
@@ -270,8 +270,7 @@ namespace SummerGUI.DataGrid
 			
 		public RectangleF ColumnHeaderBounds = RectangleF.Empty;        
 
-		// this method is automatically called during serialization
-		[SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
+		// this method is automatically called during serialization		
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);                       

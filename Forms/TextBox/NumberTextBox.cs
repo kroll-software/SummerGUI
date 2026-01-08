@@ -9,6 +9,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 
@@ -193,10 +195,10 @@ namespace SummerGUI
 				return false;
 
 			switch (e.Key) {
-			case Key.Up:
+			case Keys.Up:
 				DecrementValue ();
 				return true;
-			case Key.Down:
+			case Keys.Down:
 				IncrementValue ();
 				return true;
 			}

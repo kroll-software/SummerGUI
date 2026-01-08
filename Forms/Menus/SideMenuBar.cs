@@ -12,6 +12,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
 using SummerGUI.Menus;
+using OpenTK.Windowing.Common;
 
 namespace SummerGUI
 {
@@ -79,7 +80,7 @@ namespace SummerGUI
 		{
 			try {
 				if (Parent != null && ParentWindow != null)
-					LineHeight =  ParentWindow.GetFont(CommonFontTags.Menu).TextBoxHeight;
+					LineHeight =  WidgetExtensions.GetFont(CommonFontTags.Menu).TextBoxHeight;
 			} catch (Exception ex) {
 				ex.LogError ();
 			}

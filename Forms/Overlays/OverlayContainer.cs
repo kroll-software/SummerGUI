@@ -5,6 +5,8 @@ using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -34,13 +36,13 @@ namespace SummerGUI
 			if (OverlayMode == OverlayModes.Modal || OverlayMode == OverlayModes.Window)
 				return true;
 
-			return base.OnMouseWheel (e);				 
+			return base.OnMouseWheel (e);
 		}
 
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			// eat Tab-Keys..
-			if (IsFocused && e.Key == Key.Tab)
+			if (IsFocused && e.Key == Keys.Tab)
 				return true;
 			return false;
 		}

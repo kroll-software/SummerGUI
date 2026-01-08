@@ -6,6 +6,7 @@ using System.Diagnostics;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 
 namespace SummerGUI
 {	
@@ -20,11 +21,11 @@ namespace SummerGUI
 	}		
 		
 	public struct PaintWrapper : IDisposable
-	{					
+	{
 		// Ensure to always call it with a parameter
 		// e.g. new PaintWrapper(null)
 		public PaintWrapper(RenderingFlags flags = RenderingFlags.HighQuality)
-		{
+		{		
 			GL.PushMatrix();
 			GL.LoadIdentity();
 			OpenTkExtensions.SetDefaultRenderingOptions (flags);
@@ -109,16 +110,16 @@ namespace SummerGUI
 			}
 
 			Vector2 one = new Vector2();
-			Vector2.Add(ref leftSide, ref start, out one);
+			Vector2.Add(in leftSide, in start, out one);
 
 			Vector2 two = new Vector2();
-			Vector2.Add(ref rightSide, ref start, out two);
+			Vector2.Add(in rightSide, in start, out two);
 
 			Vector2 three = new Vector2();
-			Vector2.Add(ref rightSide, ref end, out three);
+			Vector2.Add(in rightSide, in end, out three);
 
 			Vector2 four = new Vector2();
-			Vector2.Add(ref leftSide, ref end, out four);
+			Vector2.Add(in leftSide, in end, out four);
 
 			using (new PaintWrapper (RenderingFlags.HighQuality)) {
 				pen.DoGL ();
@@ -138,7 +139,7 @@ namespace SummerGUI
 			Color c = Color.Empty;
 			if (brush != null)
 				c = brush.Color;			
-			return ctx.FontManager.Print (ctx, text, fontTag.ToString(), 
+			return FontManager.Manager.Print (ctx, text, fontTag.ToString(), 
 				new RectangleF (point, SizeF.Empty), format, c);
 		}
 
@@ -180,7 +181,7 @@ namespace SummerGUI
 			}
 				
 			SizeF retVal;
-			font.Begin(ctx);
+			font.Begin();
 			Color c = Color.Empty;
 			if (brush != null)
 				c = brush.Color;
@@ -192,7 +193,7 @@ namespace SummerGUI
 
 		public static SizeF DrawString(this IGUIContext ctx, string text, string fontTag, Color color, RectangleF bounds, FontFormat format)
 		{
-			return ctx.FontManager.Print (ctx, fontTag, text, bounds, format, color);
+			return FontManager.Manager.Print (ctx, fontTag, text, bounds, format, color);
 		}
 			
 		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, RectangleF rect, FontFormat format)
@@ -206,7 +207,7 @@ namespace SummerGUI
 			if (brush != null)
 				c = brush.Color;
 
-			font.Begin(ctx);
+			font.Begin();
 			retVal = font.Print(text, rect, format, c);
 			font.End();
 			return retVal;
@@ -215,7 +216,7 @@ namespace SummerGUI
 
 		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, string fontTag, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
 		{
-			return ctx.FontManager.PrintSelectedString (ctx, fontTag, text, selStart, selLength, bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
+			return FontManager.Manager.PrintSelectedString (ctx, fontTag, text, selStart, selLength, bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
 		}
 
 		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, IGUIFont font, int selStart, int selLength, RectangleF rect, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
@@ -224,7 +225,7 @@ namespace SummerGUI
 				return SizeF.Empty;
 
 			SizeF retVal;
-			font.Begin(ctx);
+			font.Begin();
 			retVal = font.PrintSelectedString(text, selStart, selLength, rect, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
 			font.End();
 			return retVal;
@@ -232,12 +233,12 @@ namespace SummerGUI
 
 		public static SizeF MeasureString(this IGUIContext ctx, string text, string fontTag, int start = 0, int len = -1)
 		{
-			return ctx.FontManager.Measure (fontTag, text, start, len);
+			return FontManager.Manager.Measure (fontTag, text, start, len);
 		}
 
 		public static SizeF MeasureString(this IGUIContext ctx, string text, string fontTag, RectangleF rect, FontFormat format)
 		{
-			return ctx.FontManager.Measure (fontTag, text, rect.Width, format);
+			return FontManager.Manager.Measure (fontTag, text, rect.Width, format);
 		}			
 
 		public static SizeF MeasureString(this IGUIContext ctx, string text, IGUIFont font, RectangleF rect, FontFormat format)
@@ -247,10 +248,51 @@ namespace SummerGUI
 
 		public static SizeF MeasureMnemonicString(this IGUIContext ctx, string text, string fontTag)
 		{
-			return ctx.FontManager.MeasureMnemonicString (fontTag, text);
+			return FontManager.Manager.MeasureMnemonicString (fontTag, text);
 		}
 
 		// ******************************************
+
+		public static void DrawPolygon(this IGUIContext ctx, Pen pen, PointF[] points)
+		{
+			// Sicherheitsprüfung: Stellen Sie sicher, dass Punkte vorhanden sind und es mindestens 3 Punkte gibt
+			if (points == null || points.Length < 3)
+				return;
+
+			// Verwenden Sie PaintWrapper, um den Zustand zu sichern/wiederherzustellen
+			using (new PaintWrapper(RenderingFlags.HighQuality)) 
+			{
+				GL.Color4(pen.Color);
+
+				// Optional: Hinzufügen der Eckpunkt-Logik für dickere Linien
+				if (pen.Width > 2) {
+					GL.PointSize (pen.Width / 2f + 0.5f);
+					GL.Begin (PrimitiveType.Points);
+					foreach (PointF p in points) {
+						GL.Vertex2 (p.X, p.Y);
+					}
+					GL.End ();
+				}				
+				
+				// 1. Anwendung der Pen-Einstellungen (LineWidth und möglicherweise Stippling/Dashing)
+				GL.LineWidth(pen.Width);
+				pen.DoGL(); // Wenden Sie zusätzliche GL-Einstellungen an, falls in pen.DoGL definiert
+
+				// 2. Zeichnen der Eckpunkte
+				// Wir verwenden PrimitiveType.LineLoop, um die Linien zu zeichnen und 
+				// den letzten Punkt automatisch mit dem ersten zu verbinden.
+				GL.Begin(PrimitiveType.LineLoop);
+				
+				foreach (PointF p in points) 
+				{
+					GL.Vertex2(p.X, p.Y);
+				}
+				
+				GL.End();
+				
+				pen.UndoGL(); // Entfernen Sie zusätzliche GL-Einstellungen
+			}
+		}
 
 		public static void FillPolygon(this IGUIContext ctx, Brush brush, PointF[] points)
 		{
@@ -642,7 +684,7 @@ namespace SummerGUI
 
 				GL.End ();
 			}
-		}			
+		}
 
 		public static void DrawGrayButton(this IGUIContext ctx, RectangleF rect, byte alpha = 255)
 		{			

@@ -9,6 +9,8 @@ using System.Diagnostics;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI.Splitting
@@ -85,13 +87,13 @@ namespace SummerGUI.Splitting
 		}
 
 		protected bool IsDragging;
-		public override void OnMouseDown (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnMouseDown (MouseButtonEventArgs e)
 		{
 			IsDragging = true;
 			base.OnMouseDown (e);
 		}
 
-		public override void OnMouseUp (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnMouseUp (MouseButtonEventArgs e)
 		{
 			base.OnMouseUp (e);
 			IsDragging = false;
@@ -154,7 +156,7 @@ namespace SummerGUI.Splitting
 			base.OnMouseEnter (ctx);
 		}
 
-		public override void OnMouseMove (OpenTK.Input.MouseMoveEventArgs e)
+		public override void OnMouseMove (MouseMoveEventArgs e)
 		{						
 			if (!IsDragging || WidgetState != WidgetStates.Pressed)
 				return;
@@ -258,7 +260,7 @@ namespace SummerGUI.Splitting
 			base.OnMouseEnter (ctx);
 		}
 
-		public override void OnMouseMove (OpenTK.Input.MouseMoveEventArgs e)
+		public override void OnMouseMove (MouseMoveEventArgs e)
 		{			
 			if (!IsDragging || WidgetState != WidgetStates.Pressed)
 				return;

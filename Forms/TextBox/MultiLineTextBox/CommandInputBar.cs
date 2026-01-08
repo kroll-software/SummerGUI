@@ -9,6 +9,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 using SummerGUI.Editor;
@@ -95,10 +97,10 @@ namespace SummerGUI
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			switch (e.Key) {
-			case Key.Enter:				
+			case Keys.Enter:				
 				OkButton.OnClick ();
 				return true;
-			case Key.Escape:
+			case Keys.Escape:
 				CancelButton.OnClick ();
 				return true;
 			}

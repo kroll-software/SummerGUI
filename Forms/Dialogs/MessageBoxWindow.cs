@@ -2,6 +2,8 @@
 using System.Drawing;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace SummerGUI
 {	
@@ -50,7 +52,7 @@ namespace SummerGUI
 		public string Message { get; protected set; }
 
 		protected MessageBoxWindow(string name, string caption, int width, int height, SummerGUIWindow parent)
-			: base(name, caption, width, height, parent, true, GameWindowFlags.FixedWindow)
+			: base(name, caption, width, height, parent, true)
 		{			
 			ButtonContainer = Controls.AddChild (new ButtonContainer("buttoncontainer"));
 		}
@@ -147,7 +149,7 @@ namespace SummerGUI
 			text.VAlign = Alignment.Center;
 			text.HAlign = Alignment.Center;
 
-			Controls.OnLayout (this, this.ClientRectangle);
+			Controls.OnLayout (this, (Rectangle)ClientRectangle);
 
 			// Layout the text
 
@@ -167,7 +169,7 @@ namespace SummerGUI
 
 		protected override void OnInitFonts ()
 		{
-			FontManager.GetConfig (CommonFontTags.Menu).OnDemand = true;
+			FontManager.Manager.GetConfig (CommonFontTags.Menu).OnDemand = true;
 			base.OnInitFonts ();
 		}
 
@@ -297,7 +299,7 @@ namespace SummerGUI
 		protected override void OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			switch (e.Key) {
-			case Key.Escape:
+			case Keys.Escape:
 				Close ();
 				break;			
 			default:

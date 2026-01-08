@@ -4,6 +4,7 @@ using System.Text;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Graphics;
+using OpenTK.Mathematics;
 
 
 namespace SummerGUI
@@ -53,7 +54,7 @@ namespace SummerGUI
         {
             lock (cachedViewportStack)
             {
-                GraphicsContext.Assert();
+                //GraphicsContext.Assert();
                 Viewport viewport = new Viewport();
                 GL.GetInteger(GetPName.Viewport, out viewport.X);
                 cachedViewportStack.Pop();
@@ -116,7 +117,7 @@ namespace SummerGUI
 
         public static void Begin()
         {
-            GraphicsContext.Assert();
+            //GraphicsContext.Assert();
 
             Viewport currentVp = (Viewport)CurrentViewport;
 
@@ -135,7 +136,7 @@ namespace SummerGUI
 
         public static void End()
         {
-            GraphicsContext.Assert();
+            //GraphicsContext.Assert();
 
             GL.MatrixMode(MatrixMode.Modelview);
             GL.PopMatrix(); //pop modelview

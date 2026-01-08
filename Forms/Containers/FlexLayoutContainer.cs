@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -250,7 +252,7 @@ namespace SummerGUI
 			}
 		}
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			Button def = ActiveButton;
 			if (def != null && def.OnKeyDown (e))

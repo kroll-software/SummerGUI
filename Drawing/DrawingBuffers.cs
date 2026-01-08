@@ -14,13 +14,11 @@ namespace SummerGUI
 	// OpenGL CallLists work like a 'Makro-Recorder'.
 
 	public abstract class OpenGlListBase : IDisposable
-	{
-		public IGUIContext GFX { get; private set; }
+	{		
 		public int ListHandle { get; private set; }
 
-		protected OpenGlListBase(IGUIContext gfx)
-		{
-			GFX = gfx;
+		protected OpenGlListBase()
+		{			
 		}
 
 		const string UndisposedWarning = "MEMORY LEAKS in graphics adapter: Ensure to dispose SummerGUI.OpenGlListBase inherited objects!";
@@ -56,7 +54,7 @@ namespace SummerGUI
 				Flush ();
 				GL.EndList ();
 			}
-		}			
+		}
 
 		public void CallList()
 		{
@@ -85,8 +83,7 @@ namespace SummerGUI
 		{			
 			if (!IsDisposed) {
 				IsDisposed = true;
-				DeleteList ();
-				GFX = null;
+				DeleteList ();				
 			}
 			GC.SuppressFinalize (this);
 		}
@@ -96,10 +93,9 @@ namespace SummerGUI
 	{	
 		protected Queue<T> Queue { get; private set; }
 
-		protected QueueDrawingBufferBase(IGUIContext gfx)
-			: base(gfx)
+		protected QueueDrawingBufferBase() : base()
 		{		
-			Queue = new Queue<T> ();	
+			Queue = new Queue<T> ();
 		}
 
 		public int Count
@@ -140,10 +136,9 @@ namespace SummerGUI
 	{	
 		protected Stack<T> Stack { get; private set; }
 
-		protected StackDrawingBufferBase(IGUIContext gfx)
-			: base(gfx)
+		protected StackDrawingBufferBase() : base()
 		{		
-			Stack = new Stack<T> ();	
+			Stack = new Stack<T> ();
 		}
 
 		public int Count
@@ -198,8 +193,8 @@ namespace SummerGUI
 
 	public class LineDrawingBuffer : QueueDrawingBufferBase<LineDrawingBufferRow>
 	{	
-		public LineDrawingBuffer(IGUIContext ctx) : this(ctx, LineStyles.Solid) {}
-		public LineDrawingBuffer(IGUIContext ctx, LineStyles style) : base(ctx) 
+		public LineDrawingBuffer() : this(LineStyles.Solid) {}
+		public LineDrawingBuffer(LineStyles style) : base() 
 		{
 			Style = style;
 		}
@@ -292,7 +287,7 @@ namespace SummerGUI
 
 	public class RectangleDrawingBuffer : QueueDrawingBufferBase<RectangleDrawingBufferRow>
 	{			
-		public RectangleDrawingBuffer(IGUIContext ctx) : base(ctx) 
+		public RectangleDrawingBuffer() : base() 
 		{
 		}			
 
@@ -416,17 +411,18 @@ namespace SummerGUI
 	{
 		public IGUIFont Font  { get; set; }
 		public Brush Brush  { get; set; }
-		public String Text  { get; set; }
+		public string Text  { get; set; }
 		public System.Drawing.RectangleF Rect { get; set; }
 	}		
 
 	public class StringDrawingBuffer : QueueDrawingBufferBase<StringDrawingBufferRow>
 	{	
-		public StringDrawingBuffer(IGUIContext ctx) : base(ctx) 
+		public StringDrawingBuffer() : base() 
 		{
 		}
 
-		public void AddString (string text, IGUIFont font, Brush brush, System.Drawing.Rectangle rect, System.Drawing.StringFormat sf)
+		//public void AddString (string text, IGUIFont font, Brush brush, System.Drawing.Rectangle rect, System.Drawing.Common.StringFormat sf)
+		public void AddString (string text, IGUIFont font, Brush brush, System.Drawing.Rectangle rect)
 		{
 			AddString (text, font, brush, rect, FontFormat.DefaultSingleLine);
 		}
@@ -463,7 +459,7 @@ namespace SummerGUI
 								if (lastInitializedFont != null)
 									lastInitializedFont.End ();
 
-								row.Font.Begin (GFX);
+								row.Font.Begin ();
 								lastInitializedFont = row.Font;
 							}
 
@@ -487,8 +483,7 @@ namespace SummerGUI
 
 	public class PolygonDrawingBuffer : QueueDrawingBufferBase<System.Drawing.PointF>
 	{					
-		public PolygonDrawingBuffer(IGUIContext gfx, System.Drawing.Color color)
-			: base(gfx)
+		public PolygonDrawingBuffer(System.Drawing.Color color) : base()
 		{
 			Color = color;
 		}

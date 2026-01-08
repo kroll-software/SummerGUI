@@ -6,6 +6,10 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.Runtime.InteropServices;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Mathematics;
 
 namespace SummerGUI
 {
@@ -31,7 +35,7 @@ namespace SummerGUI
 		public static bool Is64BitProcess 
 		{
 			get{
-				return (IntPtr.Size == 8);
+				return IntPtr.Size == 8;
 			}
 		}
 
@@ -49,28 +53,33 @@ namespace SummerGUI
 			return true;
 		}
 
-
 		public static OS CurrentOS
 		{
-			get{
-				if (Configuration.RunningOnWindows)
-					return OS.Windows;				
+			get
+			{
+				// 1. Windows
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+					return OS.Windows;
 
-				if (Configuration.RunningOnLinux || Configuration.RunningOnUnix)
+				// 2. Linux
+				//    (Unter .NET Core ist dies der zuverlässige Weg, da es alle Linux-Distributionen abdeckt)
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 					return OS.Linux;
 
-				if (Configuration.RunningOnMacOS)
+				// 3. macOS
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 					return OS.Mac;
 
-				if (Configuration.RunningOnAndroid)
-					return OS.Android;
+				// Anmerkung: Android und iOS/tvOS sind in der Enumeration enthalten, 
+				// wenn Sie eine .NET-Plattform wie Xamarin/MAUI verwenden.
+				// Für reines OpenTK/Desktop (GLFW) sind Linux/Windows/OSX relevant.
+				
+				// 4. Fallback (z.B. BSD, andere Unix-Derivate)
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+					return OS.Linux; // Oder ein spezifischeres OS.BSD, falls in Ihrer OS-Enum vorhanden
 
+				// Unbekannt (Sollte selten erreicht werden)
 				return OS.Unknown;
-
-				// ha ha ha ha ha ha ha:
-				// returns MacOSX for my Ubuntu System
-				// Useless crap, this function..
-				// Environment.OSVersion
 			}
 		}
 
@@ -93,8 +102,14 @@ namespace SummerGUI
 			return path;
 		}
 
-		public static void BringToFront(this INativeWindow window)
+		public static void BringToFront(this NativeWindow window)
 		{						
+			if (window.WindowState == WindowState.Minimized)
+			{
+				// Wir setzen es auf Normal, bevor wir X11/GLFW anweisen, es zu fokussieren.
+				//window.WindowState = WindowState.Normal;
+			}
+
 			switch (CurrentOS) {
 			case OS.Android:
 			case OS.Linux:
@@ -111,7 +126,43 @@ namespace SummerGUI
 			}
 		}
 
-		public static void HideFromTaskbar(this INativeWindow window)
+		public static void SetParent(this NativeWindow window, NativeWindow parent)
+		{						
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				SystemSpecific.Linux.Common.SetParent (window, parent);
+				break;
+
+			case OS.Mac:
+				SystemSpecific.Mac.Common.SetParent (window, parent);
+				break;
+
+			case OS.Windows:
+				SystemSpecific.Windows.Common.SetParent (window, parent);
+				break;
+			}
+		}
+		
+		public static void SetModalState(this NativeWindow window, NativeWindow parent, bool isModal)		
+		{						
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				SystemSpecific.Linux.Common.SetModalState (window, parent, isModal);
+				break;
+
+			case OS.Mac:
+				//SystemSpecific.Mac.Common.MakeParent (window, parent);
+				break;
+
+			case OS.Windows:
+				//SystemSpecific.Windows.Common.MakeParent (window, parent);
+				break;
+			}
+		}
+
+		public static void HideFromTaskbar(this NativeWindow window)
 		{						
 			switch (CurrentOS) {
 			case OS.Android:

@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -211,7 +213,7 @@ namespace SummerGUI
 			}
 		}
 			
-		public override bool OnMouseWheel (OpenTK.Input.MouseWheelEventArgs e)
+		public override bool OnMouseWheel (MouseWheelEventArgs e)
 		{						
 			foreach (Widget c in Children)
 				if (c.OnMouseWheel (e)) {					
@@ -225,7 +227,7 @@ namespace SummerGUI
 			return false;
 		}
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			foreach (Widget c in Children)
 				if (c.Visible && c.Enabled && c.OnKeyDown (e)) {			
@@ -358,13 +360,13 @@ namespace SummerGUI
 			
 		// RECURSIVE Update Function
 		public override void Update(IGUIContext ctx)
-		{				
+		{
 			using (var clip = new ClipBoundClip (ctx, Bounds, true)) {
 				if (!clip.IsEmptyClip) {
 					base.Update (ctx);
 					// GEMALT WIRD RÜCKWÄRTS
 					for (int i = Children.Count - 1; i >= 0; i--) {
-						Widget child = Children [i];
+						Widget child = Children [i];						
 						if (child != null && child.Visible && !child.IsOverlay) {
 							try {								
 								using (var clipChild = new ClipBoundClip (ctx, child.Bounds, true)) {

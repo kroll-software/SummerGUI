@@ -5,6 +5,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -19,7 +21,7 @@ namespace SummerGUI
 		}
 	}
 
-	public class ChildFormOverlay : Container, IChildFormHost
+	public abstract class ChildFormOverlay : Container, IChildFormHost
 	{	
 		public event EventHandler<EventArgs> Closing;
 		public OverlayModes OverlayMode { get; protected set; }
@@ -77,7 +79,7 @@ namespace SummerGUI
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			
 			switch (e.Key) {
-			case Key.Escape:				
+			case Keys.Escape:				
 				OnClose();
 				return true;			
 			default:

@@ -148,7 +148,7 @@ namespace SummerGUI
 			if (rect.Width > 0 && rect.Height > 0)
 			{
 				GL.Enable (EnableCap.ScissorTest);
-				GL.Scissor(rect.Left, ctx.Height - rect.Bottom, rect.Width, rect.Height);
+				GL.Scissor(rect.Left, ctx.Height - rect.Bottom, rect.Width + 1, rect.Height);
 				RecentClip = rect;
 			}
 

@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -90,7 +92,7 @@ namespace SummerGUI
 			ColorContext = context;
 			Styles.SetStyle (new CircleSliderDisabledWidgetStyle (), WidgetStates.Disabled);
 
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			Radius = 48;
 			//Padding = new Padding (3);
 		}			
@@ -107,14 +109,14 @@ namespace SummerGUI
 		public override void OnMouseMove (MouseMoveEventArgs e)
 		{
 			base.OnMouseMove (e);
-
-			if (DragStartPoint != Point.Empty && e.YDelta != 0) {
+			
+			if (DragStartPoint != Point.Empty && e.DeltaY != 0) {
 				if (ModifierKeys.ControlPressed)
-					SetValidValue (Value - (e.YDelta / 1000f));
+					SetValidValue (Value - (e.DeltaY / 1000f));
 				else
-					SetValidValue (Value - (e.YDelta / (Radius * 3.14f)));
+					SetValidValue (Value - (e.DeltaY / (Radius * 3.14f)));
 				Invalidate (2);
-			}
+			}			
 		}
 
 		public override void OnMouseUp (MouseButtonEventArgs e)

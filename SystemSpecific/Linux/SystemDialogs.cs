@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using KS.Foundation;
 using OpenTK;
 using OpenTK.Platform;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Mathematics;
+
 
 namespace SummerGUI.SystemSpecific.Linux
 {
@@ -40,10 +47,36 @@ namespace SummerGUI.SystemSpecific.Linux
 		[DllImport (GtkLib, CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr gtk_file_chooser_get_filename (IntPtr dialog);
 
-		[DllImport("libX11")]
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern void gtk_window_set_modal (IntPtr dialog, int modal);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern void gtk_window_set_transient_for (IntPtr window, IntPtr parent);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr gtk_window_new(int type);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern void gtk_window_present(IntPtr window);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern void gtk_window_present_with_time(IntPtr window, uint timestamp);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern void gtk_window_set_decorated(IntPtr window, int decorated);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr gtk_widget_get_window(IntPtr widget);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr gdk_x11_window_get_xid(IntPtr window);
+
+
+        [DllImport("libX11")]
 		extern public static void XReparentWindow (IntPtr x11display, IntPtr x11window, IntPtr x11parentWindow, int x, int y);
 
-		public enum GtkFileChooserAction {
+
+        public enum GtkFileChooserAction {
 			GTK_FILE_CHOOSER_ACTION_OPEN,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
 			GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
@@ -64,50 +97,35 @@ namespace SummerGUI.SystemSpecific.Linux
 			GTK_RESPONSE_HELP = -11
 		}
 
+        public enum GtkWindowPosition
+        {
+            GTK_WIN_POS_NONE,
+            GTK_WIN_POS_CENTER,
+            GTK_WIN_POS_MOUSE,
+            GTK_WIN_POS_CENTER_ALWAYS,
+            GTK_WIN_POS_CENTER_ON_PARENT
+        }
+
+        public enum GtkWindowType
+        {
+            GTK_WINDOW_TOPLEVEL,
+            GTK_WINDOW_POPUP
+        }
+
 		public SystemDialogs ()
 		{			
 		}
 
-		public string OpenFileDialog(string caption, INativeWindow parentWindow)
+		public string OpenFileDialog(string caption, NativeWindow parentWindow)
 		{
+            return "";
+
             IntPtr parent = IntPtr.Zero;
-            //IntPtr display = parentWindow.WindowInfo.Handle;
+            //IntPtr parent = parentWindow.WindowInfo.Handle;
 
-            /***
-			object display = KS.Foundation.ReflectionUtils.GetPropertyValue (parentWindow.WindowInfo, "Display");
-			IntPtr disp_pointer = new IntPtr (display.SafeInt());
-
-			object RootWindow = KS.Foundation.ReflectionUtils.GetPropertyValue (parentWindow.WindowInfo, "FBConfig");
-			IntPtr root_pointer = new IntPtr (RootWindow.SafeInt());
-
-			parent = root_pointer;
-			***/
-
-
-            // ToDo: gtk_window_set_transient_for()
-
-            // Unfortunately our GameWindow is not a GTK-Window :(
-
-
-            //parent = parentWindow.WindowInfo.Handle
-
-            //XSetTransientForHint
-
-            //var info = (OpenTK.Platform.X11.X11WindowInfo)parentWindow.WindowInfo;
-
-            //parent = parentWindow.WindowInfo.Handle;
-
-            //OpenTK.Platform.Utilities.
-
-            /***
-			Utilities.CreateX11WindowInfo(IntPtr.Zero, 0,
-				parentWindow.WindowInfo.Handle,
-				IntPtr.Zero,
-				IntPtr.Zero
-			);
-			***/
-            //Utilities.CreateX11WindowInfo(
-            //IntPtr GtkWindow = (this.GlWindow.WindowInfo as OpenTK.Platform.X11.).Visual;
+            //IntPtr parent = (IntPtr)KS.Foundation.ReflectionUtils.GetPropertyValue(parentWindow.WindowInfo, "Parent");
+            //IntPtr display = (IntPtr)KS.Foundation.ReflectionUtils.GetPropertyValue(parentWindow.WindowInfo, "Display");
+            IntPtr display = IntPtr.Zero;
 
             GtkFileChooserAction action = GtkFileChooserAction.GTK_FILE_CHOOSER_ACTION_OPEN;
 
@@ -125,48 +143,82 @@ namespace SummerGUI.SystemSpecific.Linux
 			//IntPtr button2 = Marshal.StringToHGlobalAnsi("_Save");
 			int response2 = (int)GtkResponseType.GTK_RESPONSE_ACCEPT;
 
-			try {
-				gtk_init(0, IntPtr.Zero);
-				//gtk_init(0, parent);
+            Task.Run(() =>
+            {
 
-				dialog = gtk_file_chooser_dialog_new (title, parent, (int)action,
+            try {
+				gtk_init(0, IntPtr.Zero);
+
+                IntPtr dummyGtkWindow = gtk_window_new((int)GtkWindowType.GTK_WINDOW_POPUP);
+                parent = dummyGtkWindow;
+
+                //ReflectionUtils.SetPropertyValue(parentWindow.WindowInfo, "Parent", parent);
+
+                dialog = gtk_file_chooser_dialog_new (title, parent, (int)action,
 					button1,
 					response1,
 					button2,
 					response2,
 					IntPtr.Zero);
 
-				//XReparentWindow(disp_pointer, dialog, parentWindow.WindowInfo.Handle, 0, 0);
+                //gtk_window_set_transient_for(dialog, parentWindow.WindowInfo.Handle);
 
-				// set_transient_for()
-				// gtk_window_set_modal()
+                //XReparentWindow(display, dialog, parentWindow.WindowInfo.Handle, 0, 0);
+                //gtk_window_set_modal(dialog, 1);
 
-				int ret = gtk_dialog_run (dialog);
-				if (ret == (int)GtkResponseType.GTK_RESPONSE_ACCEPT) {
-					result = gtk_file_chooser_get_filename (dialog);
-				}
 
-				if (dialog != IntPtr.Zero) {
-					gtk_widget_destroy (dialog);
-					while (gtk_events_pending () != 0)
-						gtk_main_iteration ();
-				}	
-			} catch (Exception ex) {
+
+
+                    int ret = gtk_dialog_run(dialog);
+                    if (ret == (int)GtkResponseType.GTK_RESPONSE_ACCEPT)
+                    {
+                        result = gtk_file_chooser_get_filename(dialog);
+                    }
+
+                    if (dialog != IntPtr.Zero)
+                    {
+                        gtk_widget_destroy(dialog);
+                        dialog = IntPtr.Zero;
+                    }
+
+                    if (dummyGtkWindow != IntPtr.Zero)
+                    {
+                        gtk_widget_destroy(dummyGtkWindow);
+                    }
+
+                    while (gtk_events_pending() != 0)
+                        gtk_main_iteration();                
+
+            } catch (Exception ex) {
 				ex.LogError ();
-				return String.Empty;
+				//return String.Empty;
 			} finally {
 				Marshal.FreeHGlobal (title);
 				Marshal.FreeHGlobal (button1);
 				Marshal.FreeHGlobal (button2);	
-			}				
+			}
 
-			if (result == IntPtr.Zero)
-				return String.Empty;
+                //if (result == IntPtr.Zero)
+                //return String.Empty;
 
-			string filename = result.ToAnsiString ();
-			Marshal.FreeHGlobal (result);
-			return filename;
-		}
-	}
+                string filename = result.ToAnsiString ();
+			    Marshal.FreeHGlobal (result);
+
+            });
+
+
+            Thread.Sleep(1000);
+
+            IntPtr window = gtk_widget_get_window(dialog);
+            IntPtr windowID = gdk_x11_window_get_xid(window);
+
+            X11Interface.XRaiseWindow((IntPtr)display, windowID);
+            X11Interface.XSetInputFocus((IntPtr)display, windowID, 0, 0);
+
+
+            //return filename;
+            return String.Empty;
+        }
+    }
 }
 

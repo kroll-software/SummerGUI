@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
@@ -8,11 +10,14 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using Pfz.Collections;	// TreadSafeDictionary
 using KS.Foundation;
-using SharpFont;
+//using SharpFont;
+using FreeTypeSharp;
+using static FreeTypeSharp.FT;
+using System.Security.Cryptography;
 
 namespace SummerGUI
 {
-	public class GuiFont : DisposableObject, IGUIFont
+	public unsafe class GuiFont : DisposableObject, IGUIFont
 	{		
 		public class GlyphExtents
 		{
@@ -21,7 +26,7 @@ namespace SummerGUI
 			public float BearingY;
 			public float Width;
 			public float Height;
-		}
+		}		
 
 		public float Size { get; private set; }
 		public string FilePath { get; private set; }
@@ -38,10 +43,11 @@ namespace SummerGUI
 		// Adjustments for Users/Configuration
 		public float YOffset { get; set; }
 		private float YOffsetScaled;
-		public float LineSpacing { get; set; }
+		public float LineSpacing { get; set; }		
 
 		//FontWrapper Font;
-		SharpFont.Face Font;
+		//SharpFont.Face Font;
+		FreeTypeSharp.FT_FaceRec_* Font;
 		private int	m_ListBase;
 		private int[] m_Textures;
 		//private int[] m_ExtentsX;
@@ -100,6 +106,12 @@ namespace SummerGUI
 
 		private bool GetGlyphIndex(char c, out GlyphInfo gli)
 		{
+			if (CharMap == null)	// wenn Font nicht existierte
+			{
+				gli = GlyphInfo.Empty;
+				return false;
+			}
+
 			GlyphInfo info;
 			if (CharMap.TryGetValue (c, out info)) {				
 				if (info.ListID > 0 && info.Width > 0) {
@@ -111,7 +123,7 @@ namespace SummerGUI
 				}
 			} else if (OnDemand) {
 				lock (SyncObject) {
-					uint glyphindex = Font.GetCharIndex (c);
+					uint glyphindex = FT_Get_Char_Index(Font, c);					
 					info = CompileCharacter (Font, glyphindex, c);
 					CharMap.Add (c, info);
 					gli = info;
@@ -127,7 +139,7 @@ namespace SummerGUI
 		{
 			try {
 				if (Font != null) {
-					Font.Dispose();
+					FT_Done_Face(Font);
 					Font = null;
 				}
 
@@ -166,26 +178,55 @@ namespace SummerGUI
 
 				// Reset everything
 				Clear();
+				
+				FT_Error error;
+				FT_FaceRec_** facePtr;
+								
+				byte[] pathBytes = Encoding.UTF8.GetBytes(FilePath + "\0"); // \0 ist der C-String Terminator
+				
+				fixed (FT_FaceRec_** fp = &Font)
+				fixed (byte* pathPtr = pathBytes) // <-- Hier wird der C-String erzeugt (byte*)
+				{
+					facePtr = fp;					
+					error = FT_New_Face(FontManager.Library, pathPtr, 0, facePtr); 
+				}				
 
-				Font = new Face(FontManager.Library, FilePath);
+				if (error != FT_Error.FT_Err_Ok)
+				{
+					// Fehlerbehandlung
+					throw new Exception("Konnte Font nicht laden: " + error.ToString());
+				}				
 
 				// Go on
 
 				float size = Size.Scale(ScaleFactor);
 
+				/*
+				Fixed sz = new Fixed(size / 64);
 				Fixed26Dot6 sz = new Fixed26Dot6(size / 64);
 				Font.SetCharSize(sz, sz, 72, 72);
+				*/
+				// ToDo:				
+				FT_Set_Char_Size(Font, (int)(size / 64.0f), (int)(size / 64.0f), 72, 72);				
 
-				int pixelSize = (size * 1.3334).Ceil();
-				Font.SetPixelSizes((uint)pixelSize, (uint)pixelSize);
-
-				GlyphCount = Font.GlyphCount;
+				int pixelSize = (size * 1.3334).Ceil();				
+				FT_Set_Pixel_Sizes(Font, (uint)pixelSize, (uint)pixelSize);				
+				
+				GlyphCount = (int)Font->num_glyphs;
 				int glyphCount = GlyphCount;
-				Monospace = Font.FaceFlags.HasFlag(FaceFlags.FixedWidth);
+				//Monospace = Font.FaceFlags.HasFlag(FaceFlags.FixedWidth);								
+				Monospace = (Font->face_flags & (int)FT_FACE_FLAG.FT_FACE_FLAG_FIXED_WIDTH) != 0;
+				
+				byte* psNamePtr = FT_Get_Postscript_Name(Font);
+				if (psNamePtr != null)
+				{
+					// Konvertiert den ANSI-C-String (byte*) in einen C#-String
+					string tmpName = Marshal.PtrToStringAnsi((IntPtr)psNamePtr);					
+					if (!String.IsNullOrEmpty(tmpName))
+						Name = tmpName;
+				}
 
-				string tmpName = Font.GetPostscriptName();
-				if (!String.IsNullOrEmpty(tmpName))
-					Name = tmpName;
+				//string tmpName = Font.GetPostscriptName();				
 
 
 				// We support 4 different glyph loading strategies:
@@ -204,13 +245,14 @@ namespace SummerGUI
 					// If we have a Filter set, let's count the number of valid glyphs
 					// to minimize graphics memory.
 					uint glyphindex;
-					uint cc = Font.GetFirstChar(out glyphindex);
+					//uint cc = Font.GetFirstChar(out glyphindex);
+					uint cc = (uint)FT_Get_First_Char(Font, &glyphindex);
 					int count = 0;
 					while (glyphindex > 0) {
 						char c = (char)cc;
 						if (Filter.IsValid(c))
 							count++;
-						cc = Font.GetNextChar (cc, out glyphindex);			
+						cc = (uint)FT_Get_Next_Char (Font, cc, &glyphindex);
 					}
 					GlyphCount = count;
 				} else {
@@ -226,7 +268,7 @@ namespace SummerGUI
 					GL.GenTextures (GlyphCount, m_Textures);
 
 					uint glyphindex;
-					uint cc = Font.GetFirstChar(out glyphindex);
+					uint cc = (uint)FT_Get_First_Char(Font, &glyphindex);
 					while (glyphindex > 0) {
 						char c = (char)cc;
 						if (!CharMap.ContainsKey(c) && Filter.IsValid(c)) {
@@ -236,7 +278,7 @@ namespace SummerGUI
 								ex.LogWarning();
 							}
 						}
-						cc = Font.GetNextChar (cc, out glyphindex);			
+						cc = (uint)FT_Get_Next_Char (Font, cc, &glyphindex);			
 					}
 					CharMap.TryGetValue(SpecialCharacters.Ellipsis, out m_EllipsisGlyphIndex);
 				}
@@ -254,14 +296,14 @@ namespace SummerGUI
 
 				Height = pixelSize;
 
-				float fscale = Height / Font.Height * 1.33334f;
+				float fscale = Height / (Font->height / 64.0f) * 1.33334f;
 				//float fscale = Height / Font.Height * 0.776f;
 				
-				Ascender = Font.Ascender * fscale;
-				Descender = Font.Descender * fscale;
+				Ascender = Font->ascender / 64.0f * fscale;
+				Descender = Font->descender / 64.0f * fscale;
 				//HalfHeight = Height / 2;
 
-				Height = (Ascender).Ceil();
+				Height = Ascender.Ceil();
 				HalfHeight = (int)(Height / 2);
 
 				//LineHeight = Height * 1.42f * LineSpacing;
@@ -283,7 +325,7 @@ namespace SummerGUI
 				ex.LogError ();
 			} finally {
 				if (!OnDemand && Font != null) {					
-					Font.Dispose ();
+					FT_Done_Face(Font);
 					Font = null;
 				}
 			}			
@@ -841,10 +883,10 @@ namespace SummerGUI
 			} catch (Exception ex) {
 				ex.LogError ();
 				return SizeF.Empty;
-			}				
+			}
 		}			
 
-		public void Begin(IGUIContext ctx) 
+		public void Begin()
 		{			
 			GL.PushAttrib(AttribMask.ListBit | AttribMask.CurrentBit | AttribMask.EnableBit | AttribMask.TransformBit);
 
@@ -878,7 +920,8 @@ namespace SummerGUI
 			return c == (char)182 || c == (char)183;
 		}
 
-		public unsafe GlyphInfo CompileCharacter (Face face, uint glyphindex, char character)
+		public unsafe GlyphInfo CompileCharacter (FreeTypeSharp.FT_FaceRec_* face, uint glyphindex, char character)
+		//public unsafe GlyphInfo CompileCharacter (Face face, uint glyphindex, char character)
 		{									
 			// Load or generate new Texture and store the Handle in m_Textures
 			if (m_Textures.Length <= Count)
@@ -901,30 +944,31 @@ namespace SummerGUI
 					return GlyphInfo.Empty;
 			}
 				
-			try {
-				face.LoadGlyph (glyphindex, LoadFlags.ForceAutohint, LoadTarget.Normal);	
-			} catch (Exception ex) {
-				ex.LogWarning ();
+			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);				
+			if (error != FT_Error.FT_Err_Ok) {
+				// ... Fehlerbehandlung
 				return GlyphInfo.Empty;
 			}
-
-			Glyph glyph = face.Glyph.GetGlyph ();
-			if (glyph == null)
+			
+			error = FT_Render_Glyph(face->glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);
+			if (error != FT_Error.FT_Err_Ok) {
+				// ...
 				return GlyphInfo.Empty;
+			}
+			
+			FT_Bitmap_ ftBitmap = face->glyph->bitmap;
 
-			Height = Math.Max(Height, (float)face.Glyph.Metrics.Height);
-
-			//glyph.ToBitmap (SharpFont.RenderMode.Normal, new FTVector26Dot6(0.15, 0.15), true);
-			glyph.ToBitmap (SharpFont.RenderMode.Normal, new FTVector26Dot6(0, 0), true);
-
-			BitmapGlyph bmg = glyph.ToBitmapGlyph ();
-			int width = bmg.Bitmap.Width;
-			int rows = bmg.Bitmap.Rows;
-			int size = width * rows;
+			var glyph = face->glyph;
+			
+			int width = (int)ftBitmap.width;
+			int rows = (int)ftBitmap.rows;
+			int size = width * rows;			
+			int left = glyph->bitmap_left;
+			int top = glyph->bitmap_top;
 
 			if (size <= 0)
 			{
-				glyph.Dispose ();
+				//glyph.Dispose ();
 
 				//if (Filter == GlyphFilterFlags.All)
 				//	m_ExtentsX[(int)glyphindex] = 0;
@@ -947,7 +991,8 @@ namespace SummerGUI
 			int	expandedBitmapHeight = rows.NextPowerOf2();
 			byte[]	expandedBitmapBytes = new byte[expandedBitmapWidth * expandedBitmapHeight];
 
-			fixed (byte* p = bmg.Bitmap.BufferData)
+			//fixed (byte* p = ftBitmap.BufferData)
+			byte* p = ftBitmap.buffer;
 			fixed (byte* q = expandedBitmapBytes)
 			{				
 				try {
@@ -955,7 +1000,7 @@ namespace SummerGUI
 					for (int countY = 0; countY < expandedBitmapHeight; countY++) {
 						for (int countX = 0; countX < expandedBitmapWidth; countX++) {						
 							byte* qTemp = q + (countX + countY * expandedBitmapWidth);
-							if ((countX >= width || countY >= rows))			
+							if (countX >= width || countY >= rows)			
 								*qTemp = 0;
 							else							
 								*qTemp = *(pTemp + countX);
@@ -1000,12 +1045,14 @@ namespace SummerGUI
 
 			// Account for freetype spacing rules.
 
-			float glyphWidth = (float)glyph.Advance.X;
+			//float glyphWidth = (float)glyph.Advance.X;
+			//float glyphWidth = (float)face.Glyph.Advance.X / 64.0f; // <-- Dies ist die manuelle 26.6 Umrechnung
+			float glyphWidth = (float)face->glyph->advance.x / 64.0f; // <-- Dies ist die manuelle 26.6 Umrechnung
 			//float left = (glyphWidth - bmg.Left) / 2f;
 
-			GL.Translate (bmg.Left, 0, 0);
+			GL.Translate (left, 0, 0);
 			GL.PushMatrix ();
-			GL.Translate (0, bmg.Top - rows, 0);
+			GL.Translate (0, top - rows, 0);
 
 			float x = width / (float)expandedBitmapWidth;
 			float y = rows / (float)expandedBitmapHeight;
@@ -1022,7 +1069,7 @@ namespace SummerGUI
 			//GL.Translate (face.Glyph.Metrics.HorizontalAdvance - bmg.Left, 0, 0);
 
 
-			GL.Translate (glyphWidth - bmg.Left, 0, 0);
+			GL.Translate (glyphWidth - left, 0, 0);
 
 
 			// Advance for the next character.
@@ -1038,8 +1085,7 @@ namespace SummerGUI
 			// ---------------------------------------------------------------------------
 			//m_ExtentsX[glyphindex] = face.Glyph.Metrics.HorizontalAdvance.Ceiling();
 			//m_ExtentsX[ListIndex] = glyphWidth.Ceil();
-
-			glyph.Dispose ();
+			
 			return new GlyphInfo(ListIndex, glyphWidth.Ceil());
 		}
 
@@ -1080,7 +1126,7 @@ namespace SummerGUI
 
 			// Recall the coefficients of the six user-definable clipping planes.
 			GL.PopAttrib();			
-		}
+		}		
 
 		protected override void CleanupManagedResources ()
 		{						
@@ -1090,7 +1136,7 @@ namespace SummerGUI
 		protected override void CleanupUnmanagedResources ()
 		{
 			// THESE are unmanaged resources, aren't they ?
-			Clear();
+			Clear();			
 
 			base.CleanupUnmanagedResources ();
 		}

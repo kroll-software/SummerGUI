@@ -10,10 +10,13 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
+using System.Numerics;
 
 namespace SummerGUI
-{			
+{
 	public abstract class Widget : DisposableObject, IStyleModelElement, IComparable<Widget>
 	{
 		// Autonumber Provider for Widget.ID
@@ -135,17 +138,19 @@ namespace SummerGUI
 			m_Visible = true;
 			Enabled = true;
 			AutoContextMenu = true;
-		}			
+		}        		
 
-		public override bool Equals (object obj)
-		{
-			Widget w = obj as Widget;
-			if (w == null)
-				return false;			
-			return ID.Equals(w.ID);
-		}
+        public override bool Equals(object obj)
+        {
+            return (obj is Widget) && Equals((Widget)obj);
+        }
 
-		private Container m_Parent;
+        public bool Equals(Widget other)
+        {
+            return ID.Equals(other.ID);
+        }
+
+        private Container m_Parent;
 		public Container Parent 
 		{ 
 			get {
@@ -832,7 +837,7 @@ namespace SummerGUI
 
 			bool bDouble = e.Button == MouseButton.Left && m_LastMouseDownDate != DateTime.MinValue
                && ((DateTime.Now - m_LastMouseDownDate).TotalMilliseconds < 350)
-               && ClickDistance (e) < 4;
+               && ClickDistance (e) < 4;			
 
 			m_LastMouseDownMousePosition = new Point (e.X, e.Y);
 			m_LastMouseDownUpperLeft = new Point (TooltipLocation.X.Ceil(), TooltipLocation.Y.Ceil());
@@ -1166,17 +1171,9 @@ namespace SummerGUI
 		public static bool SetFontByTag(this Widget w, string fontTag)
 		{
 			if (w != null && !w.IsDisposed && ReflectionUtils.HasProperty(w.GetType(), "Font")) {
-				IGUIContext ctx = SummerGUIWindow.CurrentContext;
-				//IGUIContext ctx = w.ParentWindow as IGUIContext;
-				if (ctx != null) {
-					ReflectionUtils.SetPropertyValue (w, "Font", ctx.GetFont (fontTag));
-					return true;				
-				}
-				/***
-				else {
-					w._FontTag = fontTag;
-				}
-				***/
+				
+				ReflectionUtils.SetPropertyValue (w, "Font", GetFont (fontTag));
+				return true;				
 			}
 			return false;
 		}
@@ -1188,50 +1185,37 @@ namespace SummerGUI
 
 		public static bool SetIconFontByTag(this Widget w, string iconFontTag)
 		{
-			if (w != null && !w.IsDisposed && ReflectionUtils.HasProperty(w.GetType(), "IconFont")) {
-				IGUIContext ctx = SummerGUIWindow.CurrentContext;
-				//IGUIContext ctx = w.ParentWindow as IGUIContext;
-				if (ctx != null) {
-					ReflectionUtils.SetPropertyValue (w, "IconFont", ctx.GetIconFont (iconFontTag));
-					return true;
-				}
-				/***
-				else {
-					w._IconFontTag = iconFontTag;
-				}
-				***/
+			if (w != null && !w.IsDisposed && ReflectionUtils.HasProperty(w.GetType(), "IconFont")) {				
+				ReflectionUtils.SetPropertyValue (w, "IconFont", GetIconFont (iconFontTag));
+				return true;				
 			}
 			return false;
 		}
 
-		public static IGUIFont GetFont(this IGUIContext ctx, CommonFontTags tag)
+		public static IGUIFont GetFont(CommonFontTags tag)
 		{
-			return (ctx.GetFont (tag.ToString ()));
+			return GetFont (tag.ToString ());
 		}
 
-		public static IGUIFont GetFont(this IGUIContext ctx, string fontTag)
+		public static IGUIFont GetFont(string fontTag)
 		{
-			if (ctx == null)
-				return null;
 			if (String.IsNullOrEmpty(fontTag))
-				return ctx.FontManager [CommonFontTags.Default.ToString()];
+				return FontManager.Manager [CommonFontTags.Default.ToString()];
 			else
-				return ctx.FontManager [fontTag];
+				return FontManager.Manager [fontTag];
 		}
 
-		public static IGUIFont GetIconFont(this IGUIContext ctx, CommonFontTags tag)
+		public static IGUIFont GetIconFont(CommonFontTags tag)
 		{
-			return ctx.GetIconFont (tag.ToString());
+			return GetIconFont (tag.ToString());
 		}
 
-		public static IGUIFont GetIconFont(this IGUIContext ctx, string iconFontTag)
-		{
-			if (ctx == null)
-				return null;
+		public static IGUIFont GetIconFont(string iconFontTag)
+		{			
 			if (String.IsNullOrEmpty(iconFontTag))
-				return ctx.FontManager [CommonFontTags.SmallIcons.ToString()];
+				return FontManager.Manager [CommonFontTags.SmallIcons.ToString()];
 			else
-				return ctx.FontManager [iconFontTag];
+				return FontManager.Manager [iconFontTag];
 		}
 
 		public static void SetContextMenu(this Widget w, string menuTag)

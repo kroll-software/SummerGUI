@@ -11,6 +11,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 using SummerGUI.Scrolling;
 using SummerGUI.DataGrid;
@@ -51,14 +53,14 @@ namespace SummerGUI
 			//VScrollBar.Visible = false;
 			//HScrollBar.Visible = false;
 
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			//Font = SummerGUIWindow.CurrentContext.FontManager.SerifFont;
 			CanFocus = true;
 			//Focus();
 
 			RowHeaders = true;
 			ColumnHeaders = true;
-			HeaderFont = SummerGUIWindow.CurrentContext.FontManager.StatusFont;
+			HeaderFont = FontManager.Manager.StatusFont;
 			VerticalLines = true;
 			m_RowBorderPen = new Pen(Color.FromArgb(128, Theme.Colors.Base1));
 			HighlightSelection = true;
@@ -165,6 +167,8 @@ namespace SummerGUI
 		{
 			if (RowManager != null && RowIndex < 0) {
 				RowManager.MoveFirst ();
+				if (RowManager.RowCount > 0)
+					SelectionManager.SelectRow (RowManager.CurrentRowIndex);
 			}
 			if (ColumnManager != null)
 				ColumnManager.OnColumnsChanged ();			
@@ -1568,7 +1572,7 @@ namespace SummerGUI
 				OnItemSelected ();
 		}			
 
-		public override bool OnKeyDown (OpenTK.Input.KeyboardKeyEventArgs e)
+		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			if (!IsFocused)
 				return false;
@@ -1586,7 +1590,7 @@ namespace SummerGUI
 			int oldRowIndex = RowIndex;
 
 			switch (e.Key) {
-			case Key.Down:
+			case Keys.Down:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
 					RowManager.MoveNext ();
@@ -1597,7 +1601,7 @@ namespace SummerGUI
 				}
 				break;							
 
-			case Key.Up:
+			case Keys.Up:
 				bHandled = true;
 				if (RowManager.CanMoveBack) {
 					RowManager.MovePrevious ();
@@ -1606,7 +1610,7 @@ namespace SummerGUI
 				}
 				break;
 
-			case Key.PageUp:
+			case Keys.PageUp:
 				bHandled = true;
 				if (RowManager.CanMoveBack) {
 					RowManager.MovePageUp ();
@@ -1614,7 +1618,7 @@ namespace SummerGUI
 					bProcess = true;
 				}
 				break;
-			case Key.PageDown:
+			case Keys.PageDown:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
 					RowManager.MovePageDown ();
@@ -1623,7 +1627,7 @@ namespace SummerGUI
 				}
 				break;
 
-			case Key.Left:
+			case Keys.Left:
 				bHandled = true;
 				if (SelectionManager.SelectionMode == DataGridSelectionModes.Row)
 				{					
@@ -1641,7 +1645,7 @@ namespace SummerGUI
 				bProcess = true;
 				break;
 
-			case Key.Right:
+			case Keys.Right:
 				bHandled = true;
 				if (SelectionManager.SelectionMode == DataGridSelectionModes.Row)
 				{					
@@ -1659,7 +1663,7 @@ namespace SummerGUI
 				bProcess = true;
 				break;
 
-			case Key.Home:
+			case Keys.Home:
 				bHandled = true;
 				if (e.Control) {
 					RowManager.MoveFirst ();
@@ -1671,7 +1675,7 @@ namespace SummerGUI
 				bEnsureVisible = true;
 				bProcess = true;
 				break;
-			case Key.End:
+			case Keys.End:
 				bHandled = true;
 				if (e.Control) {
 					RowManager.MoveLast ();
@@ -1683,7 +1687,7 @@ namespace SummerGUI
 				bEnsureVisible = true;
 				bProcess = true;
 				break;
-			case Key.Enter:
+			case Keys.Enter:
 				bHandled = true;
 				if (RowManager != null && RowManager.CurrentRowIndex >= 0 && ItemSelected != null) {
 					OnItemSelected ();
@@ -1762,7 +1766,7 @@ namespace SummerGUI
 			MouseButton = e.Button;
 
 			bool bControlPressed = ModifierKeys.ControlPressed;
-			bool bShiftPressed = ModifierKeys.ShiftPressed;
+			bool bShiftPressed = ModifierKeys.ShiftPressedWithoutCapslock;
 
 			int lastSelectedRowIndex = this.RowIndex;
 
@@ -1806,6 +1810,8 @@ namespace SummerGUI
 				if (bShiftPressed) {
 					if (lastSelectedRowIndex < 0)
 						lastSelectedRowIndex = 0;
+
+					//SelectionManager.SelectNone ();					
 				
 					for (int i = Math.Min (lastSelectedRowIndex, RowIndex); i <= Math.Max (lastSelectedRowIndex, RowIndex); i++) {
 						SelectionManager.SelectRow (i);
@@ -1819,7 +1825,7 @@ namespace SummerGUI
 						SelectionManager.SelectRow (RowIndex);
 				} else {
 					SelectionManager.SelectNone ();
-					//SelectionManager.SelectRow (RowIndex);
+					SelectionManager.SelectRow (RowIndex);
 				}
 			}
 				
@@ -1829,7 +1835,7 @@ namespace SummerGUI
 		Point lastMousePos;
 		void HideTooltip(CellInfo cell, Point pos)
 		{									
-			if ((cell != lastTooltipCell || pos.Distance(lastMousePos) > RowHeight * 2)) {												
+			if (cell != lastTooltipCell || pos.Distance(lastMousePos) > RowHeight * 2) {
 				Concurrency.WaitSpinning (3);
 				Tooltip = null;
 				Root.HideTooltip ();
@@ -1848,8 +1854,11 @@ namespace SummerGUI
 			Root.ShowTooltip (text, location);
 		}
 
+		private Point m_LastMouseMovePoint = Point.Empty;		
 		public override void OnMouseMove (MouseMoveEventArgs e)
 		{
+			m_LastMouseMovePoint = new Point((int)e.Position.X, (int)e.Position.Y);
+
 			//base.OnMouseMove (e);
 
 			//HideTooltip (CurrentCell(e.Position), e.Position);
@@ -1946,11 +1955,10 @@ namespace SummerGUI
 				*******************************/
 
 				return;
-			}
-
+			}			
 
 			// *** Clickable areas ***
-			MouseControlItem mc = FindControlItem(e.X, e.Y);
+			MouseControlItem mc = FindControlItem((int)e.Position.X, (int)e.Position.Y);
 
 			switch (mc.ItemType)
 			{
@@ -1986,7 +1994,8 @@ namespace SummerGUI
 					return;	
 				}
 				LastTooltipBounds = mc.Bounds;
-				ShowTooltip(mc.Tag.SafeString(), mc.Bounds.Location, CurrentCell(mc.Bounds.Location), e.Position);
+				Point position = new Point((int)e.Position.X, (int)e.Position.Y);
+				ShowTooltip(mc.Tag.SafeString(), mc.Bounds.Location, CurrentCell(mc.Bounds.Location), position);
 				break;
 			}
 				
@@ -1994,10 +2003,10 @@ namespace SummerGUI
 		}
 
 		public override bool OnMouseWheel (MouseWheelEventArgs e)
-		{
+		{				
 			HideTooltip (CurrentCell(e.Position), e.Position);
 			return base.OnMouseWheel (e);
-		}
+		}		
 
 		public CellInfo CurrentCell (PointF p)
 		{			

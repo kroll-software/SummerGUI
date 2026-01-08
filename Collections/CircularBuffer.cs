@@ -9,7 +9,7 @@ namespace SummerGUI
 {
 	public abstract class MeanValueCircularBuffer<T>
 	{		
-		protected readonly Object SyncObject;
+		protected readonly object SyncObject;
 		protected readonly LinkedList<T> Values;
 
 		public int N { get; private set; }
@@ -46,6 +46,7 @@ namespace SummerGUI
 	public class FramePerformanceMeter : MeanValueCircularBuffer<long>
 	{
 		readonly Stopwatch sw;
+		long last_value = 0;
 
 		public FramePerformanceMeter(int n) : base(n) 
 		{
@@ -61,21 +62,22 @@ namespace SummerGUI
 			int count = Values.Count;
 			if (count == 0)
 				return 0;
-			return (Values.Sum () / count);
+			return Values.Sum () / count;
 		}			
 
 		public long Pulse()
 		{		
 			if (!Monitor.TryEnter (SyncObject, 1))
-				return 0;
+				return last_value;
 
 			if (!sw.IsRunning)
-				return 0;
+				return last_value;
 			
 			try {
 				sw.Stop ();
 				Put (sw.ElapsedMilliseconds);
-				return CalculateMean ();
+				last_value = CalculateMean ();
+				return last_value;
 			} catch (Exception ex) {
 				ex.LogError ();
 				return 0;

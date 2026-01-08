@@ -115,7 +115,7 @@ namespace SummerGUI
 				}
 				***/
 
-				IGUIFont font = ctx.GetFont (CommonFontTags.Default);
+				IGUIFont font = WidgetExtensions.GetFont (CommonFontTags.Default);
 				if (font != null)
 					CachedPreferredSize = new SizeF (proposedSize.Width, font.CaptionHeight + Padding.Height);
 				else

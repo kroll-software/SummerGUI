@@ -8,7 +8,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using SummerGUI;
 using KS.Foundation;
-using SharpFont;
+//using SharpFont;
 
 namespace SummerGUI
 {

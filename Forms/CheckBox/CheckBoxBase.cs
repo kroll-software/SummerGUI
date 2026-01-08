@@ -11,6 +11,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -62,9 +64,9 @@ namespace SummerGUI
 		protected float IconOffsetY;
 
 		protected CheckBoxBase (string name, string text)
-			: base (name, Docking.Fill, new DefaultTextWidgetStyle(), text, SummerGUIWindow.CurrentContext.FontManager.DefaultFont)
+			: base (name, Docking.Fill, new DefaultTextWidgetStyle(), text, FontManager.Manager.DefaultFont)
 		{			
-			IconFont = SummerGUIWindow.CurrentContext.FontManager.SmallIcons;
+			IconFont = FontManager.Manager.SmallIcons;
 			//Margin = new Padding (3);
 			Margin = Padding.Empty;
 			//Padding = new Padding (8, 4, 4, 4);
@@ -84,7 +86,7 @@ namespace SummerGUI
 				return false;
 
 			switch (e.Key) {
-			case Key.Space:
+			case Keys.Space:
 				OnClick (null);
 				return true;
 			}

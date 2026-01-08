@@ -2,6 +2,8 @@
 using System.Linq;
 using KS.Foundation;
 using System.Drawing;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace SummerGUI
 {
@@ -54,9 +56,8 @@ namespace SummerGUI
 		protected override void OnParentChanged ()
 		{
 			base.OnParentChanged ();
-			if (Parent != null){
-				var context = SummerGUIWindow.CurrentContext;
-				//var context = Parent.ParentWindow as IGUIContext;
+			if (Parent != null && Parent.ParentWindow != null){			
+				var context = Parent.ParentWindow as IGUIContext;
 				float ContentWidth = Children.Sum (b => b.PreferredSize(context).Width + (2 * ScaleFactor));
 				if (ContentWidth > 100)
 					Parent.MinSize = new SizeF (ContentWidth, 0);
@@ -190,17 +191,18 @@ namespace SummerGUI
 			MenuBar.MenuDirtyFlag = true;
 		}
 
-		public override bool OnMouseWheel (OpenTK.Input.MouseWheelEventArgs e)
-		{			
-			if (e.Delta != 0 && MenuBar.Height > Height - ToolBar.Height) {
-				if (e.Delta < 0)
+		public override bool OnMouseWheel (MouseWheelEventArgs e)
+		{						
+			float scrollOffset = e.OffsetY;
+			if (scrollOffset != 0 && MenuBar.Height > Height - ToolBar.Height) {
+				if (scrollOffset < 0)
 					ScrollDown ();
-				else if (e.Delta > 0)
+				else if (scrollOffset > 0)
 					ScrollUp ();
 				Invalidate ();
 			}
 			return true;
-		}
+		}		
 
 		protected override void CleanupManagedResources ()
 		{

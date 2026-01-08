@@ -2,6 +2,7 @@
 using OpenTK;
 using System.Linq;
 using KS.Foundation;
+using OpenTK.Mathematics;
 
 namespace SummerGUI
 {

@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.Foundation;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SummerGUI.Editor
 {
@@ -97,7 +99,7 @@ namespace SummerGUI.Editor
 		}			
 			
 		float RepeatAsyncUpdateWidth = 0;
-		static int count = 0;
+		//static int count = 0;
 
 		public void OnUpdateBreakWidthAsync(float breakWidth)
 		{	
@@ -164,7 +166,7 @@ namespace SummerGUI.Editor
 
 			try {				
 				TokenSource = new CancellationTokenSource ();
-				AsyncResult = Task.Factory.StartNew (() => OnUpdate (startIndex, breakWidth), TokenSource.Token)					
+				AsyncResult = Task.Run (() => OnUpdate (startIndex, breakWidth), TokenSource.Token)					
 					.ContinueWith((t) => {							
 						if (!t.IsCanceled)
 							OnUpdateCompleted();
@@ -182,7 +184,7 @@ namespace SummerGUI.Editor
 
 		public void OnUpdate(int startIndex, float breakwidth, bool forceAll = false, int maxRows = 0)
 		{	
-			//this.RWLock.EnterWriteLock ();
+			this.RWLock.EnterReadLock();
 			try {				
 				bool doWordWrap = breakwidth != BreakWidth || forceAll;
 				BreakWidth = breakwidth;
@@ -254,7 +256,7 @@ namespace SummerGUI.Editor
 				ex.LogError ();
 			}
 			finally {
-				//this.RWLock.ExitWriteLock ();
+				this.RWLock.ExitReadLock();
 			}
 		}
 	}
@@ -577,67 +579,256 @@ namespace SummerGUI.Editor
 			//Paragraphs.OnUpdateAsync (CurrentParagraphIndex - 1, BreakWidth);
 			Paragraphs.OnUpdate (CurrentParagraphIndex - 1, BreakWidth, false, 250);
 		}
-			
-		public void InsertRange(string range)
+
+		public static void Merge(Paragraph para1, Paragraph para2)
 		{
-			if (String.IsNullOrEmpty (range))
+			if (para2 == null || para2.Length == 0)
 				return;
 
-			Paragraph para = CurrentParagraph;
-			ResetCursorColoumns ();
+			Debug.Assert(para1 != para2);
 
-			//string[] lines = range.SplitLines ();
-			string[] lines = range.Split(new char[]{'\n'}, StringSplitOptions.None);
-			if (lines.Length == 1) {
-				lines[0].ForEach(c => para.InsertChar(CursorPosition++, c, Font, Flags));
-				//para.WordWrap (BreakWidth);
-				Paragraphs.OnUpdate (CurrentParagraphIndex, BreakWidth);
-				ResetCursorColoumns ();
-			} else {
-				int startParagraphIndex = CurrentParagraphIndex;
-				string paraString = para.ToString ();
-				string startingText = paraString.StrLeft (CursorPosition);
-				string pendingText = paraString.StrMid (CursorPosition + 1);
+			// Falls para1 mit '\n' endet, entferne diesen,
+			// damit kein doppelter Absatz entsteht.
+			if (para1.EndsWithNewline())
+			{
+				para1.Glyphs.RemoveLast();
+			}
 
-				//Console.WriteLine ("ParaString: {0}, Len: {1}", paraString, paraString.Length);
-				//Console.WriteLine ("StartingText: {0}, Len: {1}", startingText, startingText.Length);
-				//Console.WriteLine ("PendingText: {0}, Len: {1}", pendingText, pendingText.Length);
+			// Falls para2 mit '\n' beginnt, entferne das,
+			// es ist der Absatztrenner zwischen beiden.
+			if (para2.StartsWithNewline())
+			{
+				para2.Glyphs.RemoveFirst();
+			}
 
-				para.Glyphs.Clear ();
-				para.ParseString (startingText + lines[0], Font, Flags);
+			// jetzt einfach Glyphs anfügen
+			para1.Glyphs.AppendRange(para2.Glyphs);
+		}
 
-				for (int i = 1; i < lines.Length; i++) {
-					string line = lines [i];
 
-					CurrentParagraphIndex++;
-					para = new Paragraph (CurrentParagraphIndex, BreakWidth);
-					if (i == lines.Length - 1) {
-						para.ParseString (line + pendingText, Font, Flags);
-						CursorPosition = line.Length;
-					} else {
-						para.ParseString (line, Font, Flags);
-					}
-					Paragraphs.Insert (CurrentParagraphIndex, para);
-				}					
+		public void InsertRange(int paraIndex, int glyphIndex, List<Paragraph> newParas)
+		{
+			// ============================================================
+			// 1. Splitte den Quellabsatz (C → left + right)
+			// ============================================================
+			Paragraph left  = Paragraphs[paraIndex];
+			Paragraph right = left.SplitAt(glyphIndex);
 
-				/***
-				//if (!String.IsNullOrEmpty(pendingText)) {
-				if (pendingText != null && pendingText.Length > 1) {
-					CurrentParagraphIndex++;
-					para = new Paragraph (CurrentParagraphIndex, BreakWidth);					
-					para.ParseString (pendingText, Font, Flags);
-					Paragraphs.Insert (CurrentParagraphIndex, para);
-					CursorPosition = 0;
+			// left wurde in place verändert
+			Paragraphs.RemoveAt(paraIndex);
+			Paragraphs.Insert(paraIndex, left);
+
+			// ============================================================
+			// 2. Neue Paragraphs einfügen
+			//    Reihenfolge:
+			//        left
+			//        newParas[0]
+			//        newParas[1]
+			//        ...
+			//        newParas[n-1]
+			//        right
+			// ============================================================
+			Paragraphs.InsertRange(paraIndex + 1, newParas);
+
+			// right IMMER an das Ende der InsertRange-Hinzufügung stellen:
+			int rightIndex = paraIndex + 1 + newParas.Count;
+			Paragraphs.Insert(rightIndex, right);
+
+
+			// ============================================================
+			// 3. Merge: left + firstNew   (falls erster Absatz nicht mit '\n' beginnt)
+			// ============================================================
+			if (newParas.Count > 0)
+			{
+				Paragraph firstNew = Paragraphs[paraIndex + 1]; // nach left
+
+				// NEU: Wenn Einfügetext mit '\n' begann, ist firstNew ein Paragraph, der nur '\n' enthält.
+				// In diesem Fall muss left den '\n' von firstNew übernehmen.
+				if (firstNew.Length == 1 && firstNew.StartsWithNewline()) 
+				{
+					// left (ABC) übernimmt das '\n' von firstNew. left ist jetzt ABC\n.
+					left.Glyphs.AppendRange(firstNew.Glyphs);
+					left.NeedsWordWrap = true;
+					
+					// firstNew entfernen (es ist jetzt Teil von left)
+					Paragraphs.RemoveAt(paraIndex + 1);
+
+					// rightIndex korrigieren
+					rightIndex--;
 				}
-				***/
+				// Ursprünglicher Fall: firstNew beginnt NICHT mit '\n' (z.B. "XXX").
+				else if (!firstNew.StartsWithNewline())
+				{
+					// left = left + firstNew (Merge wie bisher)
+					left.Glyphs.AppendRange(firstNew.Glyphs);
 
-				//CurrentParagraphIndex = (CurrentParagraphIndex++).Clamp(0, Paragraphs.Count - 1);
-				//CursorPosition = para.Length - 1;
+					// firstNew entfernen
+					Paragraphs.RemoveAt(paraIndex + 1);
 
-				Paragraphs.OnUpdate (startParagraphIndex, BreakWidth);
-				ResetCursorColoumns ();
+					// Dadurch rutschen ALLE folgenden Absätze um -1
+					// rightIndex muss daher 1 nach hinten korrigiert werden
+					rightIndex--;
+				}
+				// Fall: firstNew beginnt mit '\n', hat aber noch andere Glyphen (ParseTextToParagraphs 
+				// sollte diesen Fall nicht erzeugen, aber als Guardrail gut.) -> Kein Merge.
+			}
+
+
+			// ============================================================
+			// 4. Merge: lastNew + right   (falls letzter Absatz NICHT mit '\n' endet)
+			// ============================================================
+			Paragraph lastNew;
+
+			if (newParas.Count == 0)
+			{
+				// Eingefügter Text = "" → nur left existiert
+				lastNew = left;
+			}
+			else if (newParas.Count == 1)
+			{
+				// Nur 1 Absatz → dieser wurde bereits oben mit left gemergt
+				lastNew = left;
+			}
+			else
+			{
+				// Nach dem evtl. Entfernen von firstNew:
+				// letzter echter neuer Absatz sitzt jetzt an:
+				int lastNewIndex = paraIndex + (newParas.Count - 1);
+				lastNew = Paragraphs[lastNewIndex];
+			}
+
+
+			// Jetzt MERGEN mit right
+			if (!lastNew.EndsWithNewline())
+			{
+				lastNew.Glyphs.AppendRange(right.Glyphs);
+
+				// right steht immer an rightIndex
+				if (rightIndex < Paragraphs.Count)
+					Paragraphs.RemoveAt(rightIndex);
 			}
 		}
+
+
+		public List<Paragraph> ParseTextToParagraphs(string text)
+		{
+			List<Paragraph> result = new List<Paragraph>();
+			Paragraph current = new Paragraph(0, BreakWidth);
+
+			foreach (char c in text)
+			{
+				if (c == '\n')
+				{
+					// Absatz beenden MIT Newline
+					current.AppendChar('\n', Font, Flags);
+					current.NeedsWordWrap = true;
+					result.Add(current);
+
+					// neuen Absatz anfangen
+					current = new Paragraph(0, BreakWidth);
+				}
+				else
+				{
+					// Normales Zeichen
+					current.AppendChar(c, Font, Flags);
+				}
+			}
+
+			// Wenn der Text NICHT auf '\n' endet, muss der letzte Absatz hinzugefügt werden
+			if (current.Glyphs.Count > 0)
+			{
+				result.Add(current);
+			}
+			
+			return result;
+		}
+
+		/// <summary>
+		/// Sucht den Paragraphen-Index und die relative Cursorposition
+		/// anhand einer absoluten Position im gesamten Dokument.
+		/// </summary>
+		/// <param name="absPosition">Die absolute Zeichenposition (0-basiert).</param>
+		/// <returns>Tupel aus (ParagraphIndex, CursorPosition).</returns>
+		public (int ParagraphIndex, int CursorPosition) FindParagraphAndIndexByAbsolutePosition(int paraStart, int absPosition)
+		{
+			if (absPosition < 0) absPosition = 0;
+			paraStart = paraStart.Clamp(0, Paragraphs.Count - 1);
+			
+			// Da OnUpdate() die PositionOffsets aktualisiert, können wir diese nutzen.
+			for (int i = paraStart; i < Paragraphs.Count; i++)
+			{
+				Paragraph currentPara = Paragraphs[i];
+				
+				int startOffset = currentPara.PositionOffset;
+				int endOffset = startOffset + currentPara.Glyphs.Count;
+
+				// Fall 1: Die Position liegt im aktuellen Paragraphen
+				if (absPosition >= startOffset && absPosition < endOffset)
+				{
+					// Die relative CursorPosition ist die Differenz
+					int cursorPos = absPosition - startOffset;
+					return (i, cursorPos);
+				}
+				
+				// Fall 2: Die Position liegt genau am Ende des letzten Absatzes (EOF)
+				// Dies ist nur relevant, wenn wir den letzten Absatz im letzten Durchlauf 
+				// nicht gefunden haben. Wir müssen den Cursor immer am Ende setzen können.
+				if (absPosition == endOffset && i == Paragraphs.Count - 1)
+				{
+					return (i, currentPara.Glyphs.Count);
+				}
+
+				// Optimierung: Wenn absPosition vor dem Start des nächsten Absatzes liegt, 
+				// sollte der vorherige Absatz geprüft werden, falls die Position genau am Ende liegt.
+				// Der erste Check (absPosition < endOffset) sollte das aber abdecken.
+				// Wenn absPosition > endOffset ist, springen wir zum nächsten Paragraphen.
+			}
+
+			// Wenn die Position größer ist als das Dokumentende, 
+			// setzen wir den Cursor ans Ende des letzten Paragraphen.
+			if (Paragraphs.Count > 0)
+			{
+				Paragraph lastPara = Paragraphs[Paragraphs.Count - 1];
+				return (Paragraphs.Count - 1, lastPara.Glyphs.Count);
+			}
+
+			// Leeres Dokument
+			return (0, 0); 
+		}
+			
+		public void InsertRange(string text)
+		{
+			if (string.IsNullOrEmpty(text))
+				return;
+
+			int paraIndex = CurrentParagraphIndex;
+			int glyphIndex = CursorPosition;
+			
+			// 1. Position vor dem Einfügen (Absoluter Start)
+			int absStart = AbsCursorPosition; // Nutzung Ihrer Eigenschaft
+			
+			// 2. Zielposition (Absolutes Ende)
+			int absEnde = absStart + text.Length;
+
+			var newParas = ParseTextToParagraphs(text);
+
+			InsertRange(paraIndex, glyphIndex, newParas);
+			
+			// 3. NEUE BERECHNUNG: Cursorposition suchen
+			// Wir verwenden die bekannte absolute Zielposition (absEnde) und suchen das 
+			// entsprechende (ParaIndex, CursorPosition) Paar im aktualisierten Dokument.
+			
+			Paragraphs.OnUpdate(paraIndex, BreakWidth);
+
+			(int newParaIndex, int newCursorPos) = FindParagraphAndIndexByAbsolutePosition(paraIndex, absEnde);
+			
+			// 4. Cursor setzen
+			CurrentParagraphIndex = newParaIndex;
+			CursorPosition = newCursorPos;
+
+			ResetCursorColoumns();
+		}
+
 
 		public void DeleteCurrentChar()
 		{
@@ -694,8 +885,9 @@ namespace SummerGUI.Editor
 			int end = start + len;
 			int startParaIndex = FindParagraphIndexByPosition (start);
 			int index = startParaIndex;
+			Paragraph para = null;
 			while (len > 0 && index < Paragraphs.Count) {
-				Paragraph para = Paragraphs [index];
+				para = Paragraphs [index];
 				if (para.PositionOffset < end) {
 					int count;
 					if (start - para.PositionOffset > 0 || len < para.Length) {
@@ -704,9 +896,7 @@ namespace SummerGUI.Editor
 						count = para.Length;
 						para.Glyphs.Clear ();
 					}
-						
-					if (count < 0)
-						break;
+										
 					len -= count;
 				}
 				if (para.Glyphs.Count == 0)
@@ -714,7 +904,37 @@ namespace SummerGUI.Editor
 				else
 					index++;
 			}
-			Paragraphs.OnUpdate (startParaIndex, BreakWidth);
+
+			int endParaIndex = index; // Index des ersten Paragraphen NACH der gelöschten Region
+
+			// ============================================================
+			// 2. Merge der Ränder (Symmetrie zu InsertRange)
+			// ============================================================
+
+			// Der Start-Paragraph
+			Paragraph startPara = Paragraphs[startParaIndex]; 
+
+			// Index des Paragraphen, der an startPara angehängt werden soll (falls vorhanden)
+			int mergePartnerIndex = startParaIndex + 1;
+			
+			// Prüfen, ob ein Merge-Partner existiert
+			if (mergePartnerIndex < Paragraphs.Count)
+			{
+				// Wenn der startPara NICHT mit einem Zeilenumbruch endet, 
+				// wurde der ursprüngliche Zeilenumbruch (zwischen startPara und dem neuen mergePartner) gelöscht.
+				if (!startPara.EndsWithNewline()) 
+				{
+					Paragraph mergePartner = Paragraphs[mergePartnerIndex];
+
+					// Füge alle Glyphen des mergePartner an startPara an
+					startPara.Glyphs.AppendRange(mergePartner.Glyphs);
+
+					// Entferne den mergePartner
+					Paragraphs.RemoveAt(mergePartnerIndex);
+				}
+			}
+			
+			Paragraphs.OnUpdate(startParaIndex, BreakWidth);
 		}
 
 		public string GetCharRange(int start, int len)
@@ -1165,9 +1385,8 @@ namespace SummerGUI.Editor
 				}
 			}).ContinueWith((t) => {
 				Owner.UndoRedoManager.Clear();
-				if (LoadingCompleted != null)
-					LoadingCompleted(this, EventArgs.Empty);				
-			});
+                LoadingCompleted?.Invoke(this, EventArgs.Empty);
+            });
 		}
 
 		protected override void CleanupUnmanagedResources ()

@@ -7,6 +7,7 @@ using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
+using OpenTK.Windowing.Common;
 
 namespace SummerGUI
 {
@@ -85,12 +86,12 @@ namespace SummerGUI
 				Controller.Subscribe (StatusBar.RootControllerObserver);
 		}
 
-		protected override void OnWindowStateChanged (EventArgs e)
-		{
-			base.OnWindowStateChanged (e);
+        protected override void OnMaximized(MaximizedEventArgs e)
+        {
+            base.OnMaximized(e);
 			if (MenuPanel != null)
 				MenuPanel.UpdateWindowStateMenu (this.WindowState);
-		}
+        }		
 
 		public override void OnLoadSettings ()
 		{			
@@ -190,7 +191,7 @@ namespace SummerGUI
 			DlgAbout.LicenseInfo = "License: MIT";
 			DlgAbout.Url = "http://www.kroll-software.ch";
 			DlgAbout.UrlText = "www.kroll-software.ch";
-			DlgAbout.Copyright = "Produced 2016-2019 by Kroll-Software, free to copy and use.";
+			DlgAbout.Copyright = "Produced 2016-2026 by Kroll-Software, free to copy and use.";
 			// ToDo: DPI Scaling
 			DlgAbout.ImagePath = "Assets/Logo/SummerGUI_96px.png".FixedExpandedPath();	
 

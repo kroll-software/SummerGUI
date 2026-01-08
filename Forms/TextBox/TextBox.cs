@@ -9,6 +9,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 using SummerGUI.Editor;
@@ -17,7 +19,7 @@ namespace SummerGUI
 {	
 	public class TextBox : Widget, ITextBox, ISupportsClipboard, ISupportsUndoRedo, ISupportsSelection
 	{
-		public static readonly char DefaultPasswortChar = '*';
+		public static readonly char DefaultPasswortChar = '●';
 
 		public event EventHandler<EventArgs> TextChanged;
 		public void OnTextChanged()
@@ -104,7 +106,7 @@ namespace SummerGUI
 
 			UndoRedoManager = new UndoRedoStack (this, 100);
 
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 			MaxSize = new SizeF (MaxSize.Width, Font.TextBoxHeight);
 			Format = DefaultSingleLineFontFormat;
             			
@@ -443,38 +445,38 @@ namespace SummerGUI
 			//base.OnKeyDown (e);
 
 			switch (e.Key) {
-			case Key.ShiftLeft:
-			case Key.ShiftRight:
+			case Keys.LeftShift:
+			case Keys.RightShift:
 				//ResetSelection ();
 				return true;
 				
-			case Key.Left:
+			case Keys.Left:
 				if (e.Control)
 					MovePrevWord ();
 				else
 					MovePrevChar ();
 				SetSelection (e.Shift);
 				break;
-			case Key.Right:
+			case Keys.Right:
 				if (e.Control)
 					MoveNextWord ();
 				else
 					MoveNextChar ();
 				SetSelection (e.Shift);
 				break;
-			case Key.Home:
+			case Keys.Home:
 				MoveHome ();
 				SetSelection (e.Shift);
 				break;
-			case Key.End:
+			case Keys.End:
 				MoveEnd ();
 				SetSelection (e.Shift);
 				break;
-			case Key.PageUp:
-			case Key.PageDown:
+			case Keys.PageUp:
+			case Keys.PageDown:
 				SetSelection (e.Shift);
 				return true;
-			case Key.BackSpace:
+			case Keys.Backspace:
 				if (SelLength > 0) {
 					//this.SetUndoDelete (CursorPosition, 0);
 					Delete ();
@@ -491,56 +493,57 @@ namespace SummerGUI
 				}
 				ResetSelection ();
 				break;
-			case Key.C:
+			case Keys.C:
 				if (e.Control)
 					Copy ();
 				break;
-			case Key.V:
+			case Keys.V:
 				if (e.Control)
 					Paste ();
 				break;
-			case Key.X:
+			case Keys.X:
 				if (e.Control)
 					Cut ();
 				break;
-			case Key.Delete:
+			case Keys.Delete:
 				if (e.Shift)
 					Cut ();
 				else
 					Delete ();
 				break;
-			case Key.Insert:
+			case Keys.Insert:
 				if (e.Control)
 					Copy ();
 				else if (e.Shift)
 					Paste ();
 				break;
-			case Key.A:
+			case Keys.A:
 				if (e.Control)
 					SelectAll ();				
 				break;
-			case Key.Y:	// OpenTK sends an Y for a Z
+			case Keys.Y:	// OpenTK sends an Y for a Z
 				if (e.Control)
 					Undo ();				
 				break;
-			case Key.Z: // OpenTK sends an Z for a Y
+			case Keys.Z: // OpenTK sends an Z for a Y
 				if (e.Control)
 					Redo ();				
 				break;
-			case Key.Escape:
+			case Keys.Escape:
 				if (HideSelection)
 					SelectNone ();
 				return false;
-			case Key.Enter:
+			case Keys.Enter:
+				return false;			
+			case Keys.Tab:
 				return false;
-			/***
-			case Key.Tab:
-				if (!AllowTabKey)
-					return false;
-				InsertString (CursorPosition++, new String (' ', 4));
-				CursorPosition += 3;
-				break;
-			***/
+				//if (!AllowTabKey)
+				//	return false;
+				//InsertString (CursorPosition++, new String (' ', 4));
+				//CursorPosition += 3;
+				//break;	
+			case Keys.F10:
+				return false;
 			default:
 				//this.LogDebug ("OnKeyDown not handled: {0}", e.Key.ToString ());
 				//return false;
@@ -555,6 +558,12 @@ namespace SummerGUI
 			
 		public override bool OnHeartBeat ()
 		{
+			if (!IsVisibleEnabled || !IsFocused)
+			{
+				CursorOn = false;
+				return false;
+			}
+			
 			if (!IsMouseOrKeyDown) {
 				CursorOn = !CursorOn;
 				return true;

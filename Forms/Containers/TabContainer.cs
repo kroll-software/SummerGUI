@@ -10,6 +10,8 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -91,7 +93,7 @@ namespace SummerGUI
 			this.Styles.SetStyle (new TabButtonDisabledStyle (), WidgetStates.Disabled);
 		}
 
-		public override void OnClick (OpenTK.Input.MouseButtonEventArgs e)
+		public override void OnClick (MouseButtonEventArgs e)
 		{
 			if (Parent != null && Parent.Parent != null) {
 				TabContainer tc = Parent.Parent as TabContainer;
@@ -502,11 +504,11 @@ namespace SummerGUI
 
 			if (IsVisibleEnabled && Children.Any(c => c.IsFocused)) {
 				switch (e.Key) {
-				case Key.Right:
+				case Keys.Right:
 					//this.SelectNextChild (SelectedTab.TabButton);
 					Root.SelectNextWidget ();
 					return true;
-				case Key.Left:
+				case Keys.Left:
 					//this.SelectPrevChild (SelectedTab.TabButton);
 					Root.SelectPrevWidget ();
 					return true;

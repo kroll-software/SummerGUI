@@ -9,12 +9,20 @@ using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 
-
 namespace SummerGUI
 {
+	public enum StringAlignment
+    {
+        Near = 0, // Linksbündig (bei Linksläufigkeit)
+        Center = 1, // Zentriert
+        Far = 2 // Rechtsbündig (bei Linksläufigkeit)
+    }
+
 	public class ScrollingBoxWidgetStyle : WidgetStyle
 	{
 		public override void InitStyle ()
@@ -78,7 +86,7 @@ namespace SummerGUI
 		public ScrollingBox (string name, Docking dock, IWidgetStyle style)
 			: base (name, dock, style)
 		{
-			Font = SummerGUIWindow.CurrentContext.FontManager.DefaultFont;
+			Font = FontManager.Manager.DefaultFont;
 
 			// ToDo: DPI Scaling: Faster ! (0 or 1)
 			AnimationRate = 2;
