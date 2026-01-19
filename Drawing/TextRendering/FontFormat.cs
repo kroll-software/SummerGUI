@@ -34,9 +34,9 @@ namespace SummerGUI
 		public static readonly FontFormat DefaultMultiLineCentered = new FontFormat (Alignment.Center, Alignment.Center, FontFormatFlags.WrapText);
 		public static readonly FontFormat DefaultMnemonicLine = new FontFormat (Alignment.Near, Alignment.Center, FontFormatFlags.Mnemonics);
 		public static readonly FontFormat DefaultMnemonicLineCentered = new FontFormat (Alignment.Center, Alignment.Center, FontFormatFlags.Mnemonics);
-		public static readonly FontFormat DefaultIconFontFormatLeft = new FontFormat (Alignment.Near, Alignment.Baseline, FontFormatFlags.None);
-		public static readonly FontFormat DefaultIconFontFormatCenter = new FontFormat (Alignment.Center, Alignment.Baseline, FontFormatFlags.None);
-		public static readonly FontFormat DefaultIconFontFormatFar = new FontFormat (Alignment.Far, Alignment.Baseline, FontFormatFlags.None);
+		public static readonly FontFormat DefaultIconFontFormatLeft = new FontFormat (Alignment.Near, Alignment.Center, FontFormatFlags.None);
+		public static readonly FontFormat DefaultIconFontFormatCenter = new FontFormat (Alignment.Center, Alignment.Center, FontFormatFlags.None);
+		public static readonly FontFormat DefaultIconFontFormatFar = new FontFormat (Alignment.Far, Alignment.Center, FontFormatFlags.None);
 
 		public readonly Alignment HAlign;
 		public readonly Alignment VAlign;
@@ -96,7 +96,7 @@ namespace SummerGUI
 		/// <param name="SF">S.</param>
 		/// <param name="Ascender">Ascender.</param>
 		/// <param name="Descender">Descender.</param>
-		public static Point AlignBoxes(RectangleF rContent, RectangleF rBoundingBox, FontFormat SF, float Ascender, float Descender)
+		public static PointF AlignBoxes(RectangleF rContent, RectangleF rBoundingBox, FontFormat SF, float Ascender, float Descender)
 		{
 			if (rContent.Equals (Rectangle.Empty) || rBoundingBox.Equals (Rectangle.Empty))
 				return Point.Empty;
@@ -110,7 +110,7 @@ namespace SummerGUI
 				break;
 
 			case Alignment.Center:
-				x = Math.Max(0, (rBoundingBox.Width - rContent.Width) / 2f);
+				x = MathF.Max(0, (rBoundingBox.Width - rContent.Width) / 2f);
 				break;
 
 			case Alignment.Far:
@@ -124,20 +124,19 @@ namespace SummerGUI
 				break;
 
 			case Alignment.Center:
-				y = Math.Max(0, (rBoundingBox.Height - rContent.Height) / 2);
+				y = MathF.Max(0, (rBoundingBox.Height - rContent.Height) / 2f);
 				break;
 
 			case Alignment.Baseline:
-				y = Math.Max(0, (rBoundingBox.Height - (rContent.Height + Descender)) / 2);
+				y = MathF.Max(0, (rBoundingBox.Height - (rContent.Height + Descender)) / 2f);
 				break;
 
 			case Alignment.Far:
 				y = rBoundingBox.Height - rContent.Height;
 				break;
 			}
-
-			//return new Point ((int)(x + 0.5f), (int)(y + 0.5f));
-			return new Point (x.Ceil(), y.Ceil());
+			
+			return new PointF (x, y);
 		}
 	}
 }

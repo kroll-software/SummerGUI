@@ -6,58 +6,157 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using OpenTK;
+using OpenTK.Mathematics;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using Pfz.Collections;	// TreadSafeDictionary
 using KS.Foundation;
-//using SharpFont;
+using HarfBuzzSharp;
 using FreeTypeSharp;
 using static FreeTypeSharp.FT;
 using System.Security.Cryptography;
 
 namespace SummerGUI
 {
-	public unsafe class GuiFont : DisposableObject, IGUIFont
-	{		
-		public class GlyphExtents
+	public struct GlyphInfo : IEquatable<GlyphInfo>
+	{
+		public GlyphInfo(int textureId)
+		{				
+			TextureId = textureId;
+		}
+
+		public int TextureId;
+
+		public Vector2 Size;     // Bitmap size in pixels
+		public Vector2 Bearing;  // left/top bearing
+		public float Advance;    // pen advance in pixels
+
+		public RectangleF UV;    // meist (0,0,1,1)		
+
+		public static GlyphInfo Empty => default;
+
+		public override bool Equals (object obj)
 		{
-			public float AdvanceX;
-			public float BearingX;
-			public float BearingY;
-			public float Width;
-			public float Height;
+			return (obj is GlyphInfo) && this.Equals ((GlyphInfo)obj);
+		}
+
+		public bool Equals (GlyphInfo other)
+		{
+			return TextureId == other.TextureId && UV == other.UV;
+		}
+
+        public static bool operator ==(GlyphInfo c1, GlyphInfo c2)
+		{
+			return c1.TextureId.Equals (c2.TextureId) && c1.UV.Equals(c2.UV);
+		}
+
+		public static bool operator !=(GlyphInfo c1, GlyphInfo c2)
+		{
+			return !c1.TextureId.Equals (c2.TextureId) || !c1.UV.Equals (c2.UV);
 		}		
 
-		public float Size { get; private set; }
+		public override int GetHashCode ()
+		{
+			return TextureId.CombineHash(UV.GetHashCode());
+		}
+	}
+
+	public struct ShapedGlyph
+	{
+		public uint GlyphIndex;  // Der interne Index der Font (für den Atlas)
+		public float XOffset;    // Feinjustierung X (Kerning/Positionierung)
+		public float YOffset;    // Feinjustierung Y
+		public float XAdvance;   // Wie weit der Cursor springt
+		
+		// Optional für Debugging oder Fallbacks
+		public int Cluster;      // Index des ursprünglichen Zeichens im String
+
+		public static ShapedGlyph Empty => default;
+	}
+
+	public interface IGUIFont : IDisposable
+	{		
+		string Name  { get; }
+		float Size { get; }
+		float LineHeight { get; }
+		float TextBoxHeight { get; }
+		float CaptionHeight { get; }
+		float Height { get; }		
+		float YOffset { get; }
+		float LineSpacing { get; set; }
+		float ScaleFactor { get; }
+
+		GlyphInfo EllipsisGlyphInfo { get; }
+
+		bool IsDisposed { get; }
+
+		float Ascender { get; }
+		float Descender { get; }		
+		float LineGap { get; }
+
+		string FilePath { get; }
+		
+		SizeF Measure(string text, int start = 0, int len = -1);
+		SizeF MeasureGlyphs(string text, int start = 0, int len = -1);
+		SizeF Measure(string text, float width, FontFormat sf);
+		SizeF MeasureMnemonicString (string text);
+
+		bool ContainsChar (char c);
+		
+		int CharPos (string text, float cursorPos);		
+
+		bool GetGlyphInfo(char c, out GlyphInfo gli);
+		bool GetGlyphInfo(uint glyphIndex, out GlyphInfo gli);		
+
+		//ShapedGlyph[] ShapeText(string text);
+		IEnumerable<ShapedGlyph> ShapeText(string text);
+
+		GlyphChar GetGlyphChar (char c, SpecialCharacterFlags flags = SpecialCharacterFlags.Default);
+
+		void Rescale (float scaleFactor);
+	}
+
+	public unsafe class GuiFont : DisposableObject, IGUIFont
+	{				
 		public string FilePath { get; private set; }
+		public string Name { get; private set; }
+		public bool Monospace { get; private set; }
+		public int GlyphCount { get; private set; }		
+		public int Count { get; private set; }
+		public float Size { get; private set; }
 
 		// Automatically adjusted values
+		public float Height { get; private set; }		
 		public float Ascender { get; private set; }
 		public float Descender { get; private set; }
-		public float Height { get; private set; }
-
-		public bool Monospace { get; private set; }
-		public int GlyphCount { get; private set; }
-		public string Name { get; private set; }
+		public float LineGap { get; private set; }		
+		public float LineSpacing { get; set; }		
 
 		// Adjustments for Users/Configuration
-		public float YOffset { get; set; }
-		private float YOffsetScaled;
-		public float LineSpacing { get; set; }		
+		private float m_YOffsetUnscaled = 0;
+		public float YOffset { get; set; }		
 
 		//FontWrapper Font;
 		//SharpFont.Face Font;
-		FreeTypeSharp.FT_FaceRec_* Font;
-		private int	m_ListBase;
-		private int[] m_Textures;
-		//private int[] m_ExtentsX;
-
-		//Dictionary<char, uint> CharMap;
+		FreeTypeSharp.FT_FaceRec_* m_Face;
+		private HarfBuzzSharp.Blob m_Blob;
+		private HarfBuzzSharp.Face m_HbFace;
+        private HarfBuzzSharp.Font m_HbFont;	
+		private int[] m_Textures;		
+		
 		ThreadSafeDictionary<char, GlyphInfo> CharMap;
+		ThreadSafeDictionary<uint, GlyphInfo> GlyphMap;
 
-		//private uint m_SpaceGlyphIndex;
-		private GlyphInfo m_EllipsisGlyphIndex;
-		private float HalfHeight { get; set; }
+		//private uint m_SpaceGlyphIndex;		
+
+		private GlyphInfo m_EllipsisGlyphInfo = default;
+		public GlyphInfo EllipsisGlyphInfo 
+		{ 
+			get
+			{
+				return m_EllipsisGlyphInfo;
+			}		
+		}
 
 		public float LineHeight { get; private set; }
 		public float CaptionHeight { get; private set; }
@@ -68,103 +167,29 @@ namespace SummerGUI
 		public GlyphFilterFlags Filter { get; private set; } 
 		public bool OnDemand { get; private set; }
 
-		public struct GlyphInfo : IEquatable<GlyphInfo>
-		{
-			public static readonly GlyphInfo Empty = new GlyphInfo (0, 0);
+		private FontAtlasGroup m_AtlasGroup;
 
-			public readonly int ListID;
-			public readonly int Width;
+		private const int ATLAS_SIZE = 1024; // Standardgröße für den Font-Atlas				
 
-			public bool IsEmpty
-			{
-				get{
-					return ListID <= 0;
-				}
-			}
+		public GuiFont (GUIFontConfiguration conf)
+			: this (conf.Path, conf.Size, conf.ScaleFactor, conf.Filter, conf.YOffset, conf.LineSpacing) {}
 
-			public GlyphInfo(int listID, int widh)
-			{				
-				ListID = listID;			
-				Width = widh;
-			}
+		public GuiFont (string filePath, float size, float scaleFactor, GlyphFilterFlags filter, float yoffset, float linespacing)
+		{			
+			try {			
+				Name = Path.GetFileName(filePath);
+				FilePath = filePath.FixedExpandedPath();
+				Size = size;
+				Filter = filter;
+				OnDemand = Filter.HasFlag(GlyphFilterFlags.OnDemand);
 
-			public override bool Equals (object obj)
-			{
-				return (obj is GlyphInfo) && this.Equals ((GlyphInfo)obj);
-			}
-
-			public bool Equals (GlyphInfo other)
-			{
-				return ListID == other.ListID;
-			}				
-
-			public override int GetHashCode ()
-			{
-				return ListID;
-			}
-		}
-
-		private bool GetGlyphIndex(char c, out GlyphInfo gli)
-		{
-			if (CharMap == null)	// wenn Font nicht existierte
-			{
-				gli = GlyphInfo.Empty;
-				return false;
-			}
-
-			GlyphInfo info;
-			if (CharMap.TryGetValue (c, out info)) {				
-				if (info.ListID > 0 && info.Width > 0) {
-					gli = info;
-					return true;
-				} else {					
-					gli = GlyphInfo.Empty;
-					return false;
-				}
-			} else if (OnDemand) {
-				lock (SyncObject) {
-					uint glyphindex = FT_Get_Char_Index(Font, c);					
-					info = CompileCharacter (Font, glyphindex, c);
-					CharMap.Add (c, info);
-					gli = info;
-				}
-				return true;
-			}
-				
-			gli = GlyphInfo.Empty;
-			return false;
-		}
-
-		private void Clear()
-		{
-			try {
-				if (Font != null) {
-					FT_Done_Face(Font);
-					Font = null;
-				}
-
-				GL.BindTexture (TextureTarget.Texture2D, 0);
-
-				if (GlyphCount > 0) {
-					if (m_ListBase > 0) {
-						GL.DeleteLists (m_ListBase, GlyphCount);
-					}
-					else if (!CharMap.IsNullOrEmpty ()) {
-						CharMap.Values.Select (val => val.ListID).ForEach (lid => GL.DeleteLists (lid, 1));
-						CharMap.Clear();
-					}
-				}
-				if (!m_Textures.IsNullOrEmpty())
-					GL.DeleteTextures (m_Textures.Length, m_Textures);				
+				m_YOffsetUnscaled = yoffset;
+				LineSpacing = linespacing;
+				if (LineSpacing < 0.01)
+					LineSpacing = 1;
+				InitFont(scaleFactor);
 			} catch (Exception ex) {
 				ex.LogError ();
-			} finally {
-				GlyphCount = 0;
-				m_ListBase = 0;
-				m_Textures = null;
-				Height = 0;
-				Count = 0;
-				m_EllipsisGlyphIndex = GlyphInfo.Empty;
 			}
 		}
 
@@ -173,51 +198,98 @@ namespace SummerGUI
 			try {
 				System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
-				ScaleFactor = scaleFactor;
-				YOffsetScaled = YOffset * scaleFactor;
+				ScaleFactor = scaleFactor;				
 
 				// Reset everything
 				Clear();
+
+				// 1. Lade die Font-Daten einmalig in den Speicher (Blob)
+				m_Blob = Blob.FromFile(FilePath);
+			
+				// 2. HarfBuzz Setup
+				m_HbFace = new HarfBuzzSharp.Face(m_Blob, 0);
+				m_HbFont = new HarfBuzzSharp.Font(m_HbFace);
+
+				m_HbFont.SetFunctionsOpenType();				
 				
-				FT_Error error;
-				FT_FaceRec_** facePtr;
-								
-				byte[] pathBytes = Encoding.UTF8.GetBytes(FilePath + "\0"); // \0 ist der C-String Terminator
-				
-				fixed (FT_FaceRec_** fp = &Font)
-				fixed (byte* pathPtr = pathBytes) // <-- Hier wird der C-String erzeugt (byte*)
+				// 3. FreeType Setup aus demselben Speicherblock
+				// Zugriff auf die Daten via Span
+				ReadOnlySpan<byte> fontSpan = m_Blob.AsSpan();
+
+				fixed (FT_FaceRec_** fp = &m_Face)
+				fixed (byte* dataPtr = fontSpan)
 				{
-					facePtr = fp;					
-					error = FT_New_Face(FontManager.Library, pathPtr, 0, facePtr); 
-				}				
+					// Wir nutzen FT_New_Memory_Face statt FT_New_Face
+					var error = FT_New_Memory_Face(
+						FontManager.Library, 
+						dataPtr, 
+						m_Blob.Length, 
+						0, 
+						fp
+					);
 
-				if (error != FT_Error.FT_Err_Ok)
-				{
-					// Fehlerbehandlung
-					throw new Exception("Konnte Font nicht laden: " + error.ToString());
-				}				
+					if (error != FT_Error.FT_Err_Ok)
+						throw new Exception($"FreeType Memory Face Error: {error}");
+				}
 
-				// Go on
+				// *** Metriken ***
 
-				float size = Size.Scale(ScaleFactor);
-
-				/*
-				Fixed sz = new Fixed(size / 64);
-				Fixed26Dot6 sz = new Fixed26Dot6(size / 64);
-				Font.SetCharSize(sz, sz, 72, 72);
-				*/
-				// ToDo:				
-				FT_Set_Char_Size(Font, (int)(size / 64.0f), (int)(size / 64.0f), 72, 72);				
+				float size = Size.Scale(ScaleFactor);				
+				FT_Set_Char_Size(m_Face, (int)(size / 64.0f), (int)(size / 64.0f), 72, 72);				
 
 				int pixelSize = (size * 1.3334).Ceil();				
-				FT_Set_Pixel_Sizes(Font, (uint)pixelSize, (uint)pixelSize);				
+				FT_Set_Pixel_Sizes(m_Face, (uint)pixelSize, (uint)pixelSize);				
+								
+				float fscale = pixelSize / (m_Face->height / 64.0f) * 1.33334f;
+				int h = (int)(pixelSize * 64);
+            	m_HbFont.SetScale(h, h);				
 				
-				GlyphCount = (int)Font->num_glyphs;
-				int glyphCount = GlyphCount;
-				//Monospace = Font.FaceFlags.HasFlag(FaceFlags.FixedWidth);								
-				Monospace = (Font->face_flags & (int)FT_FACE_FLAG.FT_FACE_FLAG_FIXED_WIDTH) != 0;
+				Ascender = m_Face->ascender / 64.0f * fscale;
+				Descender = m_Face->descender / 64.0f * fscale;
+				float heightFT = m_Face->height / 64.0f * fscale;				
+
+				Height = Ascender - Descender;
+				LineGap = heightFT - Height;
+				if (LineGap < 0.0001f)
+					LineGap = 0;
 				
-				byte* psNamePtr = FT_Get_Postscript_Name(Font);
+				//LineHeight = Ascender * 1.42f * LineSpacing;
+				LineHeight = (Height + LineGap) * LineSpacing;
+				TextBoxHeight = Ascender * 1.85f + 2;
+				CaptionHeight = Ascender * 1.55f + 2;
+
+				YOffset = m_YOffsetUnscaled * scaleFactor;
+
+				// *** Atlas Initialisierung: Nur wenn nicht On-Demand ***
+				if (!OnDemand) {
+					// Konstanten für die Sicherheit
+					const int MAX_SAFE_ATLAS_SIZE = 4096; // 4k ist auf fast allen GPUs seit 2012 sicher
+					const float PACKING_EFFICIENCY = 1.4f; // Puffer für Verschnitt beim Packen					
+
+					// 1. Berechne die vertikale Höhe, die eine Glyphe maximal einnimmt
+					// Nutze entweder dein berechnetes 'pixelSize' oder die FreeType-Metrik:
+					float estimatedHeight = (float)m_Face->size->metrics.height / 64.0f;
+					if (estimatedHeight <= 0) estimatedHeight = pixelSize; // Fallback
+
+					// 2. Schätzung der Fläche pro Glyph inkl. Padding und Spacing
+					// Wir nehmen ein Quadrat mit der Seitenlänge der Schrifthöhe.
+					float areaPerGlyph = estimatedHeight * estimatedHeight * PACKING_EFFICIENCY; 
+
+					// 3. Gesamtfläche für alle Glyphen (GlyphCount hast du bereits ermittelt)
+					float totalArea = areaPerGlyph * GlyphCount;
+
+					// 4. Kantenlänge berechnen und auf 2er-Potenz runden
+					int side = (int)Math.Sqrt(totalArea);
+					int atlasSize = side.NextPowerOf2().Clamp(512, MAX_SAFE_ATLAS_SIZE);
+
+					m_AtlasGroup = new FontAtlasGroup(atlasSize);
+				}
+				
+				GlyphCount = (int)m_Face->num_glyphs;
+				int glyphCount = GlyphCount;				
+				Monospace = (m_Face->face_flags & (int)FT_FACE_FLAG.FT_FACE_FLAG_FIXED_WIDTH) != 0;
+				
+				byte* psNamePtr = FT_Get_Postscript_Name(m_Face);
 				if (psNamePtr != null)
 				{
 					// Konvertiert den ANSI-C-String (byte*) in einen C#-String
@@ -225,16 +297,12 @@ namespace SummerGUI
 					if (!String.IsNullOrEmpty(tmpName))
 						Name = tmpName;
 				}
-
-				//string tmpName = Font.GetPostscriptName();				
-
-
+				
 				// We support 4 different glyph loading strategies:
 				//
 				// (1) All: all glyphs loaded at once on start
 				// (2) Filtered: all filtered glyphs loaded at once on start
 				// (3) OnDemand: no glyphs loaded at start, all glyphs on demand
-
 
 				if (OnDemand) {
 					// Startegy (3)
@@ -246,75 +314,66 @@ namespace SummerGUI
 					// to minimize graphics memory.
 					uint glyphindex;
 					//uint cc = Font.GetFirstChar(out glyphindex);
-					uint cc = (uint)FT_Get_First_Char(Font, &glyphindex);
+					uint cc = (uint)FT_Get_First_Char(m_Face, &glyphindex);
 					int count = 0;
 					while (glyphindex > 0) {
 						char c = (char)cc;
 						if (Filter.IsValid(c))
 							count++;
-						cc = (uint)FT_Get_Next_Char (Font, cc, &glyphindex);
+						cc = (uint)FT_Get_Next_Char (m_Face, cc, &glyphindex);
 					}
 					GlyphCount = count;
 				} else {
 					// Strategy (1), loading the entire font
 				}
 
-				m_Textures = new int[Math.Max(32, GlyphCount)];
+				//m_Textures = new int[Math.Max(32, GlyphCount)];
+				if (OnDemand) {
+					m_Textures = new int[32]; // Buffer für On-Demand Texturen
+				}
 				CharMap = new ThreadSafeDictionary<char, GlyphInfo>(Math.Max(31, GlyphCount));
+				GlyphMap = new ThreadSafeDictionary<uint, GlyphInfo>(Math.Max(31, GlyphCount));
 
-				if (!OnDemand) {
-					// Strategy (1) + (2): Load all or filtered glyphs
-					m_ListBase = GL.GenLists (GlyphCount);
-					GL.GenTextures (GlyphCount, m_Textures);
+				if (!OnDemand)
+				{
+					// Strategy (1) + (2): Alle Glyphen vorab laden
+					GL.GenTextures(GlyphCount, m_Textures);
 
-					uint glyphindex;
-					uint cc = (uint)FT_Get_First_Char(Font, &glyphindex);
-					while (glyphindex > 0) {
-						char c = (char)cc;
-						if (!CharMap.ContainsKey(c) && Filter.IsValid(c)) {
-							try {								
-								CharMap.Add (c, CompileCharacter (Font, glyphindex, c));
+					uint glyphIndex;
+					// Wir iterieren über die Unicode-Map der Font
+					uint charCode = (uint)FT_Get_First_Char(m_Face, &glyphIndex);
+
+					while (glyphIndex > 0) 
+					{
+						char c = (char)charCode;
+						
+						// Filter prüfen (z.B. nur ASCII oder bestimmter Bereich)
+						if (Filter.IsValid(c)) 
+						{
+							try {
+								// 1. Glyphe nur einmal kompilieren (falls mehrere Chars auf denselben Index zeigen)
+								if (!GlyphMap.TryGetValue(glyphIndex, out GlyphInfo info))
+								{
+									info = CompileCharacter(m_Face, glyphIndex);
+									GlyphMap.Add(glyphIndex, info);
+								}
+
+								// 2. Im Char-Lookup für klassisches Rendering registrieren
+								if (!CharMap.ContainsKey(c))
+								{
+									CharMap.Add(c, info);
+								}
 							} catch (Exception ex) {
 								ex.LogWarning();
 							}
 						}
-						cc = (uint)FT_Get_Next_Char (Font, cc, &glyphindex);			
+						// Nächstes Zeichen holen
+						charCode = (uint)FT_Get_Next_Char(m_Face, charCode, &glyphIndex);          
 					}
-					CharMap.TryGetValue(SpecialCharacters.Ellipsis, out m_EllipsisGlyphIndex);
-				}
-				else {					
-					try {
-						GetGlyphIndex (SpecialCharacters.Ellipsis, out m_EllipsisGlyphIndex);	
-					} catch (Exception ex) {
-						ex.LogError();
-					}
-				}
-
-				//if (Height <= 1)
-				//Height = pixelSize.NextPowerOf2();
-				//Height = pixelSize * 1.33335f;
-
-				Height = pixelSize;
-
-				float fscale = Height / (Font->height / 64.0f) * 1.33334f;
-				//float fscale = Height / Font.Height * 0.776f;
-				
-				Ascender = Font->ascender / 64.0f * fscale;
-				Descender = Font->descender / 64.0f * fscale;
-				//HalfHeight = Height / 2;
-
-				Height = Ascender.Ceil();
-				HalfHeight = (int)(Height / 2);
-
-				//LineHeight = Height * 1.42f * LineSpacing;
-				LineHeight = (int)((Height * 1.42f * LineSpacing) + 0.5f);
-
-				//TextBoxHeight = ((Height * 2f) + (ScaleFactor * 2f)).Ceil();
-				//TextBoxHeight = (int)(Height * 1.85f + 0.5f);
-				TextBoxHeight = (int)(Height * 1.85f + 2);
-				CaptionHeight = (int)(Height * 1.55 + 2);
-
-				YOffsetScaled = (YOffset * ScaleFactor) - HalfHeight;
+					
+					// Ellipsis für Text-Trimming vorab holen
+					CharMap.TryGetValue(SpecialCharacters.Ellipsis, out m_EllipsisGlyphInfo);
+				}				
 
 				if (OnDemand) {
 					Count.LogInformation ("Font {0} ({1}), {2}/{3} glyphs pre-loaded in {4} ms, more glyphs are loaded on demand.", Name, Size, Count, glyphCount, sw.ElapsedMilliseconds);
@@ -324,35 +383,11 @@ namespace SummerGUI
 			} catch (Exception ex) {
 				ex.LogError ();
 			} finally {
-				if (!OnDemand && Font != null) {					
-					FT_Done_Face(Font);
-					Font = null;
+				if (!OnDemand && m_Face != null) {					
+					FT_Done_Face(m_Face);
+					m_Face = null;
 				}
 			}			
-		}
-
-		public GuiFont (GUIFontConfiguration conf)
-			: this (conf.Path, conf.Size, conf.ScaleFactor, conf.Filter, conf.YOffset, conf.LineSpacing)
-		{
-		}
-
-		public GuiFont (string filePath, float size, float scaleFactor, GlyphFilterFlags filter, float yoffset, float linespacing)
-		{			
-			try {			
-				Name = Path.GetFileName(filePath);
-				FilePath = filePath.FixedExpandedPath();
-				Size = size;
-				Filter = filter;
-				OnDemand = Filter.HasFlag(GlyphFilterFlags.OnDemand);
-
-				YOffset = yoffset;
-				LineSpacing = linespacing;
-				if (LineSpacing < 0.01)
-					LineSpacing = 1;
-				InitFont(scaleFactor);
-			} catch (Exception ex) {
-				ex.LogError ();
-			}
 		}
 
 		public void Rescale (float scaleFactor)
@@ -362,128 +397,140 @@ namespace SummerGUI
 			InitFont(scaleFactor);
 		}
 
-		public int CharPos(string text, float cursorPos)
-		{
-			if (text == null)
-				return 0;
-
-			float adv = 0;
-			GlyphInfo gi;
-			for (int i = 0; i < text.Length; i++) {
-				if (GetGlyphIndex(text [i], out gi)) {
-					if (adv + (gi.Width / 2f) >= cursorPos)
-						return i;
-					adv += gi.Width;
-				}
-			}
-			return text.Length;
-		}
-
-		public SizeF Measure(string text, int start = 0, int len = -1)
+		public unsafe GlyphInfo CompileCharacter(FT_FaceRec_* face, uint glyphindex)
 		{			
-			if (String.IsNullOrEmpty(text))
-				return SizeF.Empty;
+			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_NO_HINTING);
+			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 
-			if (len < 0)
-				len = text.Length;
-			else
-				len = Math.Min (len, text.Length);
+			error = FT_Render_Glyph(face->glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);
+			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 
-			float adv = 0;
-			GlyphInfo gi;
-			for (int i = start; i < len; i++) {
-				if (GetGlyphIndex(text [i], out gi)) {
-					adv += gi.Width;
+			FT_Bitmap_ bmp = face->glyph->bitmap;
+			int width = (int)bmp.width;
+			int rows = (int)bmp.rows;
+
+			if (width <= 0 || rows <= 0) {
+				return new GlyphInfo {
+					TextureId = 0, Size = Vector2.Zero, Bearing = Vector2.Zero,
+					Advance = face->glyph->advance.x / 64.0f, UV = RectangleF.Empty
+				};
+			}
+
+			// Die rohen Pixel-Daten
+			byte[] pixels = new byte[width * rows];
+			fixed (byte* pPixels = pixels)
+			{
+				byte* src = bmp.buffer;
+				int pitch = bmp.pitch;
+
+				// Fall 1: Die Daten liegen bereits kompakt vor (kein Padding pro Zeile)
+				if (pitch == width)
+				{
+					System.Buffer.MemoryCopy(src, pPixels, pixels.Length, pixels.Length);
+				}
+				// Fall 2: Wir müssen den Pitch berücksichtigen (Zeile für Zeile)
+				else
+				{
+					byte* pDest = pPixels;
+					for (int y = 0; y < rows; y++)
+					{
+						// Kopiere eine Zeile
+						System.Buffer.MemoryCopy(src, pDest, width, width);
+						
+						// Pointer-Arithmetik: Einfache Addition statt Multiplikation
+						src += pitch;      // Springe zur nächsten Quell-Zeile (inkl. Padding)
+						pDest += width;    // Springe zur nächsten Ziel-Zeile (kompakt)
+					}
+				}
+			}
+			
+			// --- FALL 1: ATLAS GRUPPEN NUTZUNG ---
+			if (m_AtlasGroup != null) {
+				if (m_AtlasGroup.TryPack(width, rows, out int texId, out int x, out int y, out int aWidth, out int aHeight)) {
+					m_AtlasGroup.CurrentActiveAtlas.UploadGlyph(x, y, width, rows, pixels);
+					Count++;
+
+					return new GlyphInfo {
+						TextureId = texId, // Die ID des jeweiligen Atlas
+						Size = new Vector2(width, rows),
+						Bearing = new Vector2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+						Advance = face->glyph->advance.x / 64.0f,
+						UV = new RectangleF(
+							x / (float)aWidth,
+							y / (float)aHeight,
+							width / (float)aWidth,
+							rows / (float)aHeight)
+					};
 				}
 			}
 
-			return new SizeF(adv, Height);
+			// --- FALL 2: EINZELTEXTUREN (OnDemand / FontAwesome) ---
+			int expandedW = (width + 1).NextPowerOf2();
+			int expandedH = rows.NextPowerOf2();
+			byte[] expandedPixels = new byte[expandedW * expandedH];
+
+			for (int y = 0; y < rows; y++)
+				for (int x = 0; x < width; x++)
+					expandedPixels[x + y * expandedW] = pixels[x + y * width];
+
+			int tex;
+			GL.GenTextures(1, out tex);
+			GL.BindTexture(TextureTarget.Texture2D, tex);
+			// (Parameter wie bisher setzen...)
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R8, 
+						expandedW, expandedH, 0, PixelFormat.Red, PixelType.UnsignedByte, expandedPixels);
+
+			Count++;
+			return new GlyphInfo {
+				TextureId = tex,
+				Size = new Vector2(width, rows),
+				Bearing = new Vector2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+				Advance = face->glyph->advance.x / 64.0f,
+				UV = new RectangleF(0, 0, width / (float)expandedW, rows / (float)expandedH)
+			};
 		}
 
-		public SizeF MeasureMnemonicString(string text)
-		{			
-			if (String.IsNullOrEmpty(text))
-				return SizeF.Empty;
-			float adv = 0;
-			GlyphInfo gi;
-			for (int i = 0; i < text.Length; i++) {
-				if (text [i] != '&' && GetGlyphIndex(text [i], out gi)) {
-					adv += gi.Width;
+		public bool GetGlyphInfo(char c, out GlyphInfo gli)
+		{
+			// Erst im Char-Cache schauen
+			if (CharMap.TryGetValue(c, out gli)) return true;
+
+			// Sonst Index holen und die neue Methode nutzen
+			uint index = FT_Get_Char_Index(m_Face, c);
+			if (GetGlyphInfo(index, out gli))
+			{
+				// Für das nächste Mal im Char-Cache merken
+				CharMap.Add(c, gli);
+				return true;
+			}
+
+			return false;
+		}
+
+		public bool GetGlyphInfo(uint glyphIndex, out GlyphInfo gli)
+		{
+			if (GlyphMap.TryGetValue(glyphIndex, out gli))
+			{
+				return true;
+			}
+			else if (OnDemand)
+			{
+				lock (SyncObject)
+				{
+					// Überladung von CompileCharacter, die nur den Index nutzt
+					gli = CompileCharacter(m_Face, glyphIndex); 
+					GlyphMap.Add(glyphIndex, gli);
+					return true;
 				}
 			}
-			return new SizeF(adv, Height);
+			gli = GlyphInfo.Empty;
+			return false;
 		}
 
-		private SizeF PrintElipsisString(string text, float width, FontFormat format)
-		{
-			if (String.IsNullOrEmpty(text))
-				return SizeF.Empty;
-
-			const int rightDotDistance = 2;
-			int[] textbytes = new int[text.Length];
-			float adv = 0;
-			int i;
-			int len = text.Length;
-			for (i = 0; i < len; i++) {								
-				GlyphInfo gi;
-				if (GetGlyphIndex (text [i], out gi)) {					
-					if (adv + gi.Width > width && i > 0) {
-						try {					
-							// add ellipsis character to where it fits
-							float desiredSpace = m_EllipsisGlyphIndex.Width + (rightDotDistance * ScaleFactor);
-							i--;
-							while (i > 1 && adv + desiredSpace > width) {
-								if (GetGlyphIndex (text [i], out gi))
-									adv -= gi.Width;								
-								i--;							
-							}
-							textbytes [i] = m_EllipsisGlyphIndex.ListID;
-							adv += m_EllipsisGlyphIndex.Width;
-							i++;
-						} catch (Exception ex) {
-							ex.LogError ();
-						}							
-						break;
-					}						
-					adv += gi.Width;
-					textbytes [i] = gi.ListID;
-				}
-			}
-				
-			GL.CallLists (i, ListNameType.Int, textbytes);
-
-			if (format.HasFlag (FontFormatFlags.Underline)) {
-				float y = -3f * ScaleFactor;	// ToDo: DPI Scaling
-				GL.Disable(EnableCap.Texture2D);
-				GL.Disable(EnableCap.Texture1D);
-				GL.Disable(EnableCap.TextureRectangle);
-				GL.LineWidth (1f * ScaleFactor);	// ToDo: DPI Scaling
-				GL.Begin (PrimitiveType.Lines);
-				GL.Vertex2 (0, y);
-				GL.Vertex2 (-adv + 0.5f, y);
-				GL.End ();
-			}
-				
-			if (i < len)
-				return new SizeF (width + 1, Height);
-			else
-				return new SizeF (adv, Height);
-		}
-
-		public bool ContainsChar(char c)
-		{
-			return CharMap.ContainsKey (c);
-		}
-
-		public float CharWidth(char c)
-		{
-			GlyphInfo gi;
-			if (GetGlyphIndex (c, out gi))
-				return gi.Width;
-			return 0;
-		}						
-
-		public GlyphChar GetGlyph(char c, SpecialCharacterFlags flags)
+		public GlyphChar GetGlyphChar(char c, SpecialCharacterFlags flags = SpecialCharacterFlags.Default)
 		{
 			lock (SyncObject) {
 				char g = c;
@@ -502,631 +549,268 @@ namespace SummerGUI
 
 				try {
 					GlyphInfo gi;
-					if (GetGlyphIndex (g, out gi)) {
-						return new GlyphChar(c, (uint)gi.ListID, gi.Width);
+					if (GetGlyphInfo (g, out gi)) {
+						return new GlyphChar(c, gi.Advance);
 					}
 				} catch (Exception ex) {
 					ex.LogError ();
 				} 
 				return GlyphChar.Empty;
 			}
-		}
+		}		
 
-		public SizeF PrintSelectedString(string text, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
+		public bool ContainsChar(char c)
 		{
-			if (string.IsNullOrEmpty (text))
-				return SizeF.Empty;
-
-			RectangleF rContent;
-			PointF presult;
-
-			SizeF contentSize;
-			if (format.Flags.HasFlag(FontFormatFlags.WrapText))
-				contentSize = Measure( text, bounds.Width, format);
-			else
-				contentSize = Measure(text);
-
-			rContent = new RectangleF (0, 0, contentSize.Width, contentSize.Height);
-			presult = BoxAlignment.AlignBoxes (rContent, bounds, format, Ascender, Descender);								
-
-			GL.Color3 (foreColor);
-			GL.Translate(Math.Floor(bounds.X + presult.X + offsetX), 
-				-Math.Ceiling(Ascender - Descender + YOffsetScaled + bounds.Y + presult.Y), 0f);
-
-			int[] textbytes;
-			float w = 0;
-
-			if (selLength == 0)
-				selStart = 0;
-			else {
-				if (selStart > 0) {
-					textbytes = new int[selStart];
-					for (int i = 0; i < selStart; i++) {
-						GlyphInfo gi;
-						if (GetGlyphIndex (text [i], out gi)) {
-							w += gi.Width;
-							textbytes [i] = gi.ListID;				
-						}
-					}
-
-					GL.CallLists (selStart, ListNameType.Int, textbytes);
-					//GL.Translate (w, 0, 0);
-				}
-								
-				selLength = Math.Min (selLength, text.Length - selStart);
-				if (selLength > 0) {
-					textbytes = new int[selLength];
-					float wStart = w;
-					for (int i = selStart; i < selStart + selLength; i++) {
-						GlyphInfo gi;
-						if (GetGlyphIndex (text [i], out gi)) {
-							w += gi.Width;
-							textbytes [i - selStart] = gi.ListID;
-						}
-					}
-
-					using (new PaintWrapper (RenderingFlags.HighQuality)) {
-						GL.Color4 (selectionBackColor);
-						GL.Rect (bounds.Left + wStart + offsetX, bounds.Top, bounds.Left + w + offsetX, bounds.Bottom);
-					}
-
-					//GL.ListBase(m_ListBase);
-					GL.Enable(EnableCap.Texture2D);
-
-					// doesn't work on windows computers with ATI card
-					//GL.Enable(EnableCap.TextureRectangle);	
-
-					GL.Color3 (selectionForeColor);
-					GL.CallLists (selLength, ListNameType.Int, textbytes);
-				}
-			}
-
-			int start = selStart + selLength;
-			int len = text.Length - start;
-			if (len > 0) {
-				textbytes = new int[len];
-				for (int i = start; i < text.Length; i++) {
-					GlyphInfo gi;
-					if (GetGlyphIndex (text [i], out gi)) {
-						textbytes [i - start] = gi.ListID;				
-					}
-				}
-				GL.Color3 (foreColor);
-				GL.CallLists (len, ListNameType.Int, textbytes);
-			}
-
-			return new SizeF (w, Height);
+			return CharMap.ContainsKey (c);
 		}
 
-		private SizeF PrintMenomicString (string text, RectangleF bounds, bool showMnemonics)
-		{			
-			int[] textbytes = new int[text.Length];
-			float w = 0;
-			float mstart = -1, mend = 0;
-			for (int i = 0; i < text.Length; i++) {								
-				char c = text [i];
-				GlyphInfo gi;
-				if (GetGlyphIndex (c, out gi)) {
-					if (c == '&') {
-						if (mstart < 0) {
-							mstart = w;
-							mend = w + gi.Width;
-						}
-					} else {
-						w += gi.Width;
-						textbytes [i] = gi.ListID;
-					}
-				}
-			}
-
-			GL.CallLists (text.Length, ListNameType.Int, textbytes);
-			if (showMnemonics && mstart >= 0 && mend > mstart) {				
-				float y = -3.5f * ScaleFactor;	// ToDo: DPI Scaling
-				GL.Disable(EnableCap.Texture2D);
-				GL.Disable(EnableCap.Texture1D);
-				GL.Disable(EnableCap.TextureRectangle);
-				GL.LineWidth (ScaleFactor);	// ToDo: DPI Scaling
-				GL.Begin (PrimitiveType.Lines);
-				GL.Vertex2 (mend - w - 1f, y);
-				GL.Vertex2 (mstart - w, y);
-				GL.End ();
-			}
-
-			return new SizeF (w, Height);
-		}
-
-		public void PrintTextLine (uint[] glyphs, RectangleF bounds, Color foreColor)
+		public int CharPos(string text, float cursorPos)
 		{
-			if (glyphs == null)
-				return;			
-			GL.Color3 (foreColor);
-
-			RectangleF rContent;
-			PointF presult;
-
-			rContent = new RectangleF (0, 0, bounds.Width, Height);
-			presult = BoxAlignment.AlignBoxes (rContent, bounds, FontFormat.DefaultSingleLine, Ascender, Descender);
-
-			GL.Translate(Math.Floor(bounds.X + presult.X), 
-				-Math.Ceiling(Ascender - Descender + YOffsetScaled + bounds.Y + presult.Y), 0f);
-
-			GL.CallLists (glyphs.Length, ListNameType.Int, glyphs);
-		}
-
-		public virtual bool IsBreakChar(char c)
-		{
-			return c.IsWrapCharacter();
-		}
-
-		public SizeF Measure(string text, float width, FontFormat sf)
-		{
-			if (String.IsNullOrEmpty(text))
-				return SizeF.Empty;
+			if (text == null)
+				return 0;
 
 			float adv = 0;
-			float maxAdv = 0;
-			int lines = 1;
 			GlyphInfo gi;
-
-			int lastStopChar = 0;
-			int maxStop = text.Length - 1;
-			int i;
-			int start = 0;
-			for (i = start; i < text.Length; i++) {	
-				bool breakFlag = false;
-				char c = text [i];
-				if (c == '\n') {
-					breakFlag = true;
-					lastStopChar = i;
-				} else {
-					if (IsBreakChar (c) && i < maxStop) {						
-						lastStopChar = i;				
-					}
-
-					if (GetGlyphIndex (c, out gi)) {					
-						float a = gi.Width;
-						if (adv + a > width && i > 0) {
-							breakFlag = true;
-							if (lastStopChar <= start) {								
-								adv = a;
-							}
-						}
-						else
-							adv += a;
-					}						
+			for (int i = 0; i < text.Length; i++) {
+				if (GetGlyphInfo(text [i], out gi)) {
+					if (adv + (gi.Advance / 2f) >= cursorPos)
+						return i;
+					adv += gi.Advance;
 				}
+			}
+			return text.Length;
+		}
+		
+		public IEnumerable<ShapedGlyph> ShapeText(string text)
+		{
+			using var buffer = new HarfBuzzSharp.Buffer();
+			buffer.AddUtf8(text);
+			buffer.GuessSegmentProperties();
+			m_HbFont.Shape(buffer);
 
-				if (breakFlag) {
-					maxAdv = Math.Max (maxAdv, adv);
+			var hbInfos = buffer.GlyphInfos;
+			var hbPositions = buffer.GlyphPositions;		
 
-					if (lastStopChar > start) {
-						i = lastStopChar;
-						start = i + 1;
-						adv = 0;
-					} else {
-						start = i;					
-					}
+			for (int i = 0; i < buffer.Length; i++)
+			{
+				yield return new ShapedGlyph
+				{
+					GlyphIndex = hbInfos[i].Codepoint,
+					XOffset = hbPositions[i].XOffset / 64.0f,
+					YOffset = hbPositions[i].YOffset / 64.0f,
+					XAdvance = hbPositions[i].XAdvance / 64.0f,
+					Cluster = (int)hbInfos[i].Cluster
+				};				
+			}
 
-					lastStopChar = 0;
-					lines++;
-				}
-			}				
+			yield break;
+		}
 
-			if (lines > 1)				
-				return new SizeF (Math.Max (maxAdv, adv), Height + (LineHeight * (lines - 1)));	
-				//return new SizeF (Math.Max (maxAdv, adv), LineHeight * lines);	
+		public SizeF Measure(string text, int start = 0, int len = -1)
+		{               
+			if (string.IsNullOrEmpty(text))
+				return SizeF.Empty;
+
+			string measureText;
+			if (len == -1 && start == 0)
+				measureText = text;
+			else
+			{
+				// Substring-Logik sicherstellen
+				if (start < 0)
+					start = 0;
+				if (len < 0 || start + len > text.Length)
+					len = text.Length - start;			
+				
+				measureText = text.Substring(start, len);
+			}
+						
+			return new SizeF(ShapeText(measureText).Sum(g => g.XAdvance), Height);
+		}
+
+		public SizeF MeasureGlyphs(string text, int start = 0, int len = -1)
+		{               
+			if (string.IsNullOrEmpty(text))
+				return SizeF.Empty;
+
+			string measureText;
+			if (len == -1 && start == 0)
+				measureText = text;
+			else
+			{
+				// Substring-Logik sicherstellen
+				if (start < 0)
+					start = 0;
+				if (len < 0 || start + len > text.Length)
+					len = text.Length - start;			
+				
+				measureText = text.Substring(start, len);
+			}
+
+			float adv = 0;
+			GlyphInfo gi;
+			foreach (char c in measureText)
+			{
+				if (GetGlyphInfo(c, out gi))
+					adv += gi.Advance;
+			}
+						
 			return new SizeF(adv, Height);
 		}
 
-		private SizeF PrintMultiline (string text, float width)
-		{						
-			if (String.IsNullOrEmpty(text))
+		public SizeF MeasureMnemonicString(string text)
+		{                   
+			if (string.IsNullOrEmpty(text))
 				return SizeF.Empty;
-
+			
 			float adv = 0;
-			float maxAdv = 0;
-			int start = 0;
-			int lastStopChar = 0;
-			int maxStop = text.Length - 1;
-			float stopCharX = 0;
-			int lines = 1;
-			int i;
-			for (i = start; i < text.Length; i++) {
-				bool breakFlag = false;
-				char c = text [i];
-				if (c == '\n') {
-					breakFlag = true;
-					lastStopChar = i;
-					stopCharX = adv;
-				}
-				else {
-					if (IsBreakChar(c) && i < maxStop) {
-						lastStopChar = i;
-						stopCharX = adv;
+			foreach (ShapedGlyph si in ShapeText(text))
+			{
+				if (GetGlyphInfo(si.GlyphIndex, out var gi)) 
+				{
+					char c = si.Cluster < text.Length ? text[si.Cluster] : (char)0;
+					if (c != '&')
+					{
+						adv += si.XAdvance;						
 					}
-
-					GlyphInfo gi;
-					if (GetGlyphIndex(c, out gi)) {						
-						if (adv + gi.Width > width && i > 0) {
-							breakFlag = true;
-							if (lastStopChar <= start)
-								stopCharX = gi.Width;
-						}
-						else
-							adv += gi.Width;
-					}
-				}
-
-				if (breakFlag) {
-					maxAdv = Math.Max (maxAdv, adv);
-					if (lastStopChar > start) {
-						i = lastStopChar;
-						adv = stopCharX;
-					}
-
-					string textLine = text.Substring(start, i - start);
-					PrintInternal (textLine);
-
-					// line++
-					GL.Translate (-adv, -LineHeight, 0);
-
-					if (lastStopChar > start) {
-						start = i + 1;
-						adv = 0;
-					}
-					else {
-						start = i;
-						adv = stopCharX;
-					}
-
-					lastStopChar = 0;
-					lines++;
 				}
 			}
-
-			if (i > start) {
-				string textLine = text.Substring(start, i - start);
-				PrintInternal (textLine);
-			}
-
-			if (lines > 1)				
-				return new SizeF (Math.Max (maxAdv, adv), Height + (LineHeight * (lines - 1)));
-				//return new SizeF (Math.Max (maxAdv, adv), LineHeight * lines);
+			
 			return new SizeF(adv, Height);
 		}
 
+		public SizeF Measure(string text, float maxWidth, FontFormat format)
+		{       
+			if (string.IsNullOrEmpty(text))
+				return SizeF.Empty;
 
-		private SizeF PrintInternal (string text)
-		{	
-			float adv = 0;
-			int[] textbytes = new int[text.Length];
-			for (int i = 0; i < text.Length; i++) {								
-				GlyphInfo gi;
-				if (GetGlyphIndex (text [i], out gi)) {
-					textbytes [i] = gi.ListID;				
-					adv += gi.Width;
+			float maxLineWidth = 0;
+			int lineCount = 1;
+			
+			bool wrapEnabled = format.HasFlag(FontFormatFlags.WrapText) && maxWidth > 0;
+
+			// Wir arbeiten mit ReadOnlySpan für maximale Performance ohne Substring-Allokationen
+			ReadOnlySpan<char> span = text.AsSpan();
+			int start = 0;
+			int lastBreakIdx = -1;
+
+			for (int i = 0; i < span.Length; i++)
+			{
+				char c = span[i];
+
+				// 1. Manueller Zeilenumbruch
+				if (c == '\n')
+				{
+					float lineWidth = MeasureSegment(span.Slice(start, i - start));
+					maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+					
+					start = i + 1;
+					lineCount++;
+					lastBreakIdx = -1;
+					continue;
+				}
+
+				// Merke dir Umbruchstellen (Leerzeichen/Bindestrich/IsWrapCharacter)
+				if (char.IsWhiteSpace(c) || c == '-' || c.IsWrapCharacter())
+				{
+					lastBreakIdx = i;
+				}
+
+				// 2. Automatischer Zeilenumbruch (Wrap)
+				if (wrapEnabled)
+				{
+					// Wir messen das aktuelle Wort/Segment bis hierhin
+					float currentWidth = MeasureSegment(span.Slice(start, i - start + 1));
+
+					if (currentWidth > maxWidth)
+					{
+						if (lastBreakIdx != -1 && lastBreakIdx > start)
+						{
+							// Umbruch am letzten Space
+							float lineWidth = MeasureSegment(span.Slice(start, lastBreakIdx - start + 1));
+							maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+							
+							i = lastBreakIdx; // Springe zurück
+							start = i + 1;
+						}
+						else
+						{
+							// Wort zu lang -> Notumbruch (umbruch direkt vor dem aktuellen Zeichen)
+							float lineWidth = MeasureSegment(span.Slice(start, i - start));
+							maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+							start = i;
+							i--; // Dieses Zeichen in der nächsten Zeile prüfen
+						}
+						lineCount++;
+						lastBreakIdx = -1;
+					}
 				}
 			}
 
-			GL.CallLists (text.Length, ListNameType.Int, textbytes);
-			return new SizeF (adv, Height);
+			// Restliche Zeile messen
+			if (start < span.Length)
+			{
+				maxLineWidth = Math.Max(maxLineWidth, MeasureSegment(span.Slice(start)));
+			}
+
+			float totalHeight = Height + (lineCount - 1) * LineHeight;
+			return new SizeF(maxLineWidth, totalHeight);
 		}
 
-		public SizeF Print(string text, RectangleF bounds, FontFormat format, Color color = default(Color)) 
-		{			
-			if (this.IsDisposed || string.IsNullOrEmpty (text))
-				return SizeF.Empty;
-
+		// Private Helper-Methode, die HarfBuzz nutzt
+		private float MeasureSegment(ReadOnlySpan<char> segment)
+		{
+			if (segment.IsEmpty) return 0;
+			return ShapeText(segment.ToString()).Sum(g => g.XAdvance);
+		}		
+				
+		private void Clear()
+		{
 			try {
+				CharMap?.Clear();
+				GlyphMap?.Clear();
 
-				RectangleF rContent;
-				PointF presult;
+				m_HbFont?.Dispose();
+				m_HbFont = null;
+				
+				m_HbFace?.Dispose();
+				m_HbFace = null;
 
-				// Abkürzung, häufigster Fall
-				if (format.HAlign == Alignment.Near && !format.HasFlag(FontFormatFlags.WrapText)) {
-					rContent = new RectangleF (0, 0, bounds.Width, bounds.Height);
-
-					float y = 0;
-					if (bounds.Height > this.Height) {				
-						switch (format.VAlign) {
-						case  Alignment.Near:
-							y = 0;
-							break;
-
-						case Alignment.Center:
-							y = (bounds.Height - Height) / 2;
-							break;
-
-						case Alignment.Baseline:
-							y = (bounds.Height - (Height + Descender)) / 2;
-							break;
-
-						case Alignment.Far:
-							y = bounds.Height - Height;
-							break;
-						}
-					}
-
-					//presult = new Point (0, (int)(y + 0.5f));
-					presult = new Point (0, y.Ceil());
-
-				} else {
-					SizeF contentSize;
-					if (format.HasFlag(FontFormatFlags.WrapText))				
-						contentSize = Measure(text, bounds.Width, format);
-					else if (format.HasFlag(FontFormatFlags.Mnemonics))				
-						contentSize = MeasureMnemonicString(text);
-					else
-						contentSize = Measure(text);
-
-					rContent = new RectangleF (0, 0, contentSize.Width, contentSize.Height);
-					presult = BoxAlignment.AlignBoxes (rContent, bounds, format, Ascender, Descender);
+				if (m_Face != null) {
+					FT_Done_Face(m_Face);
+					m_Face = null;
 				}
 
-				if (color != Color.Empty)
-					GL.Color3 (color.R, color.G, color.B);
-				else
-					GL.Color3 (Theme.Colors.Base03);
+				m_Blob?.Dispose();
+				m_Blob = null;
 
-				GL.Translate(Math.Floor(bounds.X + presult.X), 
-					-Math.Ceiling(Ascender - Descender + YOffsetScaled + bounds.Y + presult.Y), 0f);
+				GL.BindTexture (TextureTarget.Texture2D, 0);
+				
+				if (m_Textures != null)
+				{
+					foreach (var t in m_Textures)
+					{
+						if (t > 0)
+							GL.DeleteTexture(t);
+					}					
+				}
 
-				if (format.HasFlag(FontFormatFlags.Elipsis) || format.HasFlag(FontFormatFlags.Underline))
-					return PrintElipsisString(text, bounds.Width, format);
-				else if (format.HasFlag(FontFormatFlags.Mnemonics))
-					return PrintMenomicString(text, bounds, ModifierKeys.AltPressed);
-				else if (format.HasFlag(FontFormatFlags.WrapText))
-					return PrintMultiline(text, bounds.Width);
-				else
-					return PrintInternal (text);
-
+				if (m_AtlasGroup != null)
+				{
+					m_AtlasGroup.Dispose();
+					m_AtlasGroup = null;
+				}				
+				
 			} catch (Exception ex) {
 				ex.LogError ();
-				return SizeF.Empty;
+			} finally {
+				GlyphCount = 0;
+				m_Textures = null;
+				Height = 0;
+				Count = 0;
+				m_EllipsisGlyphInfo = GlyphInfo.Empty;
 			}
-		}			
-
-		public void Begin()
-		{			
-			GL.PushAttrib(AttribMask.ListBit | AttribMask.CurrentBit | AttribMask.EnableBit | AttribMask.TransformBit);
-
-			GL.MatrixMode(MatrixMode.Modelview);
-			GL.Disable(EnableCap.Lighting);
-			GL.Enable(EnableCap.Texture2D);
-			GL.Disable(EnableCap.DepthTest);
-			GL.Enable(EnableCap.Blend);
-			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-			GL.ListBase(m_ListBase);
-
-			//float[] modelviewMatrix = new float[16];
-			//GL.GetFloat(GetPName.ModelviewMatrix, modelviewMatrix);
-			GL.PushMatrix();
-			GL.LoadIdentity();
-			//GL.Translate(x, y, 0);
-			GL.Scale (1, -1, 1);
-			//GL.MultMatrix(modelviewMatrix);
 		}
-
-		public void End() 
-		{			
-			GL.PopMatrix();					
-			GL.PopAttrib();	
-		}
-
-		public int Count { get; private set; }
-
-		public bool IsSpecialChar(char c)
-		{
-			return c == (char)182 || c == (char)183;
-		}
-
-		public unsafe GlyphInfo CompileCharacter (FreeTypeSharp.FT_FaceRec_* face, uint glyphindex, char character)
-		//public unsafe GlyphInfo CompileCharacter (Face face, uint glyphindex, char character)
-		{									
-			// Load or generate new Texture and store the Handle in m_Textures
-			if (m_Textures.Length <= Count)
-				Array.Resize (ref m_Textures, Math.Max (32, m_Textures.Length * 2));
-			int TextureIndex = m_Textures [Count];
-			if (TextureIndex == 0) {
-				int[] textures = new int[1];
-				GL.GenTextures (1, textures);
-				if (textures [0] == 0)
-					return GlyphInfo.Empty;				
-				m_Textures [Count] = textures [0];
-				TextureIndex = textures [0];
-			}
-
-			int ListIndex = (int)glyphindex;
-			//if (m_ListBase == 0) {				
-			if (OnDemand) {
-				ListIndex = GL.GenLists (1);
-				if (ListIndex == 0)
-					return GlyphInfo.Empty;
-			}
-				
-			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);				
-			if (error != FT_Error.FT_Err_Ok) {
-				// ... Fehlerbehandlung
-				return GlyphInfo.Empty;
-			}
-			
-			error = FT_Render_Glyph(face->glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);
-			if (error != FT_Error.FT_Err_Ok) {
-				// ...
-				return GlyphInfo.Empty;
-			}
-			
-			FT_Bitmap_ ftBitmap = face->glyph->bitmap;
-
-			var glyph = face->glyph;
-			
-			int width = (int)ftBitmap.width;
-			int rows = (int)ftBitmap.rows;
-			int size = width * rows;			
-			int left = glyph->bitmap_left;
-			int top = glyph->bitmap_top;
-
-			if (size <= 0)
-			{
-				//glyph.Dispose ();
-
-				//if (Filter == GlyphFilterFlags.All)
-				//	m_ExtentsX[(int)glyphindex] = 0;
-				int spaceWidth = 0;
-				if (character == 32)
-				{
-					Count++;
-					spaceWidth = (Size * ScaleFactor / 3f).Ceil();
-					GL.NewList (m_ListBase + ListIndex, ListMode.Compile);	// evtl character
-					GL.Translate (spaceWidth, 0, 0);
-					GL.EndList();
-					return new GlyphInfo(ListIndex, spaceWidth);
-				}		
-				return GlyphInfo.Empty;
-			}
-
-			Count++;
-
-			int	expandedBitmapWidth = (width + 1).NextPowerOf2();
-			int	expandedBitmapHeight = rows.NextPowerOf2();
-			byte[]	expandedBitmapBytes = new byte[expandedBitmapWidth * expandedBitmapHeight];
-
-			//fixed (byte* p = ftBitmap.BufferData)
-			byte* p = ftBitmap.buffer;
-			fixed (byte* q = expandedBitmapBytes)
-			{				
-				try {
-					byte* pTemp = p;
-					for (int countY = 0; countY < expandedBitmapHeight; countY++) {
-						for (int countX = 0; countX < expandedBitmapWidth; countX++) {						
-							byte* qTemp = q + (countX + countY * expandedBitmapWidth);
-							if (countX >= width || countY >= rows)			
-								*qTemp = 0;
-							else							
-								*qTemp = *(pTemp + countX);
-						}
-						pTemp += width;
-					}
-
-					if (IsSpecialChar (character)) {
-						for (int i = 0; i < expandedBitmapBytes.Length; i++) {
-							byte* qTemp = q + i;
-							*qTemp = (byte)(*qTemp / 2);
-						}
-					}
-				} catch (Exception ex) {
-					ex.LogError ();
-				}
-			}
-
-			GL.BindTexture  (TextureTarget.Texture2D, TextureIndex);
-
-			GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Clamp);
-			GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Clamp);
-
-			//GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Linear);
-			GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
-			GL.TexImage2D (TextureTarget.Texture2D, 
-				0, 							// level-of-detail
-				PixelInternalFormat.Alpha,	// texture-format 32bit
-				(int)expandedBitmapWidth, 	// texture-width
-				(int)expandedBitmapHeight, 	// texture-height
-				0,							// border
-				PixelFormat.Alpha, // pixel-data-format
-				PixelType.UnsignedByte, 	// pixel-data-type
-				expandedBitmapBytes);			
-
-			// ---------------------------------------------------------------------------
-			//Create a display list (of precompiled GL commands) and bind a texture to it.
-			GL.NewList (m_ListBase + ListIndex, ListMode.Compile);
-			GL.BindTexture (TextureTarget.Texture2D, TextureIndex);
-
-			// Account for freetype spacing rules.
-
-			//float glyphWidth = (float)glyph.Advance.X;
-			//float glyphWidth = (float)face.Glyph.Advance.X / 64.0f; // <-- Dies ist die manuelle 26.6 Umrechnung
-			float glyphWidth = (float)face->glyph->advance.x / 64.0f; // <-- Dies ist die manuelle 26.6 Umrechnung
-			//float left = (glyphWidth - bmg.Left) / 2f;
-
-			GL.Translate (left, 0, 0);
-			GL.PushMatrix ();
-			GL.Translate (0, top - rows, 0);
-
-			float x = width / (float)expandedBitmapWidth;
-			float y = rows / (float)expandedBitmapHeight;
-
-			// Draw the quad.
-			GL.Begin (PrimitiveType.Quads);
-			GL.TexCoord2 (0, 0); GL.Vertex2 (0, rows);
-			GL.TexCoord2 (0, y); GL.Vertex2 (0, 0);
-			GL.TexCoord2 (x, y); GL.Vertex2 (width, 0);
-			GL.TexCoord2 (x, 0); GL.Vertex2 (width, rows);
-			GL.End ();
-			GL.PopMatrix ();
-
-			//GL.Translate (face.Glyph.Metrics.HorizontalAdvance - bmg.Left, 0, 0);
-
-
-			GL.Translate (glyphWidth - left, 0, 0);
-
-
-			// Advance for the next character.
-			/*** 
-			if (!Monospace)
-				GL.Translate (face.Glyph.Metrics.HorizontalAdvance - bmg.Left, 0, 0);
-			else				
-				GL.Translate (glyphWidth, 0, 0);
-			***/
-
-			GL.EndList();
-
-			// ---------------------------------------------------------------------------
-			//m_ExtentsX[glyphindex] = face.Glyph.Metrics.HorizontalAdvance.Ceiling();
-			//m_ExtentsX[ListIndex] = glyphWidth.Ceil();
-			
-			return new GlyphInfo(ListIndex, glyphWidth.Ceil());
-		}
-
-		protected Size PushProjectionMatrixAndSetParallelProjectionForViewport() 
-		{
-			int[] viewport = new int[4];
-
-			// Save the coefficients of the six user-definable clipping planes.
-			GL.PushAttrib(AttribMask.TransformBit);
-
-			// Determine the viewport coordinates.
-			GL.GetInteger(GetPName.Viewport, viewport);
-
-			// Save the projection matrix.
-			GL.MatrixMode(MatrixMode.Projection);
-			GL.PushMatrix();
-
-			// Reset/initialize the projection matrix.
-			GL.LoadIdentity();
-
-			// Set the GDI-text-mode alike coordinate system based on the viewport coordinates.
-			GL.Ortho(viewport[0], viewport[2], viewport[1], viewport[3], 0, 1);
-
-			// Recall the coefficients of the six user-definable clipping planes.
-			GL.PopAttrib();
-
-			return new Size (viewport[2] - viewport[0], viewport[3] - viewport[1]);
-		}
-
-		protected void PopProjectionMatrix ()
-		{
-			// Save the coefficients of the six user-definable clipping planes.
-			GL.PushAttrib(AttribMask.TransformBit);
-
-			// Recall the projection matrix.
-			GL.MatrixMode(MatrixMode.Projection);
-			GL.PopMatrix();
-
-			// Recall the coefficients of the six user-definable clipping planes.
-			GL.PopAttrib();			
-		}		
 
 		protected override void CleanupManagedResources ()
 		{						
@@ -1136,8 +820,7 @@ namespace SummerGUI
 		protected override void CleanupUnmanagedResources ()
 		{
 			// THESE are unmanaged resources, aren't they ?
-			Clear();			
-
+			Clear();
 			base.CleanupUnmanagedResources ();
 		}
 	}			

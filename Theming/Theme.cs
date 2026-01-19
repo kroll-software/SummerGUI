@@ -567,22 +567,22 @@ namespace SummerGUI
 
 		public static Color GetContextHoverColor(ColorContexts colorContext)
 		{
-			return CurrentTheme.GetContextColor (colorContext).Lerp (Color.White, 0.25);
+			return CurrentTheme.GetContextColor (colorContext).Lerp (Color.White, 0.25f);
 		}
 
 		public static Color GetContextDisabledColor(ColorContexts colorContext)
 		{
-			return CurrentTheme.GetContextColor (colorContext).Lerp (Color.LightGray, 0.75);
+			return CurrentTheme.GetContextColor (colorContext).Lerp (Color.LightGray, 0.75f);
 		}
 
 		public static Color GetContextDisabledBorderColor(ColorContexts colorContext)
 		{
-			return CurrentTheme.GetContextBorderColor (colorContext).Lerp (Color.LightGray, 0.75);
+			return CurrentTheme.GetContextBorderColor (colorContext).Lerp (Color.LightGray, 0.75f);
 		}
 
 		public static Color GetContextDisabledForeColor(ColorContexts colorContext)
 		{
-			return CurrentTheme.GetContextForeColor (colorContext).Lerp (Color.Gray, 0.5);
+			return CurrentTheme.GetContextForeColor (colorContext).Lerp (Color.Gray, 0.5f);
 		}
 	}
 }

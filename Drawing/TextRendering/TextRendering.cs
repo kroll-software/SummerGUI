@@ -1,46 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Drawing;
+using OpenTK.Mathematics;
 using System.Collections.Generic;
 using System.Text;
 using KS.Foundation;
 
 namespace SummerGUI
-{
-	public interface IGUIFont : IDisposable
-	{		
-		float Size { get; }
-		float LineHeight { get; }
-		float TextBoxHeight { get; }
-		float CaptionHeight { get; }
-		float Height { get; }
-		float YOffset { get; set; }
-		float LineSpacing { get; set; }
-
-		float Ascender { get; }
-		float Descender { get; }
-
-		SizeF Measure(string text, int start = 0, int len = -1);
-		SizeF Measure(string text, float width, FontFormat sf);
-		SizeF MeasureMnemonicString (string text);
-
-		bool ContainsChar (char c);
-		float CharWidth (char c);
-		int CharPos (string text, float cursorPos);
-
-		SizeF Print(string text, RectangleF bounds, FontFormat format, Color color = default(Color));
-		SizeF PrintSelectedString (string text, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor);
-		void PrintTextLine (uint[] glyphs, RectangleF bounds, Color foreColor);
-
-		GlyphChar GetGlyph (char c, SpecialCharacterFlags flags);
-
-		void Begin();
-		void End();
-
-		void Rescale (float scaleFactor);
-	}
-
-
+{		
 	public static class SpecialCharacters
 	{
 		public static char Paragraph = (char)182;	// paragraph, alt. 9166 carriage return symbol
@@ -131,19 +98,17 @@ namespace SummerGUI
 
 	public struct GlyphChar : IEquatable<GlyphChar>, IComparable<GlyphChar>
 	{		
-		public readonly char Char;
-		public uint Glyph;
-		public readonly int Width;	// this also helps for fast text-layout, word-wrapping, ..
+		public char Char;		
+		public readonly float Advance;	// this also helps for fast text-layout, word-wrapping, ..
 		//public GlyphColor Color;
 
-		public GlyphChar(char c, uint glyph, int width)
+		public GlyphChar(char c, float advance)
 		{
-			Char = c;
-			Glyph = glyph;
-			Width = width;
+			Char = c;		
+			Advance = advance;
 		}
 
-		public static readonly GlyphChar Empty = new GlyphChar ((char)0, 0, 0);
+		public static readonly GlyphChar Empty = new GlyphChar ((char)0, 0);
 
 		public override bool Equals (object obj)
 		{			
@@ -153,26 +118,23 @@ namespace SummerGUI
 		public bool Equals(GlyphChar other)
 		{
 			return Char == other.Char;
-				//&& Glyph == other.Glyph
-				//&& Width == other.Width;
 		}
 
 		public override int GetHashCode ()
 		{
-			unchecked {
-				//return ((int)Char ^ 17) + ((int)Glyph ^ 23) + Width;	// + Color.GetHashCode ();
+			unchecked {		
 				return (int)Char;
 			}
 		}
 
 		public static bool operator ==(GlyphChar c1, GlyphChar c2)
 		{
-			return c1.Equals (c2);
+			return c1.Char.Equals (c2.Char);
 		}
 
 		public static bool operator !=(GlyphChar c1, GlyphChar c2)
 		{
-			return !c1.Equals (c2);
+			return !c1.Char.Equals (c2.Char);
 		}
 
 		public static bool operator <(GlyphChar c1, GlyphChar c2)
@@ -224,7 +186,7 @@ namespace SummerGUI
 		}
 
 		public int Length { get; protected set; }
-		public int Width { get; protected set; }
+		public float Width { get; protected set; }
 
 		/// <summary>
 		/// This will create an optimal short array without extra space
@@ -252,12 +214,14 @@ namespace SummerGUI
 		/// We usually just pass this UINT-array to the renderer
 		/// </summary>
 		/// <returns>The render bytes.</returns>
+		/***
 		public uint[] ToRenderBytes()
 		{
 			if (Length == 0)
 				return new uint[0];
 			return Glyphs.Take(Length).Select (g => g.Glyph).ToArray();
 		}
+		***/
 
 		public override string ToString ()
 		{
@@ -272,10 +236,10 @@ namespace SummerGUI
 			GlyphChar[] tmp = null;
 			if (!String.IsNullOrEmpty(text) && font != null) {
 				tmp = new GlyphChar[text.Length];
-				int w = 0;
+				float w = 0;
 				for (int i = 0; i < text.Length; i++) {
-					GlyphChar g = font.GetGlyph (text [i], flags);
-					w += g.Width;
+					GlyphChar g = font.GetGlyphChar (text [i], flags);
+					w += g.Advance;
 					tmp [i] = g;
 				}
 					
@@ -306,8 +270,8 @@ namespace SummerGUI
 			if (c == '\r' || font == null)
 				return 0;
 
-			GlyphChar g = font.GetGlyph (c, flags);
-			if (g.Glyph > 0) {
+			GlyphChar g = font.GetGlyphChar (c, flags);
+			if (g.Char > 0) {
 				try {
 					int idx = 0;
 					if (Length == 0)
@@ -319,7 +283,7 @@ namespace SummerGUI
 						}
 					}
 					Glyphs[idx] = g;
-					Width += g.Width;
+					Width += g.Advance;
 					return 1;
 				} catch (Exception ex) {
 					ex.LogError ();
@@ -360,8 +324,8 @@ namespace SummerGUI
 				return Append (c, font, flags);
 						
 			// first see, if we get a valid Glyph
-			GlyphChar glyph	= font.GetGlyph(c, flags);
-			if (glyph.Glyph == 0)
+			GlyphChar glyph	= font.GetGlyphChar(c, flags);
+			if (glyph.Char == 0)
 				return 0;
 				
 			int newLen = Glyphs.Length;
@@ -379,7 +343,7 @@ namespace SummerGUI
 			}
 
 			Length++;
-			Width += glyph.Width;
+			Width += glyph.Advance;
 
 			return 1;
 		}
@@ -399,8 +363,8 @@ namespace SummerGUI
 
 			List<GlyphChar> glyphs = new List<GlyphChar> (text.Length);
 			for (int i = 0; i < text.Length; i++) {
-				GlyphChar g = font.GetGlyph(text [i], flags);
-				if (g.Glyph != 0)
+				GlyphChar g = font.GetGlyphChar(text [i], flags);
+				if (g.Char != 0)
 					glyphs.Add (g);
 			}
 
@@ -423,7 +387,7 @@ namespace SummerGUI
 			}
 
 			Length += sourceLen;
-			Width += source.Sum(p => p.Width);
+			Width += source.Sum(p => p.Advance);
 
 			return sourceLen;
 		}
@@ -476,7 +440,7 @@ namespace SummerGUI
 
 			GlyphString result = new GlyphString (arr);
 			result.Length = length;
-			result.Width = arr.Sum(p => p.Width);
+			result.Width = arr.Sum(p => p.Advance);
 			return result;
 		}
 

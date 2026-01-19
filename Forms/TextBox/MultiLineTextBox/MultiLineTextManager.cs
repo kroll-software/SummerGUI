@@ -25,7 +25,7 @@ namespace SummerGUI.Editor
 		IAsyncResult AsyncScalingWordWrapResult;
 		CancellationTokenSource TokenScalingWordWrapSource;
 
-		public int LineHeight { get; set; }
+		public float LineHeight { get; set; }
 		public int LineCount { get; set; }
 		public float BreakWidth { get; private set; }
 		public int Length { get; set; }
@@ -40,7 +40,7 @@ namespace SummerGUI.Editor
 			}
 		}
 
-		public ParagraphList(int lineHeight, float breakWidth) : base()
+		public ParagraphList(float lineHeight, float breakWidth) : base()
 		{
 			LineHeight = lineHeight;
 			BreakWidth = breakWidth;
@@ -129,7 +129,7 @@ namespace SummerGUI.Editor
 			}
 		}
 			
-		public void OnRefreshGlyphsAsync(IGUIFont font, SpecialCharacterFlags flags, int lineHeight, float breakWidth)
+		public void OnRefreshGlyphsAsync(IGUIFont font, SpecialCharacterFlags flags, float lineHeight, float breakWidth)
 		{
 			if (AsyncScalingWordWrapResult != null && !(AsyncScalingWordWrapResult.IsCompleted || AsyncScalingWordWrapResult.CompletedSynchronously)) {
 				if (TokenScalingWordWrapSource != null && !TokenScalingWordWrapSource.IsCancellationRequested)
@@ -285,7 +285,7 @@ namespace SummerGUI.Editor
 
 		// *** Metrics ***
 
-		public int LineHeight { get; private set; }
+		public float LineHeight { get; private set; }
 		public int LineCount 
 		{ 
 			get {
@@ -471,6 +471,7 @@ namespace SummerGUI.Editor
 			ParagraphPosition pos = para.PositionAtIndex (x);
 			float top = para.LineOffset * LineHeight;
 			float y = top + (pos.LineIndex * LineHeight);
+			y  += -Font.Descender / 2f;
 			return new RectangleF (pos.ColumnStart, y, pos.ColumnWidth, LineHeight);
 		}
 			
@@ -991,7 +992,7 @@ namespace SummerGUI.Editor
 			Owner = owner;
 			Font = Owner.Font;
 			Flags = flags;
-			LineHeight = (int)Font.LineHeight;
+			LineHeight = (int)Font.LineHeight.Ceil();
 
 			m_Paragraphs = new ParagraphList (LineHeight, BreakWidth);
 
@@ -1029,7 +1030,7 @@ namespace SummerGUI.Editor
 		public void OnScalingChanged(float breakWidth)
 		{
 			BreakWidth = breakWidth;
-			LineHeight = (int)Font.LineHeight;
+			LineHeight = (int)Font.LineHeight.Ceil();
 			Paragraphs.OnRefreshGlyphsAsync (Font, Flags, LineHeight, BreakWidth);
 		}
 

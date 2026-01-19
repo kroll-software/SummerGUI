@@ -89,11 +89,7 @@ namespace SummerGUI
 			UrlCaptionWidget.Text = "More Info:";
 			UrlCaptionWidget.Visible = false;
 
-			UrlWidget = Table.AddChild (new UrlTextWidget ("url", ""), 4, 2);
-			UrlWidget.Click += (sender, e) => 
-			{				
-				Helpers.OpenURL(UrlWidget.Url, this);
-			};
+			UrlWidget = Table.AddChild (new UrlTextWidget ("url", ""), 4, 2);			
 
 			CreditsWidget = Table.AddChild (new ScrollingBox ("credits"), 5, 0, 1, 3);
 			CreditsWidget.SetFontByTag(CommonFontTags.Serif);

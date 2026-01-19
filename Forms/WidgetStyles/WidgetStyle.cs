@@ -32,9 +32,9 @@ namespace SummerGUI
 		void InitStyle ();
 		IWidgetStyle Clone ();
 
-		int AlphaBack { get; set; }
-		int AlphaFore { get; set; }
-		int AlphaBorder { get; set; }
+		byte AlphaBack { get; set; }
+		byte AlphaFore { get; set; }
+		byte AlphaBorder { get; set; }
 	}
 
 	public class WidgetStyle : IWidgetStyle
@@ -124,8 +124,8 @@ namespace SummerGUI
 				RectangleF rBorder = widget.Bounds;
 				if (Math.Abs(BorderDistance) > float.Epsilon)
 					rBorder.Inflate (BorderDistance, BorderDistance);
-				rBorder = rBorder.Ceil ();				
-				rBorder.Offset (-0.5f, -0.5f);
+				//rBorder = rBorder.Ceil ();
+				//rBorder.Offset (-0.5f, -0.5f);
 				ctx.DrawRectangle (BorderColorPen, rBorder);
 			}
 		}
@@ -150,13 +150,13 @@ namespace SummerGUI
 		/// Gets or sets the background color transparency.
 		/// </summary>
 		/// <value>The alpha back.</value>
-		public int AlphaBack
+		public byte AlphaBack
 		{
 			get{
-				return (int)BackColorBrush.Color.A;
+				return BackColorBrush.Color.A;
 			}
 			set{
-				BackColorBrush.Color = Color.FromArgb (Math.Max(0, Math.Min(value, 255)), BackColorBrush.Color);
+				BackColorBrush.Color = Color.FromArgb (Math.Max((byte)0, Math.Min(value, (byte)255)), BackColorBrush.Color);
 			}
 		}
 
@@ -164,13 +164,13 @@ namespace SummerGUI
 		/// Gets or sets the foreground color transparency.
 		/// </summary>
 		/// <value>The alpha fore.</value>
-		public int AlphaFore
+		public byte AlphaFore
 		{
 			get{
-				return (int)ForeColorBrush.Color.A;
+				return ForeColorBrush.Color.A;
 			}
 			set{
-				ForeColorBrush.Color = Color.FromArgb (Math.Max(0, Math.Min(value, 255)), ForeColorBrush.Color);
+				ForeColorBrush.Color = Color.FromArgb (Math.Max((byte)0, Math.Min(value, (byte)255)), ForeColorBrush.Color);
 				ForeColorPen.Color = ForeColorBrush.Color;
 			}
 		}
@@ -179,13 +179,13 @@ namespace SummerGUI
 		/// Gets or sets the border color transparency.
 		/// </summary>
 		/// <value>The alpha border.</value>
-		public int AlphaBorder
+		public byte AlphaBorder
 		{
 			get{
-				return (int)BorderColorPen.Color.A;
+				return BorderColorPen.Color.A;
 			}
 			set{
-				BorderColorPen.Color = Color.FromArgb (Math.Max(0, Math.Min(value, 255)), BorderColorPen.Color);
+				BorderColorPen.Color = Color.FromArgb (Math.Max((byte)0, Math.Min(value, (byte)255)), BorderColorPen.Color);
 			}
 		}
 			

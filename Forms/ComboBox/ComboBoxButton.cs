@@ -53,7 +53,7 @@ namespace SummerGUI
 				float h = bounds.Height;
 				float w = bounds.Right - h;
 				if (Dock == Docking.Fill && Text == null) {						
-					ctx.DrawLine (Style.BorderColorPen, w, bounds.Top, w, bounds.Bottom - 0.5f);
+					ctx.DrawLine (Style.BorderColorPen, w, bounds.Top, w, bounds.Bottom);
 				}
 
 				RectangleF rt = new RectangleF (w, bounds.Top + TextOffsetY, h, h);

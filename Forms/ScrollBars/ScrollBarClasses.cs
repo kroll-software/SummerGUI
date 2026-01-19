@@ -96,7 +96,7 @@ namespace SummerGUI.Scrolling
 
 			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
 			float y = e.Y - sb.Top - (LastMouseDownMousePosition.Y - LastMouseDownUpperLeft.Y) - ScrollBar.ScrollBarWidth;
-			sb.Value =  (int)(y * factor);
+			sb.Value =  y * factor;
 		}
 	}
 
@@ -154,7 +154,7 @@ namespace SummerGUI.Scrolling
 
 			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
 			float x = e.X - sb.Left - (LastMouseDownMousePosition.X - LastMouseDownUpperLeft.X) - ScrollBar.ScrollBarWidth;
-			sb.Value =  (int)(x * factor);
+			sb.Value =  x * factor;
 		}
 	}
 
@@ -242,48 +242,46 @@ namespace SummerGUI.Scrolling
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{
 			base.OnPaint (ctx, bounds);		
+			
+			float iMax = 0, x = 0, y = 0;
 
-			using (LineDrawingBuffer buffer = new LineDrawingBuffer ()) {
-				float iMax = 0, x = 0, y = 0;
-
-				switch (ScrollOrientation) {
-				case ScrollOrientation.VerticalScroll:
-					x = (int)(Left + Width / 2f);
-					iMax = (int)(Width / 2f - Padding.Width / 4f);
-					if (Align == Alignment.Near) {
-						y = Top + Padding.Top;
-						for (int i = 0; i < iMax; i++) {
-							buffer.AddLine (Style.ForeColorPen, x - i, y, i + x + 1, y);
-							y++;
-						}
-					} else {
-						y = Bottom - Padding.Bottom;
-						for (int i = 0; i < iMax; i++) {
-							buffer.AddLine (Style.ForeColorPen, x - i, y, i + x + 1, y);
-							y--;
-						}
+			switch (ScrollOrientation) {
+			case ScrollOrientation.VerticalScroll:
+				x = Left + Width / 2f;
+				iMax = Width / 2f - Padding.Width / 4f;
+				if (Align == Alignment.Near) {
+					y = Top + Padding.Top;
+					for (int i = 0; i < iMax; i++) {
+						ctx.DrawLine(Style.ForeColorPen, x - i, y, i + x + 1, y);
+						y++;
 					}
-					break;
-
-				case ScrollOrientation.HorizontalScroll:
-					y = (int)(Top + Height / 2f);
-					iMax = (int)(Height / 2f - Padding.Width / 4f);
-					if (Align == Alignment.Near) {
-						x = Left + Padding.Left;
-						for (int i = 0; i < iMax; i++) {
-							buffer.AddLine (Style.ForeColorPen, x, y - i, x, i + y + 1);
-							x++;
-						}
-					} else {
-						x = Right - Padding.Right;
-						for (int i = 0; i < iMax; i++) {
-							buffer.AddLine (Style.ForeColorPen, x, y - i, x, i + y + 1);
-							x--;
-						}
+				} else {
+					y = Bottom - Padding.Bottom;
+					for (int i = 0; i < iMax; i++) {					
+						ctx.DrawLine(Style.ForeColorPen, x - i, y, i + x + 1, y);
+						y--;
 					}
-					break;
 				}
-			}
+				break;
+
+			case ScrollOrientation.HorizontalScroll:
+				y = Top + Height / 2f;
+				iMax = Height / 2f - Padding.Width / 4f;
+				if (Align == Alignment.Near) {
+					x = Left + Padding.Left;
+					for (int i = 0; i < iMax; i++) {					
+						ctx.DrawLine(Style.ForeColorPen, x, y - i, x, i + y + 1);
+						x++;
+					}
+				} else {
+					x = Right - Padding.Right;
+					for (int i = 0; i < iMax; i++) {					
+						ctx.DrawLine(Style.ForeColorPen, x, y - i, x, i + y + 1);
+						x--;
+					}
+				}
+				break;
+			}		
 		}
 
 		protected override void CleanupManagedResources ()

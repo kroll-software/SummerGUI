@@ -146,9 +146,9 @@ namespace SummerGUI.Editor
 		{
 			Glyphs.LastOrDefault ().Do (g => {
 				if (Next == null)
-					g.Glyph = SpecialCharacters.EndOfText;
+					g.Char = SpecialCharacters.EndOfText;
 				else
-					g.Glyph = SpecialCharacters.Paragraph;
+					g.Char = SpecialCharacters.Paragraph;
 			});
 		}
 
@@ -232,8 +232,8 @@ namespace SummerGUI.Editor
 
 		public bool AppendChar(char c, IGUIFont font, SpecialCharacterFlags flags)
 		{			
-			GlyphChar g = font.GetGlyph (c, flags);
-			if (g.Glyph > 0) {
+			GlyphChar g = font.GetGlyphChar (c, flags);
+			if (g.Char > 0) {
 				try {
 					Glyphs.AddLast(g);
 					NeedsWordWrap = true;
@@ -247,8 +247,8 @@ namespace SummerGUI.Editor
 
 		public bool InsertChar(int pos, char c, IGUIFont font, SpecialCharacterFlags flags)
 		{			
-			GlyphChar g = font.GetGlyph (c, flags);
-			if (g.Glyph > 0) {
+			GlyphChar g = font.GetGlyphChar (c, flags);
+			if (g.Char > 0) {
 				try {					
 					Glyphs.InsertAt(pos, g);
 					NeedsWordWrap = true;
@@ -264,7 +264,7 @@ namespace SummerGUI.Editor
 		{
 			GlyphList glyphs = new GlyphList ();
 			foreach (GlyphChar g in Glyphs)
-				glyphs.AddLast (font.GetGlyph (g.Char, flags));
+				glyphs.AddLast (font.GetGlyphChar (g.Char, flags));
 
 			Concurrency.LockFreeUpdate (ref m_Glyphs, glyphs);
 			NeedsWordWrap = true;
@@ -407,20 +407,20 @@ namespace SummerGUI.Editor
 				int prevBreakCharPos = 0;
 
 				while (curr != null) {								
-					currentWidth += curr.Value.Width;
+					currentWidth += curr.Value.Advance;
 					totalWidth += currentWidth;
 
 					if (currentWidth > BreakWidth && curr.Next != null) {						
 						if (prevBreakCharPos == 0) {
                             lineBreaks.AddLast(pos);
-							currentWidth = curr.Value.Width;
+							currentWidth = curr.Value.Advance;
 							prev = curr;
 						} else {
                             lineBreaks.AddLast(prevBreakCharPos);
 							prevBreakCharPos = 0;
 							currentWidth = 0;
 							while (prev != curr) {
-								currentWidth += prev.Value.Width;
+								currentWidth += prev.Value.Advance;
 								prev = prev.Next;
 							}								
 						}
@@ -436,7 +436,7 @@ namespace SummerGUI.Editor
 
 				// Update final values
 				Concurrency.LockFreeUpdate(ref m_Breaks, lineBreaks);
-				Width = maxWidth.Ceil ();
+				Width = maxWidth;
 				TotalGlyphWidth = totalWidth;
 			}								
 		}
@@ -444,25 +444,45 @@ namespace SummerGUI.Editor
 
 	public static class ParagraphExtensions
 	{
-		public static IEnumerable<GlyphChar[]> ToGlyphs(this Paragraph para)
-		{			
+		public struct TextLineInfo
+		{
+			public ClassicLinkedList<GlyphChar>.Node StartNode;
+			public int Length;
+		}
+
+		public static IEnumerable<TextLineInfo> ToLines(this Paragraph para)
+		{
 			var glyphNode = para.Glyphs.Head;
 			var breakNode = para.Breaks.Head;
-			int glyphIndex = 0;
-			while (glyphNode != null && breakNode != null) {
-				GlyphChar[] res = new GlyphChar[breakNode.Value - glyphIndex];
-				int idx = 0;
-				while (glyphIndex < breakNode.Value && glyphNode != null) {
-					res [idx++] = glyphNode.Value;
+			int lastBreakIndex = 0;
+			int totalGlyphsProcessed = 0;
+
+			// 1. Alle Zeilen bis zum letzten Break ausgeben
+			while (glyphNode != null && breakNode != null)
+			{
+				int lineLength = breakNode.Value - lastBreakIndex;
+				yield return new TextLineInfo { StartNode = glyphNode, Length = lineLength };
+
+				for (int i = 0; i < lineLength && glyphNode != null; i++)
+				{
 					glyphNode = glyphNode.Next;
-					glyphIndex++;
+					totalGlyphsProcessed++;
 				}
-				yield return res;
+
+				lastBreakIndex = breakNode.Value;
 				breakNode = breakNode.Next;
 			}
+
+			// 2. DER FIX: Wenn noch Glyphen übrig sind, die nach dem letzten Break kommen
 			if (glyphNode != null)
-				yield return glyphNode.ToArray();
-			yield break;
+			{
+				// Die restliche Länge ist die Gesamtzahl der Glyphen minus das, was wir schon haben
+				int remainingLength = para.Glyphs.Count - totalGlyphsProcessed;
+				if (remainingLength > 0)
+				{
+					yield return new TextLineInfo { StartNode = glyphNode, Length = remainingLength };
+				}
+			}
 		}
 
 		// used for general purpose
@@ -478,7 +498,7 @@ namespace SummerGUI.Editor
 				breakIndex = nb.Value;
 			int i = 0;
 			int x = 0;
-			int w = 0;
+			float w = 0;
 			int y = 0;
 			while (i < pos && ng.Next != null) {
 				if (i == breakIndex - 1) {					
@@ -490,13 +510,13 @@ namespace SummerGUI.Editor
 						breakIndex = nb.Value;
 				} else {
 					x++;
-					w += ng.Value.Width;
+					w += ng.Value.Advance;
 				}
 
 				i++;
 				ng = ng.Next;
 			}
-			return new ParagraphPosition(pos, x, y, w, ng.Value.Width);
+			return new ParagraphPosition(pos, x, y, w, ng.Value.Advance);
 		}			
 
 		// used for cursor placement
@@ -511,17 +531,17 @@ namespace SummerGUI.Editor
 				breakIndex = nb.Value;
 			int i = 0;
 			float w = 0;
-			float whalf = (int)(ng.Value.Width / 2f + 0.5f);
+			float whalf = (int)(ng.Value.Advance / 2f + 0.5f);
 			int x = 0;
 			int y = 0;
 			while ((y < line || (w + whalf <= width)) && ng.Next != null) {
 				if (i == breakIndex - 1) {						
 					if (y >= line) {
-						return new ParagraphPosition (i, x, y, w.Ceil(), ng.Value.Width);
+						return new ParagraphPosition (i, x, y, w, ng.Value.Advance);
 					}
 
 					w = 0;
-					whalf = (int)(ng.Value.Width / 2f + 0.5f);
+					whalf = (int)(ng.Value.Advance / 2f + 0.5f);
 					x = 0;
 					y++;
 					nb = nb.Next;
@@ -529,14 +549,14 @@ namespace SummerGUI.Editor
 						breakIndex = nb.Value;
 				} else {
 					x++;
-					w += ng.Value.Width;
-					whalf = (int)(ng.Value.Width / 2f + 0.5f);
+					w += ng.Value.Advance;
+					whalf = (int)(ng.Value.Advance / 2f + 0.5f);
 				}
 
 				ng = ng.Next;
 				i++;
 			}
-			return new ParagraphPosition(i, x, y, w.Ceil(), ng.Value.Width);
+			return new ParagraphPosition(i, x, y, w, ng.Value.Advance);
 		}
 
 		public static int FastPositionAtIndex(this Paragraph para, int pos)
@@ -556,7 +576,7 @@ namespace SummerGUI.Editor
 		public static IEnumerable<float> LineWidths(this Paragraph para)
 		{
 			if (para.Breaks.Count == 0) {
-				yield return para.Glyphs.Sum (g => g.Width);
+				yield return para.Glyphs.Sum (g => g.Advance);
 			} else {
 				BreakList.Node n = para.Breaks.Head;
 				GlyphList.Node g = para.Glyphs.Head;
@@ -564,7 +584,7 @@ namespace SummerGUI.Editor
 				int i = 0;
 				while (n != null) {
 					while (g != null && ++i <= n.Value) {
-						w += g.Value.Width;
+						w += g.Value.Advance;
 						g = g.Next;
 					}
 					i--;
@@ -574,7 +594,7 @@ namespace SummerGUI.Editor
 				}
 
 				while (g != null) {
-					w += g.Value.Width;
+					w += g.Value.Advance;
 					g = g.Next;
 				}
 				yield return w;
@@ -584,7 +604,7 @@ namespace SummerGUI.Editor
 		public static float LineWidth(this Paragraph para, int lineIndex)
 		{
 			if (para.Breaks.Count == 0)
-				return para.Glyphs.Sum (gx => gx.Width);
+				return para.Glyphs.Sum (gx => gx.Advance);
 			BreakList.Node n = para.Breaks.Head.Skip(lineIndex - 1);
 			if (n == null)
 				return 0;
@@ -594,7 +614,7 @@ namespace SummerGUI.Editor
 			n = n.Next;
 			float w = 0;
 			while (g != null && (n == null || idx++ < n.Value)) {
-				w += g.Value.Width;
+				w += g.Value.Advance;
 				g = g.Next;
 			}
 			return w;

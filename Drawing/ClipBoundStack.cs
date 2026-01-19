@@ -8,43 +8,7 @@ using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
 
 namespace SummerGUI
-{
-	/***
-	public class ClipBoundClip : IDisposable
-	{			
-		public bool IsEmptyClip { get; private set; }
-
-		public ClipBoundClip(IGUIContext ctx, RectangleF newClip, bool combine = true)
-			: this(ctx)
-		{			
-			if (combine)
-				ClipBoundStack.CombineClip (ctx, newClip);
-			else
-				ClipBoundStack.SetClip (ctx, newClip);
-			IsEmptyClip = ClipBoundStack.IsEmptyClip;
-		}
-			
-		public ClipBoundClip(IGUIContext ctx)
-		{
-			CTX = ctx;
-		}
-
-		~ClipBoundClip()
-		{
-			Dispose ();
-		}
-
-		private IGUIContext CTX;
-		public void Dispose()
-		{
-			if (CTX != null) {
-				ClipBoundStack.ResetClip (CTX);
-				CTX = null;
-			}
-		}
-	}
-	***/
-
+{	
 	public struct ClipBoundClip : IDisposable
 	{			
 		public readonly bool IsEmptyClip;
@@ -115,42 +79,26 @@ namespace SummerGUI
 				return RecentClip.IsEmpty;
 				//return RecentClip.Width <= 0 || RecentClip.Height <= 0;
 			}
-		}
-
-		public bool IsOnScreen(Rectangle rectangle)
-		{						
-			RectangleF r = rectangle;
-			return IsOnScreen(r);
-		}
+		}		
 
 		public bool IsOnScreen(RectangleF rectangle)
 		{						
 			return !RecentClip.IsEmpty && rectangle.IntersectsWith(RecentClip);
 		}
 
-		/***
-		static ClipBoundStack()
-		{
-			Instance = new Stack<RectangleF> ();
-		}
-
-		public static readonly Stack<RectangleF> Instance;
-		***/
-
-
-		public void SetClip(RectangleF r, bool bReset = false)
+		public void SetClip(RectangleF bounds, bool bReset = false)
 		{		
 			// We only set the new clip when it is valid..
-			// Otherwise we stay with the last recent clip
+			// Otherwise we stay with the last recent clip			
 
-			Rectangle rect = new Rectangle((int)r.Left, (int)r.Top, r.Width.Ceil(), (int)(r.Height + 0.5f) + 1);
+			if (bounds.Width > 0 && bounds.Height > 0)
+			{			
+				RecentClip = bounds;
+				ctx.Batcher.SetClip(this.ctx, bounds);
 
-			if (rect.Width > 0 && rect.Height > 0)
-			{
-				GL.Enable (EnableCap.ScissorTest);
-				GL.Scissor(rect.Left, ctx.Height - rect.Bottom, rect.Width + 1, rect.Height);
-				RecentClip = rect;
-			}
+				//GL.Enable (EnableCap.ScissorTest);
+				//GL.Scissor(rect.Left, ctx.Height - rect.Bottom, rect.Width + 1, rect.Height);				
+			}			
 
 			if (!bReset) {
 				m_Stack.Push (RecentClip);
@@ -158,13 +106,13 @@ namespace SummerGUI
 			}
 		}
 
-		public void CombineClip(RectangleF rect, bool bReset = false)
+		public void CombineClip(RectangleF bounds, bool bReset = false)
 		{			
-			if (RecentClip == Rectangle.Empty)
-				RecentClip = new Rectangle (0, 0, ctx.Width, ctx.Height);
+			if (RecentClip == RectangleF.Empty)
+				RecentClip = new RectangleF (0, 0, ctx.Width, ctx.Height);
 
-			rect.Intersect (RecentClip);
-			SetClip (rect, bReset);
+			bounds.Intersect (RecentClip);
+			SetClip (bounds, bReset);
 		}
 
 		public void ResetClip()
@@ -172,19 +120,18 @@ namespace SummerGUI
 			if (m_Stack.Count > 0) {
 				m_Stack.Pop ();
 				ClipCount--;
-			}
+			}			
 
 			if (m_Stack.Count > 0)
-				SetClip (m_Stack.Peek (), true);			
+				SetClip (m_Stack.Peek (), true);
 			else
 				SetClip (RectangleF.Empty, true);
 		}
 
 		public void Clear()
 		{
-			m_Stack.Clear ();
-			GL.Scissor(0, 0, ctx.Width, ctx.Height);
-			GL.Disable (EnableCap.ScissorTest);
+			m_Stack.Clear ();			
+			ctx.Batcher.SetClip(this.ctx, RectangleF.Empty);
 		}
 	}		
 }

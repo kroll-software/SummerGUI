@@ -18,35 +18,7 @@ namespace SummerGUI
 		}
 
 		public static SolidBrush WindowText { get; private set; }
-	}		
-		
-	public struct PaintWrapper : IDisposable
-	{
-		// Ensure to always call it with a parameter
-		// e.g. new PaintWrapper(null)
-		public PaintWrapper(RenderingFlags flags = RenderingFlags.HighQuality)
-		{		
-			GL.PushMatrix();
-			GL.LoadIdentity();
-			OpenTkExtensions.SetDefaultRenderingOptions (flags);
-		}
-
-		public void Dispose()
-		{
-			GL.PopMatrix ();
-			GC.SuppressFinalize (this);
-		}
-			
-		public override bool Equals (object obj)
-		{
-			return false;
-		}
-
-		public override int GetHashCode ()
-		{
-			return 0;
-		}
-	}
+	}	
 
 	public static class GUIDrawing
 	{				
@@ -54,263 +26,61 @@ namespace SummerGUI
 
 		public static Color ToColor(this Color4 color4)
 		{
-			return Color.FromArgb ((int)color4.A, (int)color4.R, (int)color4.G, (int)color4.B);
+			return Color.FromArgb ((int)color4.A * 255, (int)color4.R * 255, (int)color4.G * 255, (int)color4.B * 255);
 		}
 
 		public static Color4 ToColor4(this Color color)
 		{
 			return new Color4 (color.R / 255, color.G / 255, color.B / 255, color.A / 255);
-		}			
+		}
 
 		// ******************************************
 		// LINES
 
 		public static void DrawLine(this IGUIContext ctx, Pen pen, float x1, float y1, float x2, float y2)
-		{
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {
-				pen.DoGL ();
-					
-				if (Math.Abs(y1 - y2) < float.Epsilon) {
-					y1 -= 0.5f;
-					y2 = y1;
-				} else if (Math.Abs(x1 - x2) < float.Epsilon)  {
-					x1 -= 0.5f;
-					x2 = x1;
-				}
-
-				GL.Color4 (pen.Color);
-				GL.LineWidth (pen.Width);
-				GL.Begin (PrimitiveType.Lines);
-				GL.Vertex2 (x2, y2);
-				GL.Vertex2 (x1, y1);
-				GL.End ();
-				pen.UndoGL ();
-			}
-		}
-
-		public static void DrawThickLine(this IGUIContext ctx, Pen pen, int x1, int y1, int x2, int y2) {
-
-			Vector2 start = new Vector2(x1, y1);
-			Vector2 end = new Vector2(x2, y2);
-
-			float dx = x1 - x2;
-			float dy = y1 - y2;
-
-			float halfwidth = pen.Width / 2;
-
-			Vector2 rightSide = new Vector2(dy, -dx);
-			if (rightSide.Length > 0) {
-				rightSide.Normalize();
-				Vector2.Multiply (rightSide, halfwidth);
-			}
-			Vector2 leftSide = new Vector2(-dy, dx);
-			if (leftSide.Length > 0) {
-				leftSide.Normalize();
-				Vector2.Multiply (leftSide, halfwidth);
-			}
-
-			Vector2 one = new Vector2();
-			Vector2.Add(in leftSide, in start, out one);
-
-			Vector2 two = new Vector2();
-			Vector2.Add(in rightSide, in start, out two);
-
-			Vector2 three = new Vector2();
-			Vector2.Add(in rightSide, in end, out three);
-
-			Vector2 four = new Vector2();
-			Vector2.Add(in leftSide, in end, out four);
-
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {
-				pen.DoGL ();
-				GL.Color4 (pen.Color.R, pen.Color.G, pen.Color.B, pen.Color.A);
-				GL.Begin (PrimitiveType.Quads);
-				GL.Vertex3 (one.X, one.Y, 0);
-				GL.Vertex3 (two.X, two.Y, 0);
-				GL.Vertex3 (three.X, three.Y, 0);
-				GL.Vertex3 (four.X, four.Y, 0);				
-				GL.End ();
-				pen.UndoGL ();
-			}
-		}			
-
-		public static SizeF DrawString(this IGUIContext ctx, string text, string fontTag, Brush brush, PointF point, FontFormat format)
-		{
-			Color c = Color.Empty;
-			if (brush != null)
-				c = brush.Color;			
-			return FontManager.Manager.Print (ctx, text, fontTag.ToString(), 
-				new RectangleF (point, SizeF.Empty), format, c);
-		}
-
-		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, PointF point, FontFormat format)
-		{
-			return DrawString (ctx, text, font, brush, point.X, point.Y, format);
-		}
-			
-		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, float x, float y, FontFormat format)
-		{
-			if (ctx == null)
-				return SizeF.Empty;
-
-			SizeF contentSize = font.Measure(text);
-
-			switch (format.HAlign) {
-			case Alignment.Near:
-				break;
-			case Alignment.Center:
-				x -= contentSize.Width / 2f;
-				break;
-			case Alignment.Far:
-				x -= contentSize.Width;
-				break;
-			}
-
-			// ToDo: Was soll das hier noch ?
-			switch (format.VAlign) {
-			case Alignment.Near:
-				y -= contentSize.Height / 2f;
-				break;
-			case Alignment.Center:
-				y += contentSize.Height / 2f;
-				break;
-			case Alignment.Far:
-			case Alignment.Baseline:
-				y += contentSize.Height / 2;
-				break;
-			}
-				
-			SizeF retVal;
-			font.Begin();
-			Color c = Color.Empty;
-			if (brush != null)
-				c = brush.Color;
-			retVal = font.Print(text, new RectangleF (x, y, contentSize.Width, contentSize.Height), format, c);
-			font.End();
-			return retVal;
-		}
-		/*** ***/
-
-		public static SizeF DrawString(this IGUIContext ctx, string text, string fontTag, Color color, RectangleF bounds, FontFormat format)
-		{
-			return FontManager.Manager.Print (ctx, fontTag, text, bounds, format, color);
-		}
-			
-		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, RectangleF rect, FontFormat format)
-		{
-			if (ctx == null || text == null)
-				return SizeF.Empty;
-
-			SizeF retVal;
-
-			Color c = Color.Empty;
-			if (brush != null)
-				c = brush.Color;
-
-			font.Begin();
-			retVal = font.Print(text, rect, format, c);
-			font.End();
-			return retVal;
-		}
-
-
-		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, string fontTag, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
-		{
-			return FontManager.Manager.PrintSelectedString (ctx, fontTag, text, selStart, selLength, bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
-		}
-
-		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, IGUIFont font, int selStart, int selLength, RectangleF rect, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
-		{
-			if (ctx == null || text == null)
-				return SizeF.Empty;
-
-			SizeF retVal;
-			font.Begin();
-			retVal = font.PrintSelectedString(text, selStart, selLength, rect, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
-			font.End();
-			return retVal;
-		}
-
-		public static SizeF MeasureString(this IGUIContext ctx, string text, string fontTag, int start = 0, int len = -1)
-		{
-			return FontManager.Manager.Measure (fontTag, text, start, len);
-		}
-
-		public static SizeF MeasureString(this IGUIContext ctx, string text, string fontTag, RectangleF rect, FontFormat format)
-		{
-			return FontManager.Manager.Measure (fontTag, text, rect.Width, format);
-		}			
-
-		public static SizeF MeasureString(this IGUIContext ctx, string text, IGUIFont font, RectangleF rect, FontFormat format)
-		{
-			return font.Measure (text, rect.Width, format);
-		}
-
-		public static SizeF MeasureMnemonicString(this IGUIContext ctx, string text, string fontTag)
-		{
-			return FontManager.Manager.MeasureMnemonicString (fontTag, text);
-		}
+		{					
+			ctx.Batcher.AddLine(x1, y1, x2, y2, pen.Color, pen.Width, pen.LineStyle);			
+		}				
 
 		// ******************************************
 
 		public static void DrawPolygon(this IGUIContext ctx, Pen pen, PointF[] points)
 		{
-			// Sicherheitsprüfung: Stellen Sie sicher, dass Punkte vorhanden sind und es mindestens 3 Punkte gibt
-			if (points == null || points.Length < 3)
+			if (points == null || points.Length < 2)
 				return;
 
-			// Verwenden Sie PaintWrapper, um den Zustand zu sichern/wiederherzustellen
-			using (new PaintWrapper(RenderingFlags.HighQuality)) 
+			// Wir zeichnen jede Kante als Linie über den Batcher
+			for (int i = 0; i < points.Length; i++)
 			{
-				GL.Color4(pen.Color);
+				PointF pStart = points[i];
+				// Wenn wir am Ende sind, verbinden wir zum ersten Punkt (LineLoop-Ersatz)
+				PointF pEnd = points[(i + 1) % points.Length];
 
-				// Optional: Hinzufügen der Eckpunkt-Logik für dickere Linien
-				if (pen.Width > 2) {
-					GL.PointSize (pen.Width / 2f + 0.5f);
-					GL.Begin (PrimitiveType.Points);
-					foreach (PointF p in points) {
-						GL.Vertex2 (p.X, p.Y);
-					}
-					GL.End ();
-				}				
-				
-				// 1. Anwendung der Pen-Einstellungen (LineWidth und möglicherweise Stippling/Dashing)
-				GL.LineWidth(pen.Width);
-				pen.DoGL(); // Wenden Sie zusätzliche GL-Einstellungen an, falls in pen.DoGL definiert
-
-				// 2. Zeichnen der Eckpunkte
-				// Wir verwenden PrimitiveType.LineLoop, um die Linien zu zeichnen und 
-				// den letzten Punkt automatisch mit dem ersten zu verbinden.
-				GL.Begin(PrimitiveType.LineLoop);
-				
-				foreach (PointF p in points) 
-				{
-					GL.Vertex2(p.X, p.Y);
-				}
-				
-				GL.End();
-				
-				pen.UndoGL(); // Entfernen Sie zusätzliche GL-Einstellungen
-			}
+				// Hier nutzen wir eine Batcher.DrawLine Methode
+				ctx.Batcher.AddLine(pStart.X, pStart.Y, pEnd.X, pEnd.Y,pen.Color,pen.Width);
+			}			
 		}
 
 		public static void FillPolygon(this IGUIContext ctx, Brush brush, PointF[] points)
 		{
-			if (points == null || points.Length == 0)
+			if (points == null || points.Length < 3)
 				return;
 
-			using (new PaintWrapper(RenderingFlags.HighQuality)) {
-				GL.Color4 (brush.Color);
-				GL.Begin (PrimitiveType.Polygon);
-				foreach (PointF p in points) {
-					GL.Vertex2 (p.X, p.Y);
-				}
-				GL.End ();
+			// Wir bauen das Polygon als Triangle Fan im Batcher nach
+			// Punkt 0 ist das Zentrum für alle Dreiecke
+			Vector2 p0 = new Vector2(points[0].X, points[0].Y);
+			
+			for (int i = 1; i < points.Length - 1; i++)
+			{
+				Vector2 p1 = new Vector2(points[i].X, points[i].Y);
+				Vector2 p2 = new Vector2(points[i + 1].X, points[i + 1].Y);
+				
+				ctx.Batcher.AddTriangle(p0, p1, p2, brush.Color);
 			}
 		}
 
 		public static void FillRectangle(this IGUIContext ctx, Brush brush, RectangleF r)
-		{
+		{						
 			if (brush as SolidBrush != null)
 				FillRectangle (ctx, brush as SolidBrush, r);
 			else if (brush as LinearGradientBrush != null)
@@ -318,18 +88,10 @@ namespace SummerGUI
 			else if (brush as HatchBrush != null)
 				FillRectangle (ctx, brush as HatchBrush, r);			
 		}
-
-		public static void FillRectangle(this IGUIContext ctx, HatchBrush brush, RectangleF r)
+		
+		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, float x, float y, float width, float height)
 		{
-			using (new PaintWrapper(RenderingFlags.HighQuality)) {
-				GL.Color4 (brush.Color);
-				GL.Rect (r);
-			}
-		}
-
-		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, int x, int y, int width, int height)
-		{
-			FillRectangle (ctx, brush, new Rectangle (x, y, width, height));
+			FillRectangle (ctx, brush, new RectangleF (x, y, width, height));
 		}
 
 		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
@@ -357,143 +119,74 @@ namespace SummerGUI
 				break;							
 			}
 		}
-
+		
 		private static void FillRectangleHorizontal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(RenderingFlags.None)) {
-				GL.Color4 (brush.Color);
-				GL.Begin (PrimitiveType.Polygon);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Color4 (brush.GradientColor);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Color4 (brush.Color);
-				GL.Vertex2 (r.Left, r.Top);
-				GL.End ();
-			}
+			// Wir definieren die Farben für den horizontalen Verlauf:
+			// Links (Top & Bottom) = brush.Color
+			// Rechts (Top & Bottom) = brush.GradientColor
+			
+			ctx.Batcher.AddRectangle(
+				r, 
+				brush.Color,          // Top-Left
+				brush.GradientColor,  // Top-Right
+				brush.GradientColor,  // Bottom-Right
+				brush.Color           // Bottom-Left
+			);
 		}
 			
 		private static void FillRectangleVertical(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(RenderingFlags.None)) {
-				GL.Color4 (brush.GradientColor);
-				GL.Begin (PrimitiveType.Polygon);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Color4 (brush.Color);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Vertex2 (r.Left, r.Top);
-				GL.End ();
-			}
+			ctx.Batcher.AddRectangle(r, 
+				brush.Color,          // TL
+				brush.Color,          // TR
+				brush.GradientColor,  // BR
+				brush.GradientColor); // BL
 		}
 
 		private static void FillRectangleTopLeft(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
-		{	
-			using (new PaintWrapper(RenderingFlags.None)) {
-				GL.Begin (PrimitiveType.Polygon);
-				GL.Color4 (brush.Color);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Color4 (brush.GradientColor);
-				GL.Vertex2 (r.Left, r.Top);
-				GL.End ();
-			}
+		{   
+			ctx.Batcher.AddRectangle(r, 
+				brush.GradientColor,  // TL (Anders)
+				brush.Color,          // TR
+				brush.Color,          // BR
+				brush.Color);         // BL
 		}
 
 		private static void FillRectangleForwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			using (new PaintWrapper(RenderingFlags.None)) {
-				GL.Color4 (brush.Color);
-				GL.Begin (PrimitiveType.Polygon);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Color4 (brush.GradientColor);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Vertex2 (r.Left, r.Top);
-				GL.End ();		
-			}
+			ctx.Batcher.AddRectangle(r, 
+				brush.GradientColor,  // TL
+				brush.GradientColor,  // TR
+				brush.GradientColor,  // BR
+				brush.Color);         // BL (Anders)
 		}
 
 		private static void FillRectangleBackwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{	
-			using (new PaintWrapper(RenderingFlags.None)) {
-				GL.Color4 (brush.GradientColor);
-				GL.Begin (PrimitiveType.Polygon);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Color4 (brush.Color);
-				GL.Vertex2 (r.Left, r.Top);
-				GL.End ();
-			}
-		}
+			ctx.Batcher.AddRectangle(r, 
+				brush.Color,          // TL (Anders)
+				brush.GradientColor,  // TR
+				brush.GradientColor,  // BR
+				brush.GradientColor); // BL
+		}		
 
-		// *** FillRectangle
-
-		public static void StartRendering()
-		{				
-			GL.PushMatrix ();
-			GL.LoadIdentity ();
-			OpenTkExtensions.SetDefaultRenderingOptions ();
-		}
-
-		public static void EndRendering()
-		{
-			GL.PopMatrix ();
-		}
-
+		// *** FillRectangle		
 
 		public static void FillRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r)
 		{
 			if (r.Width < 0 || r.Height < 0)
 				return;
 
-			using (new PaintWrapper (RenderingFlags.None)) {
-                GL.Color4 (brush.Color);
-				GL.Rect (r);
-            }
-		}
-
-		public static void FillRectangle(this IGUIContext ctx, Brush brush, RectangleF r, float alpha)
-		{			
-			if (r.Width < 0 || r.Height < 0)
-				return;
-
-			using (new PaintWrapper (RenderingFlags.None)) {
-				GL.Color4 (brush.Color.ToRGBA (alpha));
-				GL.Rect (r);
-			}
-		}
-
-		public static void FillRectangle(this IGUIContext ctx, Brush brush, int x, int y, int width, int height)
-		{
-			if (width < 0 || height < 0)
-				return;
-
-			using (new PaintWrapper (RenderingFlags.None)) {
-				GL.Color4 (brush.Color);
-				GL.Rect (x, y, x + width, y + height);
-			}
-		}
+			ctx.Batcher.AddRectangle(r, brush.Color);
+		}		
 			
 		public static void FillRectangle(this IGUIContext ctx, Brush brush, float x, float y, float width, float height)
-		{
-			if (width < 0 || height < 0)
-				return;
-
-			using (new PaintWrapper (RenderingFlags.None)) {
-				GL.Color4 (brush.Color);		
-				GL.Rect (x, y, x + width, y + height);
-			}
-		}
-
-		// *** DrawRectangle
-
-		public static void DrawRectangle(this IGUIContext ctx, Pen pen, int x, int y, int width, int height)
 		{			
-			DrawRectangle (ctx, pen, new Rectangle (x, y, width, height));
+			FillRectangle(ctx, brush, new RectangleF(x, y, width, height));
 		}
+
+		// *** DrawRectangle		
 
 		public static void DrawRectangle(this IGUIContext ctx, Pen pen, float x, float y, float width, float height)
 		{			
@@ -505,37 +198,16 @@ namespace SummerGUI
 			if (r.Width < 0 || r.Height < 0)
 				return;
 
-			/***
-			float hw = pen.Width / 2f;
-			r.X += hw;
-			r.Y += hw;
-			r.Width -= pen.Width;
-			r.Height -= pen.Width;
-			***/
-
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {
-				GL.Color4 (pen.Color);
-
-				if (pen.Width > 2) {
-					GL.PointSize (pen.Width / 2f + 0.5f);
-					GL.Begin (PrimitiveType.Points);
-					GL.Vertex2 (r.Left, r.Bottom);
-					GL.Vertex2 (r.Right, r.Bottom);
-					GL.Vertex2 (r.Right, r.Top);
-					GL.Vertex2 (r.Left, r.Top);
-					GL.End ();
-				}
-
-				GL.LineWidth (pen.Width);
-				pen.DoGL ();
-				GL.Begin (PrimitiveType.LineLoop);
-				GL.Vertex2 (r.Left, r.Bottom);
-				GL.Vertex2 (r.Right, r.Bottom);
-				GL.Vertex2 (r.Right, r.Top);
-				GL.Vertex2 (r.Left, r.Top);		
-				GL.End ();
-				pen.UndoGL ();
-			}
+			float w = pen.Width;
+    
+			// Oben
+			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Y, r.Width, w), pen.Color);
+			// Unten
+			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Bottom - w, r.Width, w), pen.Color);
+			// Links
+			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Y, w, r.Height), pen.Color);
+			// Rechts
+			ctx.Batcher.AddRectangle(new RectangleF(r.Right - w, r.Y, w, r.Height), pen.Color);		
 		}
 
 
@@ -553,56 +225,45 @@ namespace SummerGUI
 		}
 
 		//static readonly double Tau = Math.PI * 2d;
-		static readonly float Tau = (float)(Math.PI * 2d);
+		static readonly float Tau = MathF.PI * 2f;
 
 		public static void DrawEllipse(this IGUIContext ctx, Pen pen, float cx, float cy, float radiusX, float radiusY, float scale = 1)
 		{
-			float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
-			float da = (float)(Math.Acos(r / (r + 0.125f)) * 2f / scale);
-			int numSteps = (int)Math.Round(Tau / da);
+			float r = (MathF.Abs(radiusX) + MathF.Abs(radiusY)) / 2f;
+			if (r < float.Epsilon) return;
 
-			if (numSteps < 1 || da < float.Epsilon)
-				return;
+			float da = MathF.Acos(r / (r + 0.125f)) * 2f / scale;
+			int numSteps = (int)MathF.Round(Tau / da);
 
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {	
-				GL.Color4 (pen.Color);
-				pen.DoGL ();
-				GL.LineWidth (pen.Width);
-				GL.Begin (PrimitiveType.LineLoop);
-				float angle = 0;
-				for (int i = 0; i < numSteps; i++)
-				{					
-					GL.Vertex2((Math.Cos(angle) * radiusX) + cx, (Math.Sin(angle) * radiusY) + cy);
-					angle += da;
+			if (numSteps < 3) numSteps = 12; // Sicherheitshalber Minimum
+
+			Vector2 firstPoint = Vector2.Zero;
+			Vector2 lastPoint = Vector2.Zero;
+
+			for (int i = 0; i <= numSteps; i++)
+			{                   
+				float angle = i * da;
+				float x = (MathF.Cos(angle) * radiusX) + cx;
+				float y = (MathF.Sin(angle) * radiusY) + cy;
+				Vector2 currentPoint = new Vector2(x, y);
+
+				if (i == 0) {
+					firstPoint = currentPoint;
+				} else {
+					// Hier nutzen wir deine neue AddLine Methode aus dem Batcher!
+					ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, currentPoint.X, currentPoint.Y, pen.Color, pen.Width);
 				}
-				GL.Vertex2 ((radiusY * Math.Cos (0)) + cx, (radiusX * Math.Sin (0)) + cy);
-				GL.End ();
-				pen.UndoGL ();
+				lastPoint = currentPoint;
 			}
+			
+			// Den Kreis schließen
+			ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, firstPoint.X, firstPoint.Y, pen.Color, pen.Width);
 		}
 
 		public static void FillEllipse(this IGUIContext ctx, Brush brush, float cx, float cy, float radiusX, float radiusY, float scale = 1)
 		{
-			float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
-			float da = (float)(Math.Acos(r / (r + 0.125f)) * 2f / scale);
-			int numSteps = (int)Math.Round(Tau / da);
-
-			if (numSteps < 1 || da < float.Epsilon)
-				return;
-
-			using (new PaintWrapper (RenderingFlags.None)) {
-				GL.Color4 (brush.Color);
-				GL.Begin (PrimitiveType.TriangleFan);
-				float angle = 0;
-				for (int i = 0; i < numSteps; i++)
-				{										
-					GL.Vertex2((radiusX * Math.Cos(angle)) + cx, (radiusY * Math.Sin(angle)) + cy);
-					angle += da;
-				}
-				GL.Vertex2 ((radiusY * Math.Cos (0)) + cx, (radiusX * Math.Sin (0)) + cy);
-				GL.End ();
-			}
-		}			
+			ctx.Batcher.FillEllipse(brush.Color, cx, cy, radiusX, radiusY, scale);			
+		}
 
 		public static void DrawPie(this IGUIContext ctx, Pen pen, RectangleF rec, float startAngle, float sweepAngle)
 		{
@@ -610,42 +271,42 @@ namespace SummerGUI
 		}
 
 		public static void DrawPie(this IGUIContext ctx, Pen pen, float x, float y, float radiusX, float radiusY, float startAngle, float sweepAngle)
-		{			
-			float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
-			float segratio = (sweepAngle / 360f);
-			float da = (float)Math.Acos(r / (r + 0.125f)) * 2f * segratio;
-			int numSteps = (int)((Tau / da) * segratio + 0.5f) + 1;
+		{
+			float r = (MathF.Abs(radiusX) + MathF.Abs(radiusY)) / 2f;
+			float segratio = MathF.Abs(sweepAngle) / 360f;
+			
+			// Deine bewährte Formel für die Schrittweite
+			float da = MathF.Acos(r / (r + 0.125f)) * 2f; 
+			int numSteps = (int)MathF.Max(1, (Tau / da) * segratio);
+			da = (sweepAngle * (Tau / 360f)) / numSteps; // Exakte Schrittweite für sweepAngle
 
-			if (numSteps < 1 || da < float.Epsilon)
-				return;
+			float angle = (startAngle - 90f) * (Tau / 360f);
+			float currentAngle = angle;
 
-			startAngle -= 90f;
+			Vector2 center = new Vector2(x, y);
+			Vector2 lastPoint = Vector2.Zero;
+			Vector2 firstPoint = Vector2.Zero;
 
-			using (new PaintWrapper (RenderingFlags.HighQuality)) {
-				GL.Color4 (pen.Color);
-				pen.DoGL ();
-
-				GL.Begin (PrimitiveType.LineStrip);
-
-				float angle = startAngle * Tau / 360f;
-				if (sweepAngle < 360f)
-					GL.Vertex2 (x, y);
-
-				for (int i = 0; i < numSteps; i++)
-				{
-					GL.Vertex2 (x + (Math.Cos (angle) * radiusY), y + (Math.Sin (angle) * radiusX));
-					angle += da;
-				}
-
-				if (sweepAngle < 360f)
-					GL.Vertex2 (x, y);
-				else
-					GL.Vertex2 (x + (Math.Cos (angle) * radiusY), y + (Math.Sin (angle) * radiusX));
+			for (int i = 0; i <= numSteps; i++)
+			{
+				Vector2 nextPoint = new Vector2(x + MathF.Cos(currentAngle) * radiusX, y + MathF.Sin(currentAngle) * radiusY);
 				
-				GL.End ();
-				pen.UndoGL ();
+				if (i == 0) firstPoint = nextPoint;
+
+				if (i > 0)					
+					ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, nextPoint.X, nextPoint.Y, pen.Color, pen.Width);
+				
+				lastPoint = nextPoint;
+				currentAngle += da;
 			}
-		}
+
+			// Die "Kuchenstücke"-Seitenlinien zeichnen, wenn es kein voller Kreis ist
+			if (sweepAngle < 360f)
+			{
+				ctx.Batcher.AddLine(center.X, center.Y, firstPoint.X, firstPoint.Y, pen.Color, pen.Width);
+				ctx.Batcher.AddLine(center.X, center.Y, lastPoint.X, lastPoint.Y, pen.Color, pen.Width);
+			}
+		}		
 
 		public static void FillPie(this IGUIContext ctx, Brush brush, RectangleF rec, float startAngle, float sweepAngle)
 		{
@@ -653,36 +314,29 @@ namespace SummerGUI
 		}			
 
 		public static void FillPie(this IGUIContext ctx, Brush brush, float x, float y, float radiusX, float radiusY, float startAngle, float sweepAngle)
-		{									
-			float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
-			float segratio = (sweepAngle / 360f);
-			float da = (float)Math.Acos(r / (r + 0.125f)) * 2f * segratio;
-			int numSteps = (int)((Tau / da) * segratio + 0.5f) + 1;
-
-			if (numSteps < 1 || da < float.Epsilon)
+		{                                   
+			if (MathF.Abs(sweepAngle) < 0.01f) 
 				return;
 
-			startAngle -= 90f;
+			float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
+			float segratio = Math.Abs(sweepAngle) / 360f;
+			
+			float da_limit = MathF.Acos(r / (r + 0.125f)) * 2f; 
+			int numSteps = (int)MathF.Max(6, (Tau / da_limit) * segratio); // Mindestens 6 Segmente für kleine Stücke
+			float da = (sweepAngle * (Tau / 360f)) / numSteps;
 
-			using (new PaintWrapper (RenderingFlags.None)) {
-				GL.Color4 (brush.Color);
+			float angle = (startAngle - 90f) * (Tau / 360f);
+    		Vector2 center = new Vector2(x, y);
 
-				GL.Begin (PrimitiveType.TriangleFan);
+			for (int i = 0; i < numSteps; i++)
+			{
+				Vector2 p1 = new Vector2(x + MathF.Cos(angle) * radiusX, y + MathF.Sin(angle) * radiusY);
+				angle += da;
+				Vector2 p2 = new Vector2(x + MathF.Cos(angle) * radiusX, y + MathF.Sin(angle) * radiusY);
 
-				float angle = startAngle * Tau / 360f;
-				if (sweepAngle < 360f)
-					GL.Vertex2 (x, y);
-				
-				for (int i = 0; i < numSteps; i++)
-				{
-					GL.Vertex2 (x + (Math.Cos (angle) * radiusY), y + (Math.Sin (angle) * radiusX));
-					angle += da;
-				}
-					
-				angle = (startAngle + sweepAngle) * Tau / 360f;
-				GL.Vertex2 (x + (Math.Cos (angle) * radiusY), y + (Math.Sin (angle) * radiusX));
-
-				GL.End ();
+				// Ein Dreieck pro Segment zum Batcher hinzufügen
+				// Wir nutzen Type 0 (Solid/Image Modus) und die whiteTexture
+				ctx.Batcher.AddTriangle(center, p1, p2, brush.Color);
 			}
 		}
 
@@ -697,11 +351,11 @@ namespace SummerGUI
 		}
 
 		public static void DrawButton(this IGUIContext ctx, RectangleF rect, Color TopColor, Color BottomColor, Color LineColor)
-		{
-			RectangleF topPart = new RectangleF(rect.Left, rect.Top, rect.Width, (int)(rect.Height * 3f / 5f) - 2);
+		{			
+			RectangleF topPart = new RectangleF(rect.Left, rect.Top, rect.Width, (rect.Height * 3f / 5f) - 2f);
 			RectangleF lowPart = new RectangleF(topPart.Left, topPart.Bottom, topPart.Width, rect.Height - topPart.Height);
 
-			int gradientHeight = (int)(topPart.Height / 3f) + 1;
+			float gradientHeight = (topPart.Height / 3f) + 1f;
 			RectangleF gradientPart = new RectangleF(topPart.Left, topPart.Bottom - gradientHeight, topPart.Width, gradientHeight);
 
 			if (topPart.Width > 0 && topPart.Height > 0)
@@ -728,7 +382,7 @@ namespace SummerGUI
 			if (rect.Width > 0 && rect.Height > 0)
 			{
 				using (var aPen = new Pen (LineColor)) {
-					ctx.DrawRectangle (aPen, rect.Left - 0.5f, rect.Top - 0.5f, rect.Width, rect.Height);
+					ctx.DrawRectangle (aPen, rect.Left, rect.Top, rect.Width, rect.Height);
 				}
 			}
 		}			

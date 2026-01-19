@@ -242,7 +242,7 @@ namespace SummerGUI
 			for (int i = 0; i < Children.Count; i++) {
 				Widget child = Children [i];
 				if (child != null && child.Visible) {					
-					if (Math.Ceiling(child.Left) < Left) {
+					if (child.Left < Left) {
 						idx = i;
 					} else {						
 						if (idx >= 0) {

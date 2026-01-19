@@ -116,10 +116,10 @@ namespace SummerGUI.Splitting
 			if (Distance > 0) {
 				if (Distance < 1) {
 					float oldDistance = Distance;
-					float distance = Math.Max(bounds.Height * Distance, Math.Min(bounds.Height - MinDistanceFar, (bounds.Height * Distance).Ceil()));
+					float distance = Math.Max(bounds.Height * Distance, MathF.Min(bounds.Height - MinDistanceFar, bounds.Height * Distance));
 					float y = Math.Max (bounds.Top + MinDistanceNear, bounds.Top + distance);
 					SetBounds (new RectangleF (bounds.Left, y, bounds.Width, SplitterWidth));
-					Distance = Math.Max(oldDistance, (int)(distance / bounds.Height));
+					Distance = Math.Max(oldDistance, distance / bounds.Height);
 				} else {
 					float oldDistance = Distance;
 					float distance = Math.Max(MinDistanceNear, Math.Min(bounds.Height - MinDistanceFar, Distance));
@@ -213,35 +213,35 @@ namespace SummerGUI.Splitting
 			if (Distance > 0) {
 				if (Distance < 1) {
 					float oldDistance = Distance;
-					float distance = Math.Max(bounds.Width * Distance, Math.Min(bounds.Width - MinDistanceFar, (bounds.Width * Distance).Ceil()));
-					float x = Math.Max (bounds.Left + MinDistanceNear, bounds.Left + distance);
+					float distance = Math.Max(bounds.Width * Distance, MathF.Min(bounds.Width - MinDistanceFar, bounds.Width * Distance));
+					float x = MathF.Max (bounds.Left + MinDistanceNear, bounds.Left + distance);
 					SetBounds (new RectangleF (x, bounds.Top, SplitterWidth, bounds.Height));
-					Distance = Math.Max(oldDistance, (int)(distance / bounds.Width));
+					Distance = MathF.Max(oldDistance, distance / bounds.Width);
 
 					//Console.WriteLine ("Distance: {0}", Distance);
 				}
 				else {
 					float oldDistance = Distance;
-					float distance = Math.Max(MinDistanceNear, Math.Min(bounds.Width - MinDistanceFar, Distance));
+					float distance = MathF.Max(MinDistanceNear, MathF.Min(bounds.Width - MinDistanceFar, Distance));
 					SetBounds (new RectangleF (bounds.Left + distance, bounds.Top, SplitterWidth, bounds.Height));
-					Distance = Math.Max(1.05f, Math.Max(oldDistance, distance));
+					Distance = MathF.Max(1f, MathF.Max(oldDistance, distance));
 				}
 			} else if (Distance < 0) {				
 				if (Distance > -1) {					
 					float oldDistance = Distance;
-					float distance = (Math.Min (Distance * bounds.Width, Math.Max(MinDistanceNear, Math.Abs(Distance) * bounds.Width)));
-					float x = Math.Max (bounds.Left + MinDistanceNear, bounds.Right + distance);
+					float distance = MathF.Min (Distance * bounds.Width, MathF.Max(MinDistanceNear, MathF.Abs(Distance) * bounds.Width));
+					float x = MathF.Max (bounds.Left + MinDistanceNear, bounds.Right + distance);
 					SetBounds (new RectangleF (x, bounds.Top, SplitterWidth, bounds.Height));
-					Distance = Math.Max(-0.95f, Math.Min(-0.05f, Math.Min(oldDistance, distance / bounds.Width)));
+					Distance = MathF.Max(-0.95f, MathF.Min(-0.05f, MathF.Min(oldDistance, distance / bounds.Width)));
 
 					//Console.WriteLine ("Distance: {0}", Distance);
 				}
 				else {					
 					float oldDistance = Distance;
-					float distance = -(Math.Max (MinDistanceFar, Math.Abs(Distance)));
-					float x = Math.Max (bounds.Left + MinDistanceNear, bounds.Right + distance);
+					float distance = - MathF.Max (MinDistanceFar, MathF.Abs(Distance));
+					float x = MathF.Max (bounds.Left + MinDistanceNear, bounds.Right + distance);
 					SetBounds (new RectangleF (x, bounds.Top, SplitterWidth, bounds.Height));
-					Distance = Math.Min(-1.05f, Math.Min(oldDistance, distance));
+					Distance = MathF.Min(-1.05f, MathF.Min(oldDistance, distance));
 				}
 			} else {
 				// damit wäre er verschwunden, und das wollen wir nicht..

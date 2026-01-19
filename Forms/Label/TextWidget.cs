@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -14,7 +15,8 @@ namespace SummerGUI
 {
 	public class TextWidget : Widget
 	{				
-		public TextWidget (string name) : this(name, Docking.None, new DefaultTextWidgetStyle(), null, null) {}
+		public TextWidget (string name) : this(name, Docking.None, new DefaultTextWidgetStyle(), null, null) {}		
+
 		public TextWidget (string name, Docking dock, IWidgetStyle style, string text, IGUIFont font)
 			: base(name, dock, style)
 		{
@@ -145,25 +147,24 @@ namespace SummerGUI
 				float h = 0;
 
 				if (IconFont != null && Icon != 0) {
-					Size sz = IconFont.Measure (Icon.ToString ()).ToSize();
+					SizeF sz = IconFont.Measure (Icon.ToString ());
 					h = sz.Height;
 					w += sz.Width * 1.5f;
 				}
 
 				if (Font != null && !String.IsNullOrEmpty (Text)) {
 					if (Format.HasFlag (FontFormatFlags.WrapText) && proposedSize.Width - w > 0) {
-						SizeF sz = Font.Measure (Text, proposedSize.Width - w - Padding.Width, Format).ToSize ();
+						SizeF sz = Font.Measure (Text, proposedSize.Width - w - Padding.Width, Format);
 						h = Math.Max (h, sz.Height);
 						w += sz.Width + 4;
 					} else {
-						SizeF sz = Font.Measure (Text).ToSize ();
+						SizeF sz = Font.Measure (Text);
 						h = Math.Max (h, sz.Height);
 						w += sz.Width;
 					}
 				}					
 
-				CachedPreferredSize = new SizeF (w + Padding.Width, 
-					h + Padding.Height);
+				CachedPreferredSize = new SizeF (w + Padding.Width, h + Padding.Height);
 			}				
 
 			return CachedPreferredSize;
@@ -179,18 +180,19 @@ namespace SummerGUI
 				RectangleF iconRect = bounds;				
 				SizeF iconWidth;
 				if (String.IsNullOrEmpty (Text)) {					
-					iconWidth = ctx.DrawString (Icon.ToString (), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatCenter);
+					iconWidth = ctx.DrawString (Icon.ToString(), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatCenter);
 				}
 				else {
-					iconWidth = ctx.DrawString (Icon.ToString (), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatLeft);
-					int offset = (int)(iconWidth.Width * 1.5f);
+					iconWidth = ctx.DrawString (Icon.ToString(), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatLeft);
+					float offset = iconWidth.Width * 1.5f;
 					bounds.X += offset;
 					bounds.Width -= offset;
 				}
 			}
 
-			if (Font != null && !String.IsNullOrEmpty(Text)) {
-				if (ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format).Width.Ceil () >= bounds.Width && !Format.HasFlag(FontFormatFlags.WrapText))
+			if (Font != null && !String.IsNullOrEmpty(Text)) {				
+				Debug.WriteLine($"Bounds: {bounds}");
+				if (ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format).Width > bounds.Width && !Format.HasFlag(FontFormatFlags.WrapText))
 					Tooltip = Text;
 				else
 					Tooltip = null;

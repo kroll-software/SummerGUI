@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
+using HarfBuzzSharp;
 using OpenTK;
+using OpenTK.Graphics.ES11;
 using OpenTK.Input;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -68,7 +70,7 @@ namespace SummerGUI
 		}
 
 		public void InitCopyButton()
-		{
+		{		
 			CopyButton = ImagePanelContainer.AddChild (new Button ("copy", "Copy", (char)FontAwesomeIcons.fa_copy, ColorContexts.Default));
 			CopyButton.Dock = Docking.Bottom;
 			CopyButton.Margin = new Padding (6, 0, 6, 6);
@@ -102,7 +104,7 @@ namespace SummerGUI
 		}
 			
 		protected virtual void InitButtons(MessageBoxButtons buttons)
-		{
+		{			
 			// panel
 			DefaultButton btn = null;
 
@@ -129,7 +131,7 @@ namespace SummerGUI
 			if (buttons.HasFlag (MessageBoxButtons.OK)) {
 				btn = ButtonContainer.AddChild (new DefaultButton ("okbutton", "&OK"));
 				btn.Click += (sender, eOK) => OnOK();
-			}				
+			}
 
 			if (buttons.HasFlag (MessageBoxButtons.Cancel)) {
 				btn = ButtonContainer.AddChild (new DefaultButton ("cancelbutton", "&Cancel"));
@@ -141,13 +143,14 @@ namespace SummerGUI
 
 		protected void InitText(string message)
 		{
-			Message = message;
+			Message = message;			
 
-			MultiLineTextWidget text = new MultiLineTextWidget ("message", message);
+			MultiLineTextWidget text = new MultiLineTextWidget ("message", message);			
 
 			text.Padding = new Padding (16);
 			text.VAlign = Alignment.Center;
 			text.HAlign = Alignment.Center;
+			text.ForeColor = Color.Black;		
 
 			Controls.OnLayout (this, (Rectangle)ClientRectangle);
 
@@ -166,6 +169,11 @@ namespace SummerGUI
 				this.Controls.AddChild (text);
 			}
 		}
+
+        protected override void OnPaint(RectangleF bounds)
+        {
+            base.OnPaint(bounds);			
+        }
 
 		protected override void OnInitFonts ()
 		{

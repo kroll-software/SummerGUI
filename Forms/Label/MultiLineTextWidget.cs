@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using KS.Foundation;
+using OpenTK.Graphics.ES11;
 
 namespace SummerGUI
 {
@@ -66,20 +68,13 @@ namespace SummerGUI
 			ResetCachedLayout ();
 		}
 
-		/***
-		public MultiLineTextWidget (string name, string text = null)
-			: this(name, text, new DefaultTextWidgetStyle())
-		{
-		}
-		***/
-
 		public MultiLineTextWidget (string name, string text = null, IWidgetStyle style = null)
 			: base(name, Docking.Fill, style)
 		{
 			Text = text;
 			this.SetFontByTag (CommonFontTags.Default);
-			m_Format = FontFormat.DefaultMultiLine;
-		}			
+			m_Format = FontFormat.DefaultMultiLine;			
+		}
 
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
@@ -103,23 +98,39 @@ namespace SummerGUI
 		}
 
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{			
+		{				
 			if (IsLayoutSuspended)
 				return;
 
-			if (Dock != Docking.Fill) {
+			if (Dock != Docking.Fill)
+			{
+				// Hiermit ändern wir die Bounds
 				this.SetBounds (bounds.Location, new SizeF (bounds.Width, PreferredSize (ctx, bounds.Size).Height));			
+
+				// Wir rufen OnLayout mit den neuen Bounds auf
 				base.OnLayout (ctx, Bounds);
-			} else {
+			}
+			else				
+			{
 				base.OnLayout (ctx, bounds);
 			}
 		}
 			
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{		
-			bounds = bounds.Inflate(Padding);
+			//Format = FontFormat.DefaultSingleLine;
+
+			//Brush sb = new SolidBrush(Color.Red);
+			//ctx.FillRectangle(sb, bounds);
+
+			//bounds = bounds.Inflate(Padding);
+			bounds = PaddingBounds;
+			Debug.WriteLine($"Bounds: {bounds}");			
+
 			if (Font != null && Text != null)
-				ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format);
+			{
+				ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format);							
+			}
 		}
 
 		protected override void CleanupManagedResources ()

@@ -55,7 +55,7 @@ namespace SummerGUI
 			float y = paddingBounds.Top + (paddingBounds.Height / 2f);
 			//ctx.DrawLine (Theme.Pens.Red, paddingBounds.Left, y, paddingBounds.Right, y);
 
-			Point p = BoxAlignment.AlignBoxes (paddingBounds, bounds, Format, Font.Ascender, Font.Descender);
+			PointF p = BoxAlignment.AlignBoxes (paddingBounds, bounds, Format, Font.Ascender, Font.Descender);
 			y = p.Y;
 			ctx.DrawLine (Theme.Pens.Red, paddingBounds.Left, y, paddingBounds.Right, y);
 

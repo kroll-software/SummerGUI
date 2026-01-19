@@ -9,6 +9,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
 using KS.Foundation;
 using System.Runtime.CompilerServices;
+using System.Drawing;
 
 namespace SummerGUI
 {	
@@ -51,10 +52,11 @@ namespace SummerGUI
 		public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, bool sizable = false, WindowPositions position = WindowPositions.CenterParent, int frameRate = 30)
 			: base(new NativeWindowSettings()
 			{
+				SharedContext = parent.Context,
 				Title = caption,
 				ClientSize = new Vector2i(width, height),
 				StartVisible = false,
-				StartFocused = false,				
+				StartFocused = false,
 				//IsEventDriven = false,
 				//Location = new Vector2i(parent.Location.X, parent.Location.Y),
 				//MinimumClientSize = new Vector2i(100, 100),
@@ -64,9 +66,9 @@ namespace SummerGUI
 				WindowState = WindowState.Normal,				
 				//API = ContextAPI.OpenGL,
 				//APIVersion = new Version(3, 3), 				
-				Profile = ContextProfile.Compatability,				
-				WindowBorder = sizable ? WindowBorder.Resizable : WindowBorder.Fixed,
-				SharedContext = parent.Context,
+				Profile = ContextProfile.Core,
+				NumberOfSamples = 4,
+				WindowBorder = sizable ? WindowBorder.Resizable : WindowBorder.Fixed,				
 			}, parent, frameRate)
 		{
 			if (String.IsNullOrEmpty (name))
@@ -78,6 +80,7 @@ namespace SummerGUI
 			Name = name;
 			IsModal = modal;
 			ParentWindow = parent;
+			BackColor = Color.White;
 
 			if (!IsModal) {
 				ShowInTaskBar = true;
@@ -115,7 +118,7 @@ namespace SummerGUI
 
 			return TRUE;  // return TRUE  unless you set 
 			//    the focus to a control
-			**/
+			**/			
 		}
 
 		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
@@ -125,7 +128,7 @@ namespace SummerGUI
 			Vector2i childSize = child.Size;
 
 			int newX = parentLocation.X + (parentSize.X - childSize.X) / 2;
-			int newY = parentLocation.Y + (parentSize.Y - childSize.Y) / 2 + (parent.TitleBarHeight / 2);
+			int newY = parentLocation.Y + (parentSize.Y - childSize.Y) / 2;
 
 			child.Location = new Vector2i(newX, newY);
 		}
@@ -214,9 +217,9 @@ namespace SummerGUI
 		{
 			Result = DialogResults.Cancel;
 			this.Close ();
-		}			
+		}
 
-		/***
+        /***
 		protected override void OnKeyDown (KeyboardKeyEventArgs e)
 		{
 			switch (e.Key) {
@@ -233,39 +236,52 @@ namespace SummerGUI
 		}
 		****/
 
+        protected override void OnRenderFrame(double elapsedSeconds)
+        {
+			Batcher.BindContext(this);
+            base.OnRenderFrame(elapsedSeconds);
+        }
+
 		public void Show(SummerGUIWindow parent)
 		{
 			if (ParentWindow != parent)
 				this.LogWarning ("Parent should equal ParentWindow");
-						
-			this.IsVisible = true;
-			this.Focus();
+									
+			this.IsVisible = true;			
+			this.Focus();			
 			this.BringToFront();
+			
+			Batcher.BindContext(this);
 			this.Run ();
 		}        
 
 		public override void OnProcessEvents ()
 		{
 			base.OnProcessEvents ();			
-			ParentWindow?.OnProcessEvents ();
+			//ParentWindow?.OnProcessEvents ();
 		}
 
 		public override void OnDispatchUpdateAndRenderFrame()
 		{
 			base.OnDispatchUpdateAndRenderFrame ();			
-			ParentWindow?.OnDispatchUpdateAndRenderFrame ();
+			//ParentWindow?.OnDispatchUpdateAndRenderFrame ();
 		}
 
 		protected override void OnUnload (EventArgs e)
 		{				
 			if (ParentWindow != null) {
-				ParentWindow.RemoveChildWindow (this);
-				//ParentWindow.MakeCurrent ();
-				ParentWindow.Focus ();
-			}
+				ParentWindow.RemoveChildWindow (this);			
+				ParentWindow.Focus ();				
+			}			
 
 			base.OnUnload (e);
 		}
+
+        protected override void Dispose(bool manual)
+        {
+			Batcher.UnbindContext(this);
+            base.Dispose(manual);
+        }
 	}
 }
 

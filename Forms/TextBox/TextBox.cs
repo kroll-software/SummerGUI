@@ -16,9 +16,11 @@ using KS.Foundation;
 using SummerGUI.Editor;
 
 namespace SummerGUI
-{	
+{		
 	public class TextBox : Widget, ITextBox, ISupportsClipboard, ISupportsUndoRedo, ISupportsSelection
 	{
+		public static readonly FontFormat DefaultSingleLineFontFormat = new FontFormat (Alignment.Near, Alignment.Center, FontFormatFlags.None);
+
 		public static readonly char DefaultPasswortChar = '●';
 
 		public event EventHandler<EventArgs> TextChanged;
@@ -162,9 +164,7 @@ namespace SummerGUI
 			if (Font == null)
 				return base.PreferredSize (ctx, proposedSize);
 			return new SizeF(proposedSize.Width, Font.TextBoxHeight);
-		}
-
-		public static readonly FontFormat DefaultSingleLineFontFormat = new FontFormat (Alignment.Near, Alignment.Center, FontFormatFlags.None);
+		}		
 
 		private float TextOffsetX = 0;
 		bool CursorOn = false;
@@ -177,7 +177,7 @@ namespace SummerGUI
 		int CursorPosition = 0;
 		float CursorPosPix {
 			get{				
-				return Font.Measure (DisplayText.StrLeft (CursorPosition)).Width + TextOffsetX + 0.5f;
+				return Font.MeasureGlyphs (DisplayText.StrLeft (CursorPosition)).Width + TextOffsetX;
 			}
 		}
 			
@@ -398,9 +398,9 @@ namespace SummerGUI
 			}
 
 			// Text length left from Cursor
-			float lenLeft = Font.Measure (text, 0, CursorPosition).Width;
+			float lenLeft = Font.MeasureGlyphs (text, 0, CursorPosition).Width;
 			// add text length right from Cursor
-			float totalLength = lenLeft + Font.Measure (text, CursorPosition).Width;
+			float totalLength = lenLeft + Font.MeasureGlyphs (text, CursorPosition).Width;
 
 			float contentWidth = Bounds.Width - (TextMargin.Width * 2f);
 			float cursorX = lenLeft + TextOffsetX;

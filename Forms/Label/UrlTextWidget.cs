@@ -84,21 +84,18 @@ namespace SummerGUI
 				}
 			}
 		}
-
+        
 		public void OpenURL()
 		{
 			if (!String.IsNullOrEmpty(Url))
 			{
 				try
-				{
-					Process.Start(Url);
+				{					
+					Process.Start(new ProcessStartInfo(Url) { UseShellExecute = true });
 				}
 				catch (Exception ex)
 				{
-					ex.LogError ();
-
-					// ToDo()
-					//ErrMsgBox(ex.Message);
+					ex.LogError ();					
 				}
 			}
 		}
@@ -107,7 +104,7 @@ namespace SummerGUI
 		{
 			base.OnClick (e);
 			if (IsVisibleEnabled) {
-				OpenURL ();
+				OpenURL();
 			}
 		}			
 

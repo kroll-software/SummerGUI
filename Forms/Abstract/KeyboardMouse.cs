@@ -19,19 +19,19 @@ public class KeyPressEventArgs : System.EventArgs
 public class MouseWheelEventArgs : System.EventArgs
 {
     // Die Eigenschaft, die Ihre internen Widgets erwarten		
-    public int X { get; } 
-    public int Y { get; } 
+    public float X { get; } 
+    public float Y { get; } 
     public OpenTK.Mathematics.Vector2 Offset { get; } 
     public float OffsetX { get; } 
     public float OffsetY { get; } 
-    public Point Position
+    public PointF Position
     {
         get{
-            return new Point(X, Y); 
+            return new PointF(X, Y); 
         }
     }
     
-    public MouseWheelEventArgs(int x, int y, OpenTK.Mathematics.Vector2 offset, float offsetX, float offsetY)
+    public MouseWheelEventArgs(float x, float y, OpenTK.Mathematics.Vector2 offset, float offsetX, float offsetY)
     {
         X = x;
         Y = y;
@@ -45,20 +45,20 @@ public class MouseWheelEventArgs : System.EventArgs
 public class MouseButtonEventArgs : System.EventArgs
 {
     // Die Eigenschaft, die Ihre internen Widgets erwarten
-    public int X { get; } 
-    public int Y { get; } 
+    public float X { get; } 
+    public float Y { get; } 
 
-    public Point Position 
+    public PointF Position 
     {
         get
         {
-            return new Point(X, Y);
+            return new PointF(X, Y);
         }		
     } 
 
     public MouseButton Button { get; } 
     
-    public MouseButtonEventArgs(int x, int y, MouseButton button)
+    public MouseButtonEventArgs(float x, float y, MouseButton button)
     {
         X = x;
         Y = y;

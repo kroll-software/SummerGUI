@@ -750,7 +750,7 @@ namespace SummerGUI.DataGrid
 			}
 		}        
 			
-		internal int DesiredWidth = 0;
+		internal float DesiredWidth = 0;
 		protected int GetValueListHashCode()
 		{
 			return (17).CombineHash(m_ValueList);

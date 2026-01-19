@@ -56,7 +56,7 @@ namespace SummerGUI
 
 		private QuadTree Tree = null;
 
-		public LayoutItem FindItem(int x, int y)
+		public LayoutItem FindItem(float x, float y)
 		{					
 			// for this function we ignore any threading errors 
 			// that might happen when accessing the tree
@@ -102,7 +102,7 @@ namespace SummerGUI
 			// ToDo:
 		}
 
-		private bool SetActiveIcon(int x, int y)
+		private bool SetActiveIcon(float x, float y)
 		{
 			LayoutItem li = FindItem (x, y);
 			if (li.Equals(LayoutItem.Empty) || li.Item == null) {
@@ -119,7 +119,7 @@ namespace SummerGUI
 		{			
 			base.OnMouseMove (e);
 
-			if (SetActiveIcon ((int)e.Position.X, (int)e.Position.Y) && Expanded)
+			if (SetActiveIcon (e.Position.X, e.Position.Y) && Expanded)
 				ShowSubMenu (ActiveItem);
 			else
 				Invalidate ();
@@ -238,7 +238,7 @@ namespace SummerGUI
 
 			float maxspace = Math.Max (spaceAbove, spaceBelow);
 			if (desiredHeight > maxspace)
-				desiredHeight = (int)(maxspace / itemHeight) * itemHeight;
+				desiredHeight = maxspace / itemHeight * itemHeight;
 
 			RectangleF result = RectangleF.Empty;
 			if (desiredHeight > 0 && desiredWidth > 0) {				
@@ -345,7 +345,7 @@ namespace SummerGUI
 
 				if (iconWidth > 0) {					
 					ctx.DrawString (((char)item.ImageIndex).ToString (), IconFont, brush, itemBounds, FontFormat.DefaultIconFontFormatLeft);
-					itemBounds.Offset ((int)iconWidth, 0);
+					itemBounds.Offset (iconWidth, 0);
 				}
 
 				if (textWidth > 0) {					

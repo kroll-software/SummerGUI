@@ -59,8 +59,8 @@ namespace SummerGUI.Editor
 				if (Owner == null)
 					return base.PreferredSize (ctx, proposedSize);
 				else
-					CachedPreferredSize = new SizeF (Math.Max (MinSize.Width, Owner.Font.Measure (Owner.RowManager.LineCount.ToString ()).Width.Ceil () + Padding.Width), 
-						Math.Max (proposedSize.Height, Owner.RowManager.Height + Owner.Padding.Height));
+					CachedPreferredSize = new SizeF (MathF.Max (MinSize.Width, Owner.Font.Measure (Owner.RowManager.LineCount.ToString ()).Width + Padding.Width), 
+						MathF.Max (proposedSize.Height, Owner.RowManager.Height + Owner.Padding.Height));
 			}
 			return CachedPreferredSize;
 		}	
@@ -107,18 +107,18 @@ namespace SummerGUI.Editor
 			int selectedRowIndex = rowManager.CurrentParagraphIndex;
 			Brush foreColorBrush = Style.ForeColorBrush;
 
-			int lineHeight = rowManager.LineHeight;
-			int offsetY = (int)Owner.ScrollOffsetY;
+			float lineHeight = rowManager.LineHeight;
+			float offsetY = Owner.ScrollOffsetY;
 
 			int rowIndex = rowManager.FirstParagraphOnScreen;
 			//float halfHeight = bounds.Height / 2f;
 
 			while (rowIndex < rowManager.Paragraphs.Count) {
 				Paragraph para = rowManager.Paragraphs [rowIndex];
-				Rectangle rowBounds;
+				RectangleF rowBounds;
 
 				if (DisplayMode == DisplayModes.LineNumber) {
-					rowBounds = new Rectangle ((int)(bounds.Left + 0.5f), (int)(paddingTop + bounds.Top + para.Top + offsetY + 0.5f), (int)(bounds.Width + 0.5f), lineHeight);
+					rowBounds = new RectangleF (bounds.Left, paddingTop + bounds.Top + para.Top + offsetY, bounds.Width, lineHeight);
 
 					for (int i = 0; i < para.LineCount; i++) {
 						if (rowBounds.Bottom > bounds.Top) {
@@ -139,7 +139,7 @@ namespace SummerGUI.Editor
 							break;
 					}
 				} else {
-					rowBounds = new Rectangle ((int)(bounds.Left + 0.5f), (int)(paddingTop + bounds.Top + para.Top + offsetY + 0.5f), (int)(bounds.Width + 0.5f), para.LineCount * lineHeight);
+					rowBounds = new RectangleF (bounds.Left, paddingTop + bounds.Top + para.Top + offsetY, bounds.Width, para.LineCount * lineHeight);
 
 					if (rowBounds.Bottom > bounds.Top) {
 						int line = para.Index;

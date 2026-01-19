@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -28,6 +29,37 @@ namespace SummerGUI
 		}
 		***/
 
+		public static Rectangle GetScisorBounds()
+		{
+			// Array für 4 Integer (X, Y, Width, Height)
+            int[] scissorBox = new int[4];
+            GL.GetInteger(GetPName.ScissorBox, scissorBox);
+            
+			return new Rectangle(scissorBox[0], scissorBox[1], scissorBox[2], scissorBox[3]);
+
+            // Status des Scissor-Tests prüfen
+            //bool isScissorEnabled = GL.IsEnabled(EnableCap.ScissorTest);
+		}
+
+		// Vorsicht: Sehr langsam!
+		public static Rectangle CurrentScissorBounds(this IGUIContext ctx)
+		{
+			int[] box = new int[4];
+			GL.GetInteger(GetPName.ScissorBox, box);
+
+			// OpenGL Box: [0]=X, [1]=Y (Bottom), [2]=Width, [3]=Height
+			int x = box[0];
+			int width = box[2];
+			int height = box[3];
+
+			// Umrechnung von Bottom-Up zu Top-Down:
+			// Der Top-Wert in SummerGUI ist der Abstand von der Oberkante.
+			// In OpenGL ist der 'Y' Wert der Abstand von der Unterkante zur Unterkante des Rechtecks.
+			int top = ctx.Height - (box[1] + height);
+
+			return new Rectangle(x, top, width, height);
+		}
+
 		public static  Color4 ToRGBA(this Color4 color, float alpha)
 		{
 			return new Color4 (color.R, color.G, color.B, alpha);
@@ -41,45 +73,7 @@ namespace SummerGUI
 		public static  Color4 ToRGBA(this Color color, float alpha)
 		{
 			return new Color4 (color.R, color.G, color.B, alpha);
-		}
-			
-		/***
-		public static void SetClip(this IGUIContext ctx, Rectangle rect)
-		{			
-			if (rect.Width > 0 && rect.Height > 0)
-			{
-				GL.Enable (EnableCap.ScissorTest);
-				GL.Scissor(rect.Left, ctx.Height - rect.Bottom, rect.Width, rect.Height);
-			}
-			else
-			{
-				GL.Scissor (0, 0, ctx.Width, ctx.Height);
-				GL.Disable (EnableCap.ScissorTest);
-			}
-				
-			m_ClipRectangle = rect;
-			//System.Diagnostics.Debug.WriteLine(m_ClipRectangle.ToString(), "CLIP");
-		}			
-
-		public static void CombineClip(this IGUIContext ctx, Rectangle rect)
-		{			
-			if (m_ClipRectangle == Rectangle.Empty)
-				m_ClipRectangle = new Rectangle (0, 0, ctx.Width, ctx.Height);
-
-			rect.Intersect (m_ClipRectangle);
-			SetClip (ctx, rect);
-		}
-
-		public static void ResetClip(this IGUIContext ctx)
-		{			
-			SetClip (ctx, Rectangle.Empty);
-		}
-		***/
-
-		public static void SetDefaultRenderingOptions(this IGUIContext context)
-		{
-			SetDefaultRenderingOptions ();
-		}			
+		}		
 
 		public static float ScaleValue(this IGUIContext ctx, float value)
 		{
@@ -89,59 +83,7 @@ namespace SummerGUI
 		public static int ScaleValue(this IGUIContext ctx, int value)
 		{
 			return (int)(value * ctx.ScaleFactor + 0.5f);
-		}
-
-		//public static bool HighQuality = true;
-
-        public static void SetDefaultRenderingOptions(RenderingFlags flags = RenderingFlags.HighQuality)
-		{			
-			//GL.Translate (0, 0, 0);
-			//GL.Enable(EnableCap.ScissorTest);
-			GL.Disable(EnableCap.DepthTest);
-			GL.Disable(EnableCap.CullFace);		
-			//GL.Disable(EnableCap.LineStipple);
-
-			GL.Disable(EnableCap.Texture2D);
-			GL.Disable(EnableCap.Texture1D);
-			GL.Disable(EnableCap.TextureRectangle);
-
-			// Blending
-			GL.Enable(EnableCap.AlphaTest);
-			GL.Enable(EnableCap.Blend);
-			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-            // high quality
-
-            if (flags.HasFlag(RenderingFlags.MultiSample))
-                GL.Enable(EnableCap.Multisample);
-            else
-                GL.Disable(EnableCap.Multisample);
-
-            if (flags.HasFlag(RenderingFlags.Smooth))
-            {
-                GL.ShadeModel(ShadingModel.Smooth);
-
-                GL.Enable(EnableCap.PointSmooth);
-                GL.Hint(HintTarget.PointSmoothHint, HintMode.Nicest);
-
-                GL.Enable(EnableCap.LineSmooth);
-                GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);
-
-                GL.Enable(EnableCap.PolygonSmooth);
-                GL.Hint(HintTarget.PolygonSmoothHint, HintMode.Nicest);
-            }
-            else
-            {
-                GL.Disable(EnableCap.PointSmooth);
-                //GL.Hint(HintTarget.PointSmoothHint, HintMode.Nicest);
-
-                GL.Disable(EnableCap.LineSmooth);
-                //GL.Hint(HintTarget.LineSmoothHint, HintMode.Nicest);
-
-                GL.Disable(EnableCap.PolygonSmooth);
-                //GL.Hint(HintTarget.PolygonSmoothHint, HintMode.Nicest);
-            }
-		}
+		}		
 	}
 }
 

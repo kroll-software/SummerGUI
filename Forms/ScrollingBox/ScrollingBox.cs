@@ -306,11 +306,11 @@ namespace SummerGUI
 
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{
-			base.OnPaint (ctx, bounds);
+			base.OnPaint (ctx, bounds);			
 
 			if (Font == null)
 				return;
-			for(int i = 0; i < Items.Count; i++)
+			for (int i = 0; i < Items.Count; i++)
 			{
 				ScrollingBoxItem item = Items[i];
 

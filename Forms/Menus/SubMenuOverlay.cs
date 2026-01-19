@@ -133,7 +133,7 @@ namespace SummerGUI
 
 			SubMenuWidgetStyle style = Style as SubMenuWidgetStyle;
 			if (style != null && Font != null)
-				style.IconColumnWidth = LineHeight.Ceil();
+				style.IconColumnWidth = LineHeight;
 		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)

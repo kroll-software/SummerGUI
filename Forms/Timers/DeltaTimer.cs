@@ -1,6 +1,6 @@
 using System;
 
-namespace SummerGUI.Timers;
+namespace SummerGUI;
 
 public class DeltaTimer
 {
@@ -11,7 +11,7 @@ public class DeltaTimer
     {
         lastTick = Environment.TickCount;
     }
-
+    
     public void Update()
     {
         int now = Environment.TickCount;

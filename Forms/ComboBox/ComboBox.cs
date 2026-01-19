@@ -53,7 +53,7 @@ namespace SummerGUI
 			base.OnLayout (ctx, bounds);
 			if (TB.Font != null) {
 				float height = TB.Font.TextBoxHeight;
-				Button.SetBounds (new RectangleF (bounds.Right - height - 1, bounds.Top.Ceil (), height + 1, (int)height - 0.5f));
+				Button.SetBounds (new RectangleF (bounds.Right - height - 1, bounds.Top, height, height));
 			}
 		}
 

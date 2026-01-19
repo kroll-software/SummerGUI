@@ -68,7 +68,7 @@ namespace SummerGUI
 			Text = text;
 			this.SetFontByTag (CommonFontTags.Default);
 
-			Padding = new Padding (6, 4, 6, 3);
+			Padding = new Padding (6, 2, 6, 4);
 			//Padding = Padding.Empty;
 			Margin = Padding.Empty;
 			//MaxSize = new Size (240, Int32.MaxValue);
@@ -117,7 +117,7 @@ namespace SummerGUI
 					CachedPreferredSize = SizeF.Empty;
 				} else {
 					SizeF sz = Font.Measure (Text, MaxSize.Width, FontFormat.DefaultMultiLine);
-					CachedPreferredSize = new SizeF (sz.Width.Ceil () + Padding.Width, sz.Height.Ceil () + Padding.Height);
+					CachedPreferredSize = new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
 				}
 			}
 			return CachedPreferredSize;
@@ -152,7 +152,7 @@ namespace SummerGUI
 					if (Style.AlphaBack < 5)
 						OnClose();				
 					ctx.Invalidate (1);
-				}					
+				}
 			}
 		}
 

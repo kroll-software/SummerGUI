@@ -341,7 +341,7 @@ namespace SummerGUI.Theming
 			case ColorContexts.Outline:
 				return Color.Empty;
 			default:
-				return GetContextColor (colorContext).Lerp (Color.Black, 0.15);
+				return GetContextColor (colorContext).Lerp (Color.Black, 0.15f);
 			}
 		}
 
@@ -353,7 +353,7 @@ namespace SummerGUI.Theming
 			case ColorContexts.Outline:
 				return Color.White;
 			default:
-				return GetContextColor (colorContext).Lerp (Color.Black, 0.25);
+				return GetContextColor (colorContext).Lerp (Color.Black, 0.25f);
 			}
 		}
 

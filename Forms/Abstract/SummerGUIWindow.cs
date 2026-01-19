@@ -44,17 +44,10 @@ namespace SummerGUI
 			Context = context;
 			Message = message;
 		}			
-	}	
+	}
 
 	public abstract class SummerGUIWindow : NativeWindow, IGUIContext
-	{		
-		/***
-		private VertexBuffer<ColouredVertex> vertexBuffer;
-		private ShaderProgram shaderProgram;
-		private VertexArray<ColouredVertex> vertexArray;
-		private Matrix4Uniform projectionMatrix;
-		**/
-
+	{				
 		/***
 		public event Action<DragEventArgs> DragEnter;
 		public event Action<EventArgs> DragLeave;
@@ -66,6 +59,16 @@ namespace SummerGUI
 		public void OnDragDrop(DragEventArgs e) => DragDrop?.Invoke(e);
 		public void OnDragOver(DragEventArgs e) => DragOver?.Invoke(e);
 		***/
+
+		private static int _instanceCount = 0;
+
+		public GUIRenderBatcher Batcher 
+		{ 
+			get
+			{
+				return GUIRenderBatcher.Batcher;
+			}		
+		}		
 
 		private int m_FrameRate = 30;
 		public int FrameRate
@@ -88,17 +91,10 @@ namespace SummerGUI
 			{
 				return ((Rectangle)base.Bounds);				
 			}
-		}		
+		}
 		
 		// Da Sie IGUIContext implementieren, müssen Sie die GlWindow-Eigenschaft selbst liefern:
-		public NativeWindow GlWindow => this;
-
-		/***
-		private GL m_GLContext;
-
-    	public GL GL => m_GLContext; // IGUIContext Implementierung
-		***/
-    
+		public NativeWindow GlWindow => this;		
 
 		/*** ***/
 		private Devices m_Device = Devices.Desktop;
@@ -133,19 +129,95 @@ namespace SummerGUI
 		public RootContainer Controls { get; private set; }
 
 		public IGuiMenu MainMenu { get; set; } 
-		public MenuManager MenuManager { get; private set; }
+		public MenuManager MenuManager { get; private set; }		
 
-		static object GetStaticFieldValue(Type type, string fieldName)
+		public string Name { get; protected set; }
+
+		public DpiScalingAutomat DpiScaling { get; private set; }
+
+		public int DPI { get; protected set; }
+		public virtual void DetectDPI()
 		{
-			return type.GetField(fieldName,
-				System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+			// ToDo: Detect DPI from the Display-Device and calculate the ScaleFactor
+			DPI = 72;
+			ScaleFactor = 1f;
 		}
 
-		static void SetStaticFieldValue(Type type, string fieldName, object value)
-		{
-			type.GetField(fieldName,
-				System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, value);
-		}
+		public int OriginalWidth { get; private set; }
+		public int OriginalHeight { get; private set; }
+		public float LayoutFrameRate { get; set; }
+		public float PaintFrameRate { get; set; }
+
+		public bool IsCreated { get; private set; }
+
+		public float ScaleFactor { get; protected set; }
+		public SummerGUIWindow ParentWindow  { get; protected set; }
+
+		public ClipBoundStackClass ClipBoundStack { get; private set; }
+		
+		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
+        {
+			_instanceCount++;
+
+			this.Context.MakeCurrent();
+
+			//NativeWindowSettings test = new NativeWindowSettings();
+			//test.TransparentFramebuffer = false;			
+						
+			m_FrameRate = frameRate;
+			this.VSync = VSyncMode.Adaptive;
+			this.AutoIconify = false;
+			this.CursorState = CursorState.Normal;
+
+			LoadingErrorsQueue = new Queue<LoadingError>();
+			ClipBoundStack = new ClipBoundStackClass(this);
+			Context.SwapInterval = 1;	
+			this.LogInformation ("OpenGL Version: {0}", GL.GetString(StringName.Version));
+			DetectDPI ();
+			//DetectDevice ();
+
+			ChildWindows = new ClassicLinkedList<ChildFormWindow> ();
+			Animator = new AnimationService (frameRate);
+
+			MaxDirtyPaint = 10;
+			MaxDirtyLayout = 10;
+
+			ThreadSleepOnEmptyUpdateFrame = 1;
+			ThreadSleepOnEmptyRenderFrame = 1;
+
+			OriginalWidth = Width;
+			OriginalHeight = Height;
+			
+			InitFonts ();
+			InitCursors ();
+
+			SetRenderingOptions();
+			//SetupViewport ();
+			BackColor = Theme.Colors.Base02;			
+			GL.ClearColor(BackColor);
+			
+			Controls = new RootContainer (this);
+			DpiScaling = new DpiScalingAutomat (this);			
+			InvalidateMeter = new FramePerformanceMeter(5);			
+
+			this.ParentWindow = parent;
+			if (ParentWindow != null)
+				this.SetParent(ParentWindow);
+        }
+
+		// Die Basisklasse NativeWindow erwartet die Settings im "base" Aufruf.
+    	protected SummerGUIWindow (string caption, int width, int height, SummerGUIWindow parent = null, int frameRate = 30)
+			// 1. Übergabe der konfigurierten Settings an den NativeWindow Basis-Konstruktor
+			: this(new NativeWindowSettings()
+			{
+				Title = caption,
+				ClientSize = new Vector2i(width, height),
+				AutoLoadBindings = true,
+				StartVisible = false,				
+				Profile = ContextProfile.Compatability,
+				NumberOfSamples = 4,								
+				TransparentFramebuffer = false,
+			}, parent, frameRate) {}		
 
 		public unsafe void AddChildWindow(ChildFormWindow wnd)
 		{
@@ -162,6 +234,8 @@ namespace SummerGUI
 
 		public unsafe void RemoveChildWindow(ChildFormWindow wnd)
 		{
+			Batcher.BindContext(this);
+			
 			try {				
 				ChildWindows.Remove (wnd);
 			} catch (Exception ex) {
@@ -203,103 +277,31 @@ namespace SummerGUI
 			GLFW.FocusWindow(cw.WindowPtr);
 			cw.Focus();
 			return true;
-		}
+		}		
 
-		public string Name { get; protected set; }
-
-		public DpiScalingAutomat DpiScaling { get; private set; }
-
-		public int DPI { get; protected set; }
-		public virtual void DetectDPI()
-		{
-			// ToDo: Detect DPI from the Display-Device and calculate the ScaleFactor
-			DPI = 72;
-			ScaleFactor = 1f;
-		}
-
-		public bool IsCreated { get; private set; }
-
-		public float ScaleFactor { get; protected set; }
-		public SummerGUIWindow ParentWindow  { get; protected set; }
-
-		public ClipBoundStackClass ClipBoundStack { get; private set; }
+		public int TitleBarHeight => Math.Max(0, Size.Y - ClientSize.Y);
 		
-		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
-        {			
-			this.Context.MakeCurrent();
-						
-			m_FrameRate = frameRate;
-			this.VSync = VSyncMode.Adaptive;
-			this.AutoIconify = false;
-			this.CursorState = CursorState.Normal;
-
-			LoadingErrorsQueue = new Queue<LoadingError>();
-			ClipBoundStack = new ClipBoundStackClass(this);
-			Context.SwapInterval = 1;	
-			this.LogInformation ("OpenGL Version: {0}", GL.GetString(StringName.Version));
-			DetectDPI ();
-			//DetectDevice ();
-
-			ChildWindows = new ClassicLinkedList<ChildFormWindow> ();
-			Animator = new AnimationService (frameRate);
-
-			MaxDirtyPaint = 10;
-			MaxDirtyLayout = 10;
-
-			ThreadSleepOnEmptyUpdateFrame = 1;
-			ThreadSleepOnEmptyRenderFrame = 1;
-
-			OriginalWidth = Width;
-			OriginalHeight = Height;
-			
-			InitFonts ();
-			InitCursors ();
-
-			SetupViewport ();
-			BackColor = Color4.White;
-			GL.ClearColor(BackColor);
-			
-			Controls = new RootContainer (this);
-			DpiScaling = new DpiScalingAutomat (this);			
-			InvalidateMeter = new FramePerformanceMeter(5);
-
-			this.ParentWindow = parent;
-			if (ParentWindow != null)
-				this.SetParent(ParentWindow);
-        }
-
-		// Die Basisklasse NativeWindow erwartet die Settings im "base" Aufruf.
-    	protected SummerGUIWindow (string caption, int width, int height, SummerGUIWindow parent = null, int frameRate = 30)
-			// 1. Übergabe der konfigurierten Settings an den NativeWindow Basis-Konstruktor
-			: this(new NativeWindowSettings()
-			{
-				Title = caption,
-				ClientSize = new Vector2i(width, height),
-				AutoLoadBindings = true,
-				StartVisible = false,				
-				Profile = ContextProfile.Compatability,				
-			}, parent, frameRate) {}		
-
-		public int OriginalWidth { get; private set; }
-		public int OriginalHeight { get; private set; }
-		public float LayoutFrameRate { get; set; }
-		public float PaintFrameRate { get; set; }
-
-		internal void gluPerspective(double fovy, double aspect, double zNear, double zFar)
+		protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
 		{
-			double xmin, xmax, ymin, ymax;
+			base.OnFramebufferResize(e);
+			MakeCurrent();
 
-			ymax = zNear * Math.Tan(fovy * Math.PI / 360.0);
-			ymin = -ymax;
+			// Viewport IMMER zuerst			
+			GL.Viewport(0, 0, e.Width, e.Height);			
 
-			xmin = ymin * aspect;
-			xmax = ymax * aspect;
+			// Projection exakt gleich
+			//Batcher.UpdateSize(e.Width, e.Height);			
+			GUIRenderBatcher.Batcher.BindContext(this);
 
-			GL.Frustum(xmin, xmax, ymin, ymax, zNear, zFar);
+			Invalidate();
 		}
+
+		private void SetupViewport()
+		{
+		}		
 
 		private Rectangle m_LastResizeBounds = Rectangle.Empty;
-		
+
 		protected override void OnResize(ResizeEventArgs e)
 		{			
 			base.OnResize(e);			
@@ -307,7 +309,8 @@ namespace SummerGUI
 
 			if (Bounds != m_LastResizeBounds) {				
 				m_LastResizeBounds = Bounds;
-				SetupViewport ();
+				//SetupViewport ();
+				iDirtyLayout = MaxDirtyLayout * 2;	// be safe and allow 10 layouts
 				Invalidate ();
 
 				// *** Test
@@ -317,7 +320,7 @@ namespace SummerGUI
 
 				if (WindowState == WindowState.Normal)
 					DefaultSize = Size;				
-			}				
+			}			
 		}
 
         protected override void OnMove(WindowPositionEventArgs e)
@@ -348,30 +351,13 @@ namespace SummerGUI
 			} catch (Exception ex) {
 				ex.LogError ("Initialization failed for widget: {0}, Type: {1}, Error: {2}", widget.Name, widget.GetType().Name, ex.Message);
 			}
-		}
-
-		public int TitleBarHeight		
-		{			
-			get{				
-				return Math.Max(0, Size.Y - ClientSize.Y);
-			}			
-		}
-
-		private void SetupViewport()
-		{				
-			GL.Viewport(0, 0, this.Width, this.Height);			
-
-			GL.MatrixMode(MatrixMode.Projection);
-			GL.LoadIdentity ();
-						
-			GL.Ortho(0, this.Width, this.Height, 0, -1, 1);			
-
-			iDirtyLayout = MaxDirtyLayout * 2;	// be safe and allow 10 layouts
-		}
+		}		
 
 		public event EventHandler<EventArgs> Load;
 		protected virtual void OnLoad(EventArgs e)
-		{
+		{			
+			this.Batcher.Init(this.Size.X, this.Size.Y);			
+
 			IsCreated = true;
 			IsVisible = true;
 
@@ -401,11 +387,16 @@ namespace SummerGUI
 			}
 				
 			if (ScaleFactor > 1)
-				ScaleGUI(ScaleFactor);
+				ScaleGUI(ScaleFactor);			
+
+			// Wichtig für Core-Profile
+			GL.Enable(EnableCap.Blend);
+			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+			GL.Disable(EnableCap.DepthTest);
 
 			// activate immediate swapping for flicker-free painting.
-			Context.SwapInterval = 0;			
-		}		
+			Context.SwapInterval = 0;
+		}
 
 		protected Vector2i DefaultLocation { get; set; }
 		protected Vector2i DefaultSize { get; set; }
@@ -483,17 +474,7 @@ namespace SummerGUI
 
 		void InitFonts()
 		{						
-			OnInitFonts ();
-
-			// Preload some icons for messageboxes
-			string test = "" + (char)FontAwesomeIcons.fa_info_circle
-			              + (char)FontAwesomeIcons.fa_exclamation_circle
-			              + (char)FontAwesomeIcons.fa_warning
-			              + (char)FontAwesomeIcons.fa_times_circle
-			              + (char)FontAwesomeIcons.fa_question_circle
-			              + (char)FontAwesomeIcons.fa_life_ring
-			              + (char)FontAwesomeIcons.fa_anchor;
-			this.MeasureString (test, CommonFontTags.LargeIcons.ToString());
+			OnInitFonts ();			
 		}
 
 		// Preload your fonts here
@@ -705,7 +686,7 @@ namespace SummerGUI
 			char c = e.AsString[0];
 			KeyPressEventArgs args = new KeyPressEventArgs(c);
 			Controls.OnKeyPress (args);
-        }				
+        }
 
 		// finding out that this is a BUG took me some hours..
 		// After each mouse down, a OnMouseWheel is fired, where the wheel isn't touched at all
@@ -720,7 +701,7 @@ namespace SummerGUI
 			base.OnMouseDown (e);
 			
 			Vector2 pos = this.MouseState.Position;			
-			SummerGUI.MouseButtonEventArgs args = new MouseButtonEventArgs((int)pos.X, (int)pos.Y + TitleBarHeight, e.Button);
+			SummerGUI.MouseButtonEventArgs args = new MouseButtonEventArgs((int)pos.X, (int)pos.Y, e.Button);
 			Controls.OnMouseDown (args);
         }
 
@@ -731,7 +712,7 @@ namespace SummerGUI
 			base.OnMouseUp (e);
 			
 			Vector2 pos = this.MouseState.Position;
-			SummerGUI.MouseButtonEventArgs args = new MouseButtonEventArgs((int)pos.X, (int)pos.Y + TitleBarHeight, e.Button);
+			SummerGUI.MouseButtonEventArgs args = new MouseButtonEventArgs((int)pos.X, (int)pos.Y, e.Button);
 
 			Controls.OnMouseUp (args);
 			m_MouseDownFlag = false;
@@ -743,9 +724,8 @@ namespace SummerGUI
 				return;
 			LowerSleepTime ();
 			base.OnMouseMove (e);
-			
-			MouseMoveEventArgs args = new MouseMoveEventArgs(e.X, e.Y + TitleBarHeight, e.DeltaX, e.DeltaY);
-			Controls.OnMouseMove (args);
+						
+			Controls.OnMouseMove (e);
 		}
 
 		protected override void OnMouseWheel (OpenTK.Windowing.Common.MouseWheelEventArgs e)
@@ -758,7 +738,7 @@ namespace SummerGUI
 			base.OnMouseWheel (e);
 
 			Vector2 pos = this.MouseState.Position;			
-			var args = new SummerGUI.MouseWheelEventArgs((int)pos.X, (int)pos.Y + TitleBarHeight, e.Offset, e.OffsetX, e.OffsetY);			
+			var args = new SummerGUI.MouseWheelEventArgs((int)pos.X, (int)pos.Y, e.Offset, e.OffsetX, e.OffsetY);			
 			Controls.OnMouseWheel (args);
 		}
 
@@ -767,7 +747,7 @@ namespace SummerGUI
 			return Controls.AddChild (c);
 		}			
 
-		public Color4 BackColor { get; set; }	
+		public Color BackColor { get; set; }	
 
 		public int MaxDirtyPaint { get; set; }
 		public int MaxDirtyLayout { get; set; }
@@ -809,9 +789,33 @@ namespace SummerGUI
 			// Setze den Active-State, um den Timeout-Wert auf 0.0 zu setzen (Polling)
 			//this.SetActivationState(true);
 		}
+
+		protected virtual void ClearBackground()
+		{
+			RectangleF rect = new RectangleF(0, 0, this.Width, this.Height);
+			Brush br = new SolidBrush(BackColor);
+			this.FillRectangle(br, rect);
+		}
+
+		protected virtual void SetRenderingOptions()
+		{
+			GL.MatrixMode (MatrixMode.Modelview);
+			GL.LoadIdentity ();			
+
+			// WICHTIG: Depth Test aus für 2D GUI
+			GL.Disable(EnableCap.DepthTest);
+			GL.DepthMask(false);    // NICHT in den Depth Buffer schreiben
+
+			// WICHTIG: Blending an, damit Text (Alpha) funktioniert
+			GL.Enable(EnableCap.Blend);
+			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+			GL.Clear (ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);			
+
+			GL.Enable(EnableCap.ScissorTest);
+		}
 			
 		public readonly object SyncObject = new object ();
-		private void DoPaint(Rectangle bounds)
+		private void DoPaint(RectangleF bounds)
 		{				
 			int clipCount = ClipBoundStack.Count;
 			if (clipCount > 0) {
@@ -819,27 +823,84 @@ namespace SummerGUI
 				this.LogWarning ("ClipBoundStack was not empty, Count: {0}", clipCount);
 			}
 
-			GL.MatrixMode (MatrixMode.Modelview);
-			GL.LoadIdentity ();
+			ClearBackground();
 
-			GL.Clear (ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-		
-			this.SetDefaultRenderingOptions ();
-			GL.Scissor (0, 0, Width, Height);
+			try {
+				Batcher.ResetCounters();
+				OnPaint (bounds);				
+				Batcher.Flush();
+				//Debug.WriteLine($"DrawCount: {Batcher.DrawCount}, FlushCount: {Batcher.FlushCount}, ClipCount: {Batcher.ClipCount}");
 
-			try {				
-				OnPaint (bounds);
-				GL.Flush();
 			} catch (Exception ex) {
 				ex.LogError ("DoPaint");
 			} finally {
 				OnAfterPaint ();
 			}
-		}		
+		}
 
-		protected virtual void OnPaint(Rectangle bounds)
-		{	
+		protected virtual void OnPaint(RectangleF bounds)
+		{				
 			this.Controls.Update (this);
+			return;			
+
+			ClipBoundStack.Clear();
+			this.FillRectangle(new SolidBrush(Theme.Colors.Base02), new RectangleF(0, 0, this.Width, this.Height));
+
+			//RectangleF r = new RectangleF(513.9219f, 35f, 24.84375f, 40);
+			RectangleF r = new RectangleF(513.9219f, 35f, 44f, 40);
+			//var f = FontFormat.DefaultIconFontFormatCenter;			
+			var f = new FontFormat(Alignment.Near, Alignment.Center, FontFormatFlags.None);
+			Pen p = new Pen(Color.Yellow);
+			Brush b = new SolidBrush(Color.AliceBlue);
+			this.DrawRectangle(p, r);
+			var fo = FontManager.Manager.FontByTag(CommonFontTags.MediumIcons);
+			string s = ((char)FontAwesomeIcons.fa_info_circle).ToString();
+			this.DrawString(s, fo, b, r, f);
+			return;
+
+
+			
+
+
+			float xStart = 100;
+			float yStart = 100;
+			float width = 200;
+			float height = 200;
+			float distance = 25;
+			string text = "Hallo Welt";
+			Pen pen = new Pen(Color.Yellow);
+			Brush brush = new SolidBrush(Color.White);
+			FontFormat format = new FontFormat(Alignment.Center, Alignment.Center, FontFormatFlags.None);
+			format = FontFormat.DefaultIconFontFormatCenter;
+
+			string iconText = ((char)FontAwesomeIcons.fa_amazon).ToString() + ((char)FontAwesomeIcons.fa_align_justify).ToString() + ((char)FontAwesomeIcons.fa_android).ToString();			
+
+			foreach (var font in FontManager.Manager.Fonts.Values)
+			{
+				if (font == null)
+					continue;
+
+				if (font.Name == "FontAwesome")
+					text = iconText;
+				else
+					text = font.Name + " ff ffi s&z";
+
+				SizeF sz = font.Measure(text);
+				width = sz.Width + 50;		
+				height = font.TextBoxHeight + 150;
+
+				RectangleF rect = new RectangleF(xStart, yStart, width, height);
+				this.DrawRectangle(pen, rect);
+
+				this.DrawString(text, font, brush, rect, format);
+				
+				yStart += height + distance;
+				if (yStart + height > this.Height)
+				{
+					yStart = 100;			
+					xStart += width + distance;
+				}
+			}
 		}
 
 		protected virtual void OnAfterPaint()
@@ -891,7 +952,7 @@ namespace SummerGUI
 			}
 				
 			if (iDirtyLayout > 0) {				
-				Rectangle rec = new Rectangle(0, TitleBarHeight, ClientRectangle.Size.X, ClientRectangle.Size.Y);
+				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 				this.Controls.OnLayout (this, rec);
 				iDirtyLayout--;
 			}			
@@ -899,6 +960,9 @@ namespace SummerGUI
 			
 		protected virtual void OnRenderFrame(double elapsedSeconds)
 		{							
+			// Vor dem Zeichnen: Batcher auf dieses Fenster "eichen"
+    		//GUIRenderBatcher.Batcher.BindContext(this);
+
 			if (Animator.IsStarted) {
 				Animator.Animate ();
 				Invalidate (1);
@@ -908,7 +972,7 @@ namespace SummerGUI
 				return;
 			}
 						
-			DoPaint ((Rectangle)ClientRectangle);
+			DoPaint ((Rectangle)ClientRectangle);			
 			iDirtyPaint--;
 		}
 
@@ -945,7 +1009,13 @@ namespace SummerGUI
 						}
 					}
 				}
-			}			
+			}
+		}
+
+		protected virtual void ShutdownFramework()
+		{
+			FontManager.Manager.Dispose();
+        	GUIRenderBatcher.Batcher.Dispose();
 		}
 			
 		public AnimationService Animator { get; private set; }
@@ -1067,7 +1137,7 @@ namespace SummerGUI
 				
 				if (BeforeFullscreenWindowState == WindowState.Normal)
 				{											
-					Vector2i newSize = new Vector2i(DefaultSize.X, DefaultSize.Y - TitleBarHeight);
+					Vector2i newSize = new Vector2i(DefaultSize.X, DefaultSize.Y);
 					this.Size = newSize;
 					this.Location = DefaultLocation;
 				}
@@ -1111,7 +1181,7 @@ namespace SummerGUI
 					Controls = null;
 					ClipBoundStack?.Clear();
 					ClipBoundStack = null;
-					MainMenu = null;                    
+					MainMenu = null;					
 				} catch (Exception ex) {
 					ex.LogError ();
 				}					
@@ -1178,8 +1248,14 @@ namespace SummerGUI
 				}
 
 				OnUnload (EventArgs.Empty);
+
+				_instanceCount--;				
+				if (_instanceCount <= 0)
+				{
+					this.ShutdownFramework();
+				}
 			}
-		}			
+		}				
 
 		/***
 		public VSyncMode VSync
@@ -1603,6 +1679,8 @@ namespace SummerGUI
 			timestamp = watch.Elapsed.TotalSeconds;
 			render_time = timestamp - render_timestamp;
 		}
+
+
 	}
 }
 

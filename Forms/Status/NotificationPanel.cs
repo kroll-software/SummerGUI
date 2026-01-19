@@ -41,8 +41,7 @@ namespace SummerGUI
 
 			Text = AddChild (new MultiLineTextWidget ("notificationText", text, Style));
 			Text.Padding = new Padding (8);
-
-			Margin = new Padding (0, 1, 0, 0);
+			Margin = Padding.Empty;
 
 			NotificationStyle = notificationStyle;
 
@@ -67,6 +66,7 @@ namespace SummerGUI
 				TextWidget TWI = AddChild (new TextWidget ("notificationIcon", Docking.Left, Style, null, null));
 				TWI.Icon = Icon;
 				TWI.ZIndex = 1;
+				TWI.Format = FontFormat.DefaultIconFontFormatCenter;
 			}
 
 			CloseButtonVisible = canClose;
@@ -75,6 +75,7 @@ namespace SummerGUI
 				btnClose.Dock = Docking.Right;
 				btnClose.ZIndex = 1;
 				btnClose.MaxSize = new SizeF (btnClose.MaxSize.Width, Int32.MaxValue);
+				btnClose.Format = FontFormat.DefaultIconFontFormatCenter;
 				btnClose.Styles.OfType<ButtonWidgetStyle> ().ForEach (s => {
 					s.ButtonStyle = ButtonStyles.Flat;
 					s.Border = 0;

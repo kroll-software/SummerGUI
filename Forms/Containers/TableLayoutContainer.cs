@@ -397,7 +397,7 @@ namespace SummerGUI
 			}
 
 			if (FillColCount > 0) {
-				float fillColWidth = (int)(((proposedSize.Width - FixedColWidth - ((columnCount - 1) * CellPadding.Width)) / FillColCount));
+				float fillColWidth = (proposedSize.Width - FixedColWidth - ((columnCount - 1) * CellPadding.Width)) / FillColCount;
 				for (int i = 0; i < columnCount; i++) {
 					WidgetTableColumn col = Table.Columns [i];
 					if (col.SizeMode == TableSizeModes.Fill || col.SizeMode == TableSizeModes.None)
@@ -405,7 +405,7 @@ namespace SummerGUI
 				}
 			}
 
-			Width = (int)(Table.Columns.Sum(col => col.Width) + ((Table.Columns.Count - 1) * CellPadding.Width) + 0.5f);
+			Width = Table.Columns.Sum(col => col.Width) + ((Table.Columns.Count - 1) * CellPadding.Width);
 
 			//DumpColumns ();
 		}			
@@ -425,7 +425,7 @@ namespace SummerGUI
 							float w = 0;
 							for (int m = cell.Column; m < cell.Column + cell.ColumnSpan; m++)
 								w += Table.Columns [m].Width + CellPadding.Width;
-							cell.ProposedSize = new Size ((int)w, (int)row.Height);
+							cell.ProposedSize = new SizeF (w, row.Height);
 							cell.UpdatePreferredSize (ctx);
 							maxHeight = Math.Max (maxHeight, cell.PreferredSize.Height);
 						}
@@ -452,7 +452,7 @@ namespace SummerGUI
 				}
 			}
 
-			Height = (int)(Table.Rows.Sum(row => row.Height) + ((Table.Rows.Count - 1) * CellPadding.Height));
+			Height = (Table.Rows.Sum(row => row.Height) + ((Table.Rows.Count - 1) * CellPadding.Height));
 		}
 
 		public void DumpColumns()
@@ -706,7 +706,7 @@ namespace SummerGUI
 					return base.PreferredSize (ctx, proposedSize);
 				
 				SizeF sz = Layout.PreferredSize(ctx, new SizeF(proposedSize.Width - Padding.Width, proposedSize.Height - Padding.Height));
-			return new SizeF ((int)(sz.Width + Padding.Width + 0.5f), sz.Height + Padding.Height);
+			return new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
 			//}
 		
 			//return CachedPreferredSize;

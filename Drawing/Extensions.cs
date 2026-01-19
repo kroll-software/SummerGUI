@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Text;
 using System.Globalization;
+using OpenTK.Mathematics;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -46,14 +47,14 @@ namespace SummerGUI
 			return (PointF)p;
 		}
 
-		public static double Distance (this Point p, Point other)
+		public static float Distance (this Point p, Point other)
 		{
-			return Math.Sqrt((p.X - other.X).Power2() + (p.Y - other.Y).Power2());
+			return MathF.Sqrt((p.X - other.X).Power2() + (p.Y - other.Y).Power2());
 		}
 
-		public static double Distance (this PointF p, PointF other)
+		public static float Distance (this PointF p, PointF other)
 		{
-			return Math.Sqrt((p.X - other.X).Power2() + (p.Y - other.Y).Power2());
+			return MathF.Sqrt((p.X - other.X).Power2() + (p.Y - other.Y).Power2());
 		}
 
 		public static double Power2 (this double d)
@@ -61,14 +62,14 @@ namespace SummerGUI
 			return d * d;
 		}
 
-		public static double Power2 (this float d)
+		public static float Power2 (this float d)
 		{
 			return d * d;
 		}
 
-		public static double Power2 (this int d)
+		public static float Power2 (this int d)
 		{
-			return (double)(d * d);
+			return d * d;
 		}
 
 		public static int NextPowerOf2 (this int n)
@@ -138,17 +139,17 @@ namespace SummerGUI
 
 		public static float Scale(this float val, float scaling)
 		{			
-			return (val * scaling);
+			return val * scaling;
 		}			
 			
 		public static int Ceil(this float val)
 		{			
-			return (int)Math.Ceiling(val);
+			return (int)MathF.Ceiling(val);
 		}
 
 		public static int Floor(this float val)
 		{			
-			return (int)Math.Floor(val);
+			return (int)MathF.Floor(val);
 		}
 
 		public static int Ceil(this double val)
@@ -173,14 +174,15 @@ namespace SummerGUI
 			return new Size(val.Width.Floor(), val.Height.Floor());
 		}
 
-		public static Rectangle Ceil(this RectangleF val)
+		public static RectangleF Ceil(this RectangleF val)
 		{			
-			return Rectangle.Ceiling(val);
+			//return Rectangle.Ceiling(val);
+			return new RectangleF(val.X.Ceil(), val.Y.Ceil(), val.Width.Ceil(), val.Height.Ceil());
 		}
 
-		public static Rectangle Floor(this RectangleF val)
+		public static RectangleF Floor(this RectangleF val)
 		{			
-			return new Rectangle(val.X.Floor(), val.Y.Floor(), val.Width.Floor(), val.Height.Floor());
+			return new RectangleF(val.X.Floor(), val.Y.Floor(), val.Width.Floor(), val.Height.Floor());
 		}
 
 		public static Point Add(this Point left, Point right)
@@ -218,20 +220,25 @@ namespace SummerGUI
 
 		public static SizeF MaxSize(this SizeF s1, SizeF s2)
 		{
-			return new SizeF (Math.Max(s1.Width, s2.Width), Math.Max(s1.Height, s2.Height));
+			return new SizeF (MathF.Max(s1.Width, s2.Width), MathF.Max(s1.Height, s2.Height));
 		}
-
+		
 		public static double Lerp(this double min, double max, double fraction) 
 		{
 			return (1 - fraction) * min + fraction * max;
-		}			
-
-		public static PointF Lerp(this PointF min, PointF max, double fraction) 
-		{
-			return new PointF((float)Lerp(min.X, max.X, fraction), (float)Lerp(min.Y, max.Y, fraction));
 		}
 
-		public static Color Lerp(this Color min, Color max, double fraction) 
+		public static float Lerp(this float min, float max, float fraction) 
+		{
+			return (1 - fraction) * min + fraction * max;
+		}
+
+		public static PointF Lerp(this PointF min, PointF max, float fraction) 
+		{
+			return new PointF(Lerp(min.X, max.X, fraction), Lerp(min.Y, max.Y, fraction));
+		}
+
+		public static Color Lerp(this Color min, Color max, float fraction) 
 		{
 			return Color.FromArgb((int)Lerp(min.A, max.A, fraction), (int)Lerp(min.R, max.R, fraction), (int)Lerp(min.G, max.G, fraction), (int)Lerp(min.B, max.B, fraction));
 		}
@@ -281,7 +288,7 @@ namespace SummerGUI
 
 		public static RectangleF Combine(this RectangleF rect, RectangleF other)
 		{
-			return new RectangleF (Math.Min(rect.X, other.X), Math.Min(rect.Y, other.Y), Math.Max(rect.Width, other.Width), Math.Max(rect.Height, other.Height));
+			return new RectangleF (MathF.Min(rect.X, other.X), MathF.Min(rect.Y, other.Y), MathF.Max(rect.Width, other.Width), MathF.Max(rect.Height, other.Height));
 		}
 
 		public static bool IsWeekend(this DateTime date)
@@ -361,7 +368,7 @@ namespace SummerGUI
 		{		
 			if (timer != null)	
 				timer.Change (dueTime, period);
-		}			
+		}		
 	}
 }
 

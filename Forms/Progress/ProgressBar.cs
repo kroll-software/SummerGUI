@@ -192,12 +192,12 @@ namespace SummerGUI
 				if (infiniteDirection != 0) {
 					delta = rb.Width * 0.25f;
 					rbp = rb;
-					rbp.Width = (int)(rbp.Width * Value + 0.5f);
+					rbp.Width = rbp.Width * Value;
 					float left = rbp.Right - delta;
 					rbp = new RectangleF (left, rbp.Top, rbp.Right - left, rbp.Height);
 				} else {			
 					rbp = rb;
-					rbp.Width = (int)(rbp.Width * Value + 0.5f);
+					rbp.Width = rbp.Width * Value;
 				}
 				if (rbp.Width > 0 && rbp.Height > 0)
 					ctx.FillRectangle (ProgressColorBrush, rbp);

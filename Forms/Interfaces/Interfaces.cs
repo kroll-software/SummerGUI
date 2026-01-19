@@ -12,6 +12,7 @@ namespace SummerGUI
 	public interface IGUIContext
 	{
 		NativeWindow GlWindow { get; }
+		int TitleBarHeight { get; }
 		//GL GL { get; }
 
 		Devices Device { get; set; }
@@ -22,7 +23,7 @@ namespace SummerGUI
 		int Height { get; }
 		int OriginalWidth { get; }
 		int OriginalHeight { get; }
-		Color4 BackColor  { get; }
+		Color BackColor  { get; }
 		void Invalidate();
 		void Invalidate (int frames);
 		void SetCursor (Cursors cursor);
@@ -33,6 +34,8 @@ namespace SummerGUI
 		ClipBoundStackClass ClipBoundStack { get; }
 		MenuManager MenuManager { get; }
 		IRootController Controller { get; }
+
+		GUIRenderBatcher Batcher { get; }
 	}
 
 	/***

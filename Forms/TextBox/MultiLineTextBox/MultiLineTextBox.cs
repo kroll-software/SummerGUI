@@ -266,7 +266,7 @@ namespace SummerGUI
 				Paragraph para = RowManager.CurrentParagraph;
 
 				if (!IsMouseOrKeyDown && para != null && para.Height < Height - Padding.Height) {
-					int lineHeight = RowManager.LineHeight;
+					float lineHeight = RowManager.LineHeight;
 					float halfRowHeight = lineHeight / 2f;
 
 					float paragraphTop = Top + (para.LineOffset * lineHeight) + ScrollOffsetY + Padding.Top;
@@ -296,7 +296,7 @@ namespace SummerGUI
 				if (para == null)
 					return;
 
-				int lineHeight = RowManager.LineHeight;
+				float lineHeight = RowManager.LineHeight;
 				float halfRowHeight = lineHeight / 2f;
 				int lineIndex = para.LineOffset + para.LineFromPosition(RowManager.CursorPosition);
 
@@ -832,8 +832,7 @@ namespace SummerGUI
 			//EnsureCurrentRowVisible ();
 			base.OnLayout (ctx, bounds);
 		}
-			
-		readonly Lazy<RectangleDrawingBuffer> painter = new Lazy<RectangleDrawingBuffer> (() => new RectangleDrawingBuffer (), false);
+					
 		public Brush SelectionBrush { get; set; }
 
 		public override void Update (IGUIContext ctx)
@@ -860,9 +859,7 @@ namespace SummerGUI
 				if (BreakWidthRulerVisible && Padding.Right > 0) {
 					int breakWidth = (int)(bounds.Left + Padding.Left + BreakWidth);
 					ctx.DrawLine (Theme.Pens.Base01, breakWidth, bounds.Top, breakWidth, bounds.Bottom);
-				}
-
-				painter.Value.Clear ();
+				}				
 
 				if (SelLength <= 0)
 					return;
@@ -875,7 +872,7 @@ namespace SummerGUI
 				if (firstParagraphIndex > paraIndexEnd)
 					return;
 
-				int rowHeight = RowManager.LineHeight;
+				float rowHeight = RowManager.LineHeight;
 				float rowBorder = 1f * ScaleFactor;
 
 				Paragraph paraStart;
@@ -906,12 +903,11 @@ namespace SummerGUI
 				float yStart = bounds.Top + Padding.Top + (absline * rowHeight) + ScrollOffsetY;
 				float xEnd = 0;
 
-				if (absline == absEndLine) {
-					xEnd = ppEnd.ColumnStart + bounds.Left + Padding.Left;
-					painter.Value.AddRectangle (SelectionBrush, xStart, yStart, xEnd - xStart, rowHeight - rowBorder);
+				float lineOffsetY = -Font.Descender / 2f;
 
-					// >>> Paint end exit ,,
-					painter.Value.Flush ();
+				if (absline == absEndLine) {
+					xEnd = ppEnd.ColumnStart + bounds.Left + Padding.Left;					
+					ctx.FillRectangle (SelectionBrush, xStart, yStart + lineOffsetY, xEnd - xStart, rowHeight - rowBorder);					
 					return;
 				}
 
@@ -921,15 +917,12 @@ namespace SummerGUI
 					foreach (float w in paraStart.LineWidths ().Skip(lineOffset)) {						
 						if (absline++ == absEndLine || yStart > bounds.Bottom) {						
 							startWidth = ppEnd.ColumnStart;
-							painter.Value.AddRectangle (SelectionBrush, xStart, yStart, startWidth, rowHeight - rowBorder);
-
-							// >>> Paint end exit ,,
-							painter.Value.Flush ();
+							ctx.FillRectangle (SelectionBrush, xStart, yStart + lineOffsetY, startWidth, rowHeight - rowBorder);							
 							return;
 						}					
 
 						if (yStart + rowHeight > bounds.Top && yStart < bounds.Bottom) {
-							painter.Value.AddRectangle (SelectionBrush, xStart, yStart, w - startWidth, rowHeight - rowBorder);
+							ctx.FillRectangle (SelectionBrush, xStart, yStart + lineOffsetY, w - startWidth, rowHeight - rowBorder);
 						}
 						yStart += rowHeight;
 						startWidth = 0;
@@ -953,8 +946,8 @@ namespace SummerGUI
 
 			bounds.Offset (Padding.Left, Padding.Top);
 
-			int lineHeight = RowManager.LineHeight;
-			int offsetY = (int)ScrollOffsetY;
+			float lineHeight = RowManager.LineHeight;
+			float offsetY = ScrollOffsetY;
 
 			int rowIndex = RowManager.FirstParagraphOnScreen;
 			IGUIFont font = RowManager.Font;
@@ -962,22 +955,76 @@ namespace SummerGUI
 			try {
 				while (rowIndex < RowManager.Paragraphs.Count) {					
 					Paragraph para = RowManager.Paragraphs[rowIndex];
-					Rectangle rowBounds = new Rectangle((int)bounds.Left + (int)ScrollOffsetX, 
-						(int)(bounds.Top + para.Top + offsetY),
-						(int)bounds.Width, 
+					RectangleF rowBounds = new RectangleF(bounds.Left + ScrollOffsetX, 
+						bounds.Top + para.Top + offsetY,
+						bounds.Width, 
 						lineHeight);
 
+					/***
 					var glyphLines = para.ToGlyphs();
-
 					foreach (var line in glyphLines) {
-						if (rowBounds.Bottom > bounds.Top) {							
-							font.Begin();
-							font.PrintTextLine (line.Select(g => g.Glyph).ToArray(), rowBounds, Style.ForeColorBrush.Color);
-							font.End();
+						if (rowBounds.Bottom > bounds.Top) {
+							ctx.DrawTextLine(line.Select(g => g.Char).ToArray(), this.Font, rowBounds, Style.ForeColorBrush.Color);
+							//font.Begin();
+							//font.PrintTextLine (line.Select(g => g.Glyph).ToArray(), rowBounds, Style.ForeColorBrush.Color);
+							//font.End();
 						}
 						rowBounds.Offset(0, lineHeight);
 						if (rowBounds.Top > bounds.Bottom)
 							break;
+					}
+					***/
+					
+					foreach (var line in para.ToLines()) 
+					{
+						if (rowBounds.Bottom > bounds.Top) 
+						{
+							// Zeichne die Zeile Zeichen für Zeichen
+							float currentX = rowBounds.X;
+							var node = line.StartNode;
+							Color color;
+
+							for (int i = 0; i < line.Length && node != null; i++)
+							{
+								char c = node.Value.Char;								
+
+								switch (c)
+								{
+									case ' ':
+										c = SpecialCharacters.SpaceDot;
+										color = Theme.Colors.Base00;
+										break;
+
+									case '\n':
+										c = SpecialCharacters.Paragraph;
+										color = Theme.Colors.Base00;
+										break;
+									default:
+										color = Style.ForeColorBrush.Color;
+										break;		
+								}									
+								
+								GlyphInfo glyphInfo;
+								if (font.GetGlyphInfo(c, out glyphInfo))
+								{
+									// Berechne Ziel-Rechteck (Bearing beachten!)
+									RectangleF dest = new RectangleF(
+										currentX + glyphInfo.Bearing.X,
+										rowBounds.Y + (font.Ascender - glyphInfo.Bearing.Y),
+										glyphInfo.Size.X,
+										glyphInfo.Size.Y
+									);
+
+									ctx.Batcher.AddGlyph(glyphInfo.TextureId, dest, glyphInfo.UV, color);
+								}
+
+								currentX += glyphInfo.Advance;
+								node = node.Next;
+							}
+						}
+						
+						rowBounds.Offset(0, lineHeight);
+						if (rowBounds.Top > bounds.Bottom) break;
 					}
 
 					if (rowBounds.Top > bounds.Bottom)
@@ -989,8 +1036,8 @@ namespace SummerGUI
 				if (CursorOn && CursorVisible) {					
 					RectangleF CursorRectangle = RowManager.CalcCursorRectangle();
 					int x = Math.Max((int)bounds.Left + 1, (int)(CursorRectangle.X + bounds.Left + ScrollOffsetX + 0.5f));
-					float y1 = CursorRectangle.Top + bounds.Top + ScrollOffsetY + 2;
-					float y2 = y1 + CursorRectangle.Height - 4;
+					float y1 = CursorRectangle.Top + bounds.Top + ScrollOffsetY + 1;
+					float y2 = y1 + CursorRectangle.Height - 2;
 					ctx.DrawLine (CursorPen, x, y1, x, y2);
 				}	
 			} catch (Exception ex) {
@@ -1306,12 +1353,7 @@ namespace SummerGUI
 				StopOutOfBoundsSelection ();
 				OutOfBoundsSelectionTimer.Dispose ();
 			}
-				
-			if (painter.IsValueCreated) {
-				painter.Value.Clear ();
-				painter.Value.Dispose ();
-			}
-				
+								
 			UndoRedoManager.Dispose ();
 			RowManager.Dispose ();
 			base.CleanupUnmanagedResources ();

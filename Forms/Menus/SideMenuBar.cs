@@ -337,12 +337,12 @@ namespace SummerGUI
 							}
 
 							if (w != null && w == LastExpandedItem && w.Enabled) {
-								using (Brush sb = new SolidBrush(backBrush.Color.Lerp(Theme.Colors.Cyan, 0.85))) {
+								using (Brush sb = new SolidBrush(backBrush.Color.Lerp(Theme.Colors.Cyan, 0.85f))) {
 									ctx.FillRectangle (sb, itemRect);
 								}
 								foreBrush = Theme.Brushes.White;							
 							} else if (w != null && w == m_ActiveItem && w.Enabled) {
-								using (Brush sb = new SolidBrush(backBrush.Color.Lerp(Theme.Colors.Orange, 0.85))) {
+								using (Brush sb = new SolidBrush(backBrush.Color.Lerp(Theme.Colors.Orange, 0.85f))) {
 									ctx.FillRectangle (sb, itemRect);
 								}
 								foreBrush = Theme.Brushes.White;
@@ -357,7 +357,7 @@ namespace SummerGUI
 							if (w.HasChildren) {
 								char dropDownTriangle = w.Collapsed ? (char)FontAwesomeIcons.fa_caret_right : (char)FontAwesomeIcons.fa_caret_down;
 								RectangleF ib = new RectangleF(itemRect.Right - icoWidth, itemRect.Top, icoWidth, itemRect.Height);
-								ctx.DrawString (dropDownTriangle.ToString(), this.IconFont, foreBrush, ib, FontFormat.DefaultSingleBaseLineCentered);
+								ctx.DrawString (dropDownTriangle.ToString(), this.IconFont, foreBrush, ib, FontFormat.DefaultIconFontFormatCenter);
 								if (w.Level == 0) {
 									tb.Width -= icoWidth * 2;
 									tb.Offset(icoWidth, 0);
@@ -384,7 +384,7 @@ namespace SummerGUI
 									} else 
 										c = ((char)w.ImageIndex).ToString();
 
-									ctx.DrawString (c, this.IconFont, foreBrush, ib, FontFormat.DefaultSingleBaseLine);
+									ctx.DrawString (c, this.IconFont, foreBrush, ib, FontFormat.DefaultIconFontFormatLeft);
 								}									
 
 								tb.Offset(icoWidth + indent, 1);

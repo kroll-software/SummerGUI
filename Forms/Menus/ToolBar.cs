@@ -160,7 +160,7 @@ namespace SummerGUI
 			MaxSize = SizeMax;
 			Margin = Padding.Empty;
 			Padding = new Padding (6, 3, 6, 3);
-			TextOffsetY = 0;
+			TextOffsetY = 0;			
 			this.SetFontByTag(CommonFontTags.Caption);
 			CanFocus = false;
 		}
@@ -189,7 +189,7 @@ namespace SummerGUI
 			}
 
 			base.OnLayout (ctx, bounds);
-		}			
+		}        
 
 		protected override void CleanupManagedResources ()
 		{
@@ -241,10 +241,10 @@ namespace SummerGUI
 			IsMenu = false;
 			Menu = menu;
 			if (Menu == null)
-				Menu = new GuiMenu (name + "_menu");
+				Menu = new GuiMenu (name + "_menu");			
 
 			this.ZIndex = 1000;
-			this.Padding = new Padding (3, 2, 3, 2);
+			this.Padding = new Padding (3, 2, 3, 2);			
 			MinSize = new Size (0, 16);
 
 			CanFocus = false;
@@ -343,7 +343,7 @@ namespace SummerGUI
 			set {
 				base.Visible = value;
 			}
-		}
+		}        
 
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
@@ -421,7 +421,7 @@ namespace SummerGUI
 					button.Styles.SetStyle (new MainToolBarButtonPressedStyle (), WidgetStates.Pressed);
 				}
 				button.Styles.SetStyle (new MainToolBarButtonDisabledStyle (), WidgetStates.Disabled);
-				button.Padding = new Padding (6, 3);
+				button.Padding = new Padding (6, 3);				
 				//CanFocus = false;
 				button.SetIconFontByTag(CommonFontTags.MediumIcons);
 				ResetCachedLayout ();
@@ -471,7 +471,7 @@ namespace SummerGUI
 					x += c.Width + c.Margin.Width;
 				}
 			});
-		}
+		}        
 	}
 
 	public class ComponentToolBar : ToolBarBase

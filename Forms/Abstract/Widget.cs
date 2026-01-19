@@ -757,7 +757,7 @@ namespace SummerGUI
 		public bool InvalidateOnHeartBeat { get; set; }
 		bool invalidateFlag;
 
-		public virtual void Invalidate(int frames = 0)
+		public virtual void Invalidate(int frames = 0, Widget widget = null)
 		{
 			if (IsLayoutSuspended)
 				return;
@@ -766,7 +766,7 @@ namespace SummerGUI
 			else {
 				RootContainer root = Root;
 				if (root != null)
-					root.Invalidate (frames);
+					root.Invalidate (frames, widget);
 			}
 		}
 
@@ -807,16 +807,16 @@ namespace SummerGUI
 		}
 
 		private DateTime m_LastMouseDownDate = DateTime.MinValue;
-		private Point m_LastMouseDownMousePosition = Point.Empty;
-		private Point m_LastMouseDownUpperLeft = Point.Empty;
-		public Point LastMouseDownMousePosition
+		private PointF m_LastMouseDownMousePosition = PointF.Empty;
+		private PointF m_LastMouseDownUpperLeft = PointF.Empty;
+		public PointF LastMouseDownMousePosition
 		{
 			get{
 				return m_LastMouseDownMousePosition;
 			}
 		}
 
-		public Point LastMouseDownUpperLeft
+		public PointF LastMouseDownUpperLeft
 		{
 			get{
 				return m_LastMouseDownUpperLeft;
@@ -839,8 +839,8 @@ namespace SummerGUI
                && ((DateTime.Now - m_LastMouseDownDate).TotalMilliseconds < 350)
                && ClickDistance (e) < 4;			
 
-			m_LastMouseDownMousePosition = new Point (e.X, e.Y);
-			m_LastMouseDownUpperLeft = new Point (TooltipLocation.X.Ceil(), TooltipLocation.Y.Ceil());
+			m_LastMouseDownMousePosition = new PointF (e.X, e.Y);
+			m_LastMouseDownUpperLeft = new PointF (TooltipLocation.X, TooltipLocation.Y);
 			m_LastMouseDownDate = DateTime.Now;
 
 			if (e.Button == MouseButton.Left)

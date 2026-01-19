@@ -66,8 +66,10 @@ namespace SummerGUI
 			HighlightSelection = true;
 			SelectedRowColor = Theme.Colors.Blue;
 			AlternatingRowColor = Color.FromArgb (45, Theme.Colors.Cyan);		
-			CellPadding = new Padding (8, 4, 8, 4);
+			CellPadding = new Padding (8, 4, 4, 4);
 			CellToolTips = true;
+
+			BackColor = Color.GhostWhite;
 		}
 
 
@@ -364,7 +366,7 @@ namespace SummerGUI
 		{			
 			//ResetCachedLayoutCalled++;
 			//Console.WriteLine ("ResetCachedLayout() # {0} on {1}", ResetCachedLayoutCalled.ToString("n0"), this.Name);
-
+			
 			if (m_Font != null)
 				RowHeight = m_Font.TextBoxHeight;
 
@@ -372,9 +374,6 @@ namespace SummerGUI
 				m_HeaderHeight = RowHeight;
 			else
 				m_HeaderHeight = 0;			
-
-			//if (HeaderFont != null)
-			//m_HeaderHeight = Math.Max(RowHeight, (int)(HeaderFont.CaptionHeight));
 
 			HeadHeight = m_HeaderHeight;
 			if (RowHeaders)
@@ -560,8 +559,8 @@ namespace SummerGUI
 		protected float m_HeaderHeight = 21;
 
 		// Mouse Click
-		protected int MouseX = 0;
-		protected int MouseY = 0;
+		protected float MouseX = 0;
+		protected float MouseY = 0;
 		protected MouseButton MouseButton;
 
 		// Column Resizing
@@ -1035,7 +1034,7 @@ namespace SummerGUI
 			return new RectangleF (Bounds.Left, info.RowTop + VerticalScrollOffset, Bounds.Width, info.RowHeight);
 		}
 
-		protected virtual MouseControlItem FindControlItem(int x, int y)
+		protected virtual MouseControlItem FindControlItem(float x, float y)
 		{            
 			if (ControlItems == null)
 				return MouseControlItem.Empty;
@@ -1054,7 +1053,7 @@ namespace SummerGUI
 		[DpiScalable]
 		public Padding CellPadding { get; set; }
 
-		protected virtual void DrawColumnHeaders(IGUIContext gfx, RectangleF RH, RectangleF Bounds)
+		protected virtual void DrawColumnHeaders(IGUIContext ctx, RectangleF RH, RectangleF Bounds)
 		{			
 			// Column Headers Captions
 			float ColumnDeviderX;
@@ -1069,6 +1068,9 @@ namespace SummerGUI
 			if (font == null)
 				font = Font;
 
+			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Bounds.Y, Bounds.Width - RowHeaderWidth, HeadHeight);
+
+			using (var clip = new ClipBoundClip (ctx, ClipRect)) 
 			using (SolidBrush ColumnTextBrush = new SolidBrush(HeaderForeground.Color))
 			{
 				m_MaxColumnWidth = 0;
@@ -1089,7 +1091,7 @@ namespace SummerGUI
 
 						RectangleF RT = new RectangleF (iColStart + CellPadding.Left, RH.Top, colWidth - CellPadding.Right - rightIndent - 1, RH.Height);
 						if (RT.Right > Left && RT.Left < Right) {
-							float stringWidth = gfx.DrawString (col.Caption, font, ColumnTextBrush, RT, FontFormat.DefaultSingleLine).Width;
+							float stringWidth = ctx.DrawString (col.Caption, font, ColumnTextBrush, RT, FontFormat.DefaultSingleLine).Width;
 						}
 
 						//if (CellToolTips && stringWidth > RT.Width)
@@ -1098,7 +1100,7 @@ namespace SummerGUI
 						ColumnDeviderX = iColStart + colWidth;
 						if (ColumnDeviderX > Bounds.Left && ColumnDeviderX < Bounds.Right) {							
 
-							gfx.DrawLine (HeaderBorder, ColumnDeviderX, RH.Top + 4, ColumnDeviderX, RH.Top + RH.Height - 6);
+							ctx.DrawLine (HeaderBorder, ColumnDeviderX, RH.Top + 4, ColumnDeviderX, RH.Top + RH.Height - 6);
 
 							if (col.AllowResize) {
 								// resizing / border
@@ -1115,8 +1117,8 @@ namespace SummerGUI
 
 								List<PointF> triAngle = new List<PointF> ();
 
-								float triHeight = (6f * ScaleFactor).Ceil ();
-								float triWidth = (10f * ScaleFactor).Ceil ();
+								float triHeight = 6f * ScaleFactor;
+								float triWidth = 10f * ScaleFactor;
 
 								float iTop = col.ColumnHeaderBounds.Top + (col.ColumnHeaderBounds.Height / 2) - (triHeight / 2) - 1;
 								float iBottom = iTop + triHeight;
@@ -1147,7 +1149,7 @@ namespace SummerGUI
 									//    gfx.ResetTransform();
 									//}
 
-									gfx.FillPolygon (Theme.Brushes.Base01, triAngle.ToArray ());
+									ctx.FillPolygon (Theme.Brushes.Base01, triAngle.ToArray ());
 									triAngle.Clear ();
 								}                            
 							}
@@ -1186,8 +1188,8 @@ namespace SummerGUI
 			return new FontFormat (col.TextAlignment, col.LineAlignment, flags);
 		}        
 
-		protected virtual void DrawTextCell(IGUIContext gfx, DataGridColumn col, RectangleF RText, string text, RectangleF Bounds, bool bHighLight)
-		{
+		protected virtual void DrawTextCell(IGUIContext ctx, DataGridColumn col, RectangleF RText, string text, bool bHighLight)
+		{			
 			if (!(RText.Left < Right && RText.Right > Left))
 				return;
 
@@ -1206,29 +1208,22 @@ namespace SummerGUI
 					RText.Offset(0, multilineYOffset);
 				else
 				{
-					fontHeight = (int)(Font.LineHeight / 2f + 0.5f);
+					fontHeight = Font.LineHeight / 2f;
 					RText.Offset(0, fontHeight);
 				}
 			}
+						
+			Brush brush = bHighLight ? Theme.Brushes.White : Theme.Brushes.Base02;
+			float stringWidth = ctx.DrawString(text, Font, brush, RText, sf).Width;			
+			
+			if (CellToolTips && stringWidth > RText.Width)
+				ControlItems.Add(new MouseControlItem(RText, MouseControlItemTypes.Tooltip, text));
 
-			// Hier kommen die Styles zu den Fonts also her...
-
-			float stringWidth;
-			if (bHighLight)
-				stringWidth = gfx.DrawString(text, this.Font, Theme.Brushes.White, RText, sf).Width;
-			else				
-				stringWidth = gfx.DrawString(text, this.Font, Theme.Brushes.Base02, RText, sf).Width;
-
-			if (CellToolTips || col.AutoMinWidth)
-			{				
-				if (CellToolTips && stringWidth > RText.Width)
-					this.ControlItems.Add(new MouseControlItem(RText, MouseControlItemTypes.Tooltip, text));
-				if (col.AutoMinWidth)
-					col.DesiredWidth = (int)Math.Max(col.DesiredWidth, TextIndent + 8 + stringWidth);
-			}            
+			if (col.AutoMinWidth)
+				col.DesiredWidth = Math.Max(col.DesiredWidth, TextIndent + 8 + stringWidth);
 		}
 
-		private bool m_PrintingFlag { get; set; }
+		private bool m_PrintingFlag = false;
 
 		public int FirstRowOnScreen
 		{
@@ -1267,17 +1262,127 @@ namespace SummerGUI
 
 		//private StringFormat textFormat;
 
+		protected virtual void DrawRowHeaders(IGUIContext ctx)
+		{
+			if (RowHeaderWidth < 0)
+				return;
+
+			int startRowIndex = FirstRowOnScreen;
+			int endRowIndex = LastRowOnScreen;
+			
+			for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) 
+			{						
+				RowInfo info = RowManager.RowInfoByRowIndex (rowIndex);
+				float top = info.RowTop + VerticalScrollOffset;
+				
+				RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
+				RectangleF recRowHeader = new RectangleF (Left, top, RowHeaderWidth, info.RowHeight);
+				ctx.DrawGrayButton (recRowHeader);
+				//ctx.DrawLine (HeaderBorder, recRowHeader.Left, recRowHeader.Bottom, recRowHeader.Right, recRowHeader.Bottom);
+				
+				// Selection Rectangle / RowHeader Selection Triangle                                                
+				if (RowHeaders && rowIndex == RowIndex && RowHeaderWidth > 0 && !m_PrintingFlag) {						
+					float iCenter = R.Top + (R.Height / 2f) - 1;
+					PointF[] points = new PointF[3];
+
+					float srDX = Bounds.Left + (6f * ScaleFactor);
+					float srDY = 4f * ScaleFactor;
+
+					points [0] = new PointF (srDX, iCenter - srDY);
+					points [1] = new PointF (srDX, iCenter + srDY);
+					points [2] = new PointF (srDX + srDY, iCenter);
+					ctx.FillPolygon (Theme.Brushes.Base01, points);											
+				}
+			}
+		}
+
 		public override void OnPaintBackground (IGUIContext ctx, RectangleF bounds)
 		{
 			base.OnPaintBackground (ctx, bounds);
 
-			using (var br = new SolidBrush (Color.FromArgb(128, Color.GhostWhite))) {
-				ctx.FillRectangle (br, bounds);
+			// Linke untere Ecke
+			if (RowHeaders && HScrollBar.Visible)
+			{
+				RectangleF rb = new RectangleF(bounds.Left, bounds.Bottom - HScrollBar.Height, RowHeaderWidth, HScrollBar.Height);
+				ctx.FillRectangle(new SolidBrush(HScrollBar.BackColor), rb);
+			}
+
+			if (RowManager == null || RowManager.RowCount <= 0)
+				return;
+
+			int startRowIndex = FirstRowOnScreen;
+			int endRowIndex = LastRowOnScreen;
+
+			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
+			using (var clip = new ClipBoundClip (ctx, ClipRect)) {				
+				for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) 
+				{						
+					RowInfo info = RowManager.RowInfoByRowIndex (rowIndex);
+					float top = info.RowTop + VerticalScrollOffset;
+					RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);					
+					if (HighlightSelection && !m_PrintingFlag && !m_IsEditing && SelectionManager.IsRowSelected (rowIndex)) 
+					{
+						if (IsFocused) 
+						{
+							ctx.FillRectangle (SelectedRowBrush, R);
+						} 
+						else if (!HideSelection) 
+						{							
+							ctx.FillRectangle (SelectedRowInactiveBrush, R);
+						}
+					} 
+					else if (!AlternatingRowColor.IsEmpty && rowIndex % 2 > 0) 
+					{
+						ctx.FillRectangle (m_AlternatingRowColorBrush, R);
+					}
+					else 
+					{
+						//ctx.FillRectangle (RowColorBrush, R);
+					}
+
+					if (m_RowBorderPen.Width > 0)
+						ctx.DrawLine (m_RowBorderPen, R.Left, R.Bottom, R.Right, R.Bottom);					
+				}
+
+				if (VerticalLines) {
+					Pen invertedPen = new Pen(BackColor);
+
+					RectangleF clientRectangle = ScrollBounds;
+					float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
+					// Vertical Lines
+					float iColStartX = ColumnStartX ();
+					foreach (DataGridColumn col in Columns) {
+						if (col.Visible) {
+							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
+							float columnDeviderX = iColStartX + colWidth;
+							if (m_RowBorderPen.Width > 0 && columnDeviderX > Left) {
+								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, LastBottomline);
+							}
+
+							// Selected row							
+							foreach (var rowindex in SelectedRowIndices)
+							{
+								RowInfo info = RowManager.RowInfoByRowIndex (rowindex);
+								float top = info.RowTop + VerticalScrollOffset;
+								RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
+								ctx.DrawLine (invertedPen, columnDeviderX, R.Top, columnDeviderX, R.Bottom);
+							}							
+
+							iColStartX += colWidth;
+							if (iColStartX > bounds.Right)
+								break;
+						}
+					}
+				}				
+
+				DrawRowHeaders(ctx);
 			}
 		}
 
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
-		{			
+		{
+			ControlItems = new QuadTree(Bounds);
+
 			// Top-Left Area
 			RectangleF RTOP = new RectangleF (Left, Top, Width, HeadHeight - m_HeaderHeight);
 			// overridable action
@@ -1294,254 +1399,63 @@ namespace SummerGUI
 
 				// HeaderLine
 				ctx.DrawLine (HeaderBorder, Bounds.Left, Top + HeadHeight, Bounds.Right, Top + HeadHeight);
-			}
+			}			
 
-			// No Data.. EXIT
-			if (RowManager == null)
+			// overridable action
+			if (ColumnHeaders) {
+				DrawColumnHeaders (ctx, RH, Bounds); // since here, column.Left is valid
+			}			
+
+			if (RowManager == null || RowManager.RowCount <= 0 || Columns == null && Columns.Count <= 0)
 				return;
 
- 			int startRowIndex = FirstRowOnScreen;
+			int startRowIndex = FirstRowOnScreen;
 			int endRowIndex = LastRowOnScreen;
-
-			ControlItems = new QuadTree(Bounds);				
-
 			RectangleF clientRectangle = ScrollBounds;
-			float oldMaxColumnWidth = m_MaxColumnWidth;
+			float oldMaxColumnWidth = m_MaxColumnWidth;			
 
-			// Column Headers Captions
-			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, HeadHeight - m_HeaderHeight, Bounds.Width - RowHeaderWidth, Bounds.Height);
-			using (var clip = new ClipBoundClip (ctx, ClipRect)) {
+			//if (ColumnIndex > m_MaxColumnIndex)
+			//	ColumnIndex = m_MaxColumnIndex;
 
-				// overridable action
-				if (ColumnHeaders) {
-					DrawColumnHeaders (ctx, RH, Bounds); // since here, column.Left is valid
-				}
+			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
+			using (var clip = new ClipBoundClip (ctx, ClipRect)) 
+			{
+				for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) 
+				{						
+					RowInfo info = RowManager.RowInfoByRowIndex (rowIndex);
+					float top = info.RowTop + VerticalScrollOffset;
+					RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
 
-				// **********************
+					bool bHighLightRow = HighlightSelection && (!HideSelection || IsFocused) && SelectionManager.IsRowSelected(rowIndex);
 
-				if (RowManager == null || RowManager.RowCount <= 0)
-					return;
-
-				//int ColumnDeviderX;
-				DataGridColumnCollection columns = Columns;
-				if (columns == null)
-					return;
-
-				if (ColumnIndex > m_MaxColumnIndex)
-					ColumnIndex = m_MaxColumnIndex;
-
-				// *** Rows ***
-
-				RectangleF Region1 = new RectangleF (Bounds.X, Top + HeadHeight, Bounds.Width - VScrollBarWidth, Bounds.Height - HeadHeight);	//  - HScrollBarHeight ?
-				RectangleF Region2 = new RectangleF (Bounds.X + RowHeaderWidth, Top + HeadHeight, Bounds.Width - RowHeaderWidth - VScrollBarWidth, Bounds.Height - HeadHeight);	 //  - HScrollBarHeight ?
-				RectangleF rClip = Bounds;
-				rClip.Intersect (Region1);
-				rClip.Intersect (Region2);
-				//ctx.SetClip (rClip);
-
-				using (var rowClip = new ClipBoundClip (ctx, rClip, false)) {
-					using (Pen penTreeLines = new Pen (Color.White)) {
-						columns.ForEach (c => c.DesiredWidth = 0);
-
-						Stack<GroupStart> stackGroups = null;
-						//int treeLinesMaxX = -1;
-						float treeColumnX = -1;
-						if (Columns.TreeColumn != null) {
-							treeColumnX = Columns.TreeColumn.Left;
-							stackGroups = new Stack<GroupStart> ();
-							int groupLevel = DataProvider.GroupLevel (0);
-							for (int k = 0; k < groupLevel; k++) {                 
-								//stackGroups.Push (new GroupStart (k, (treeColumnX + (k * GroupIndent) + 10).Ceil(), 0, 0));
-								stackGroups.Push (new GroupStart (k, (int)(treeColumnX + (k * GroupIndent) + 10), 0, 0));
-							}
-						}					
-					
-						//int CenterYCell = 0;                
-						//int LastGroupLevel = 0;
-						int colStartX = (int)(ColumnStartX () + 0.5);
-
-						for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) {
-							//ctx.SetClip (Region1);
-
-							RowInfo info = RowManager.RowInfoByRowIndex (rowIndex);
-							float top = info.RowTop + VerticalScrollOffset;
-							RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
-							bool bHighLightRow = false;
-							Brush highlightBrush = null;
-
-							using (var reg1Clip = new ClipBoundClip (ctx, Region1, false)) {								
-								if (RowHeaderWidth > 0) {
-									RectangleF recRowHeader = new RectangleF (Left, top, RowHeaderWidth, info.RowHeight);
-									ctx.DrawGrayButton (recRowHeader);
-									ctx.DrawLine (HeaderBorder, recRowHeader.Left, recRowHeader.Bottom, recRowHeader.Right, recRowHeader.Bottom);
-								}
-
-								R.X += RowHeaderWidth;
-								R.Width -= RowHeaderWidth;
-
-								//int m_ItemIconIndent = 0;
-								//if (ganttItemImages != null && item != null && !item.ImageKey.IsNullOrEmpty())
-								//	m_ItemIconIndent = ganttItemImages.ImageSize.Width + 2;
-
-								// left INDENT
-
-								if (HighlightSelection && !m_PrintingFlag && !m_IsEditing && (RowManager.CurrentRowIndex == rowIndex || SelectionManager.IsRowSelected (rowIndex))) {
-									if (IsFocused) {
-										if (m_RowBorderPen.Width > 0) {
-											highlightBrush = SelectedRowBrush;										
-										} else {
-											ctx.FillRectangle (SelectedRowBrush, R);
-										}
-										bHighLightRow = true;
-									} else if (!HideSelection) {
-										if (m_RowBorderPen.Width > 0) {
-											highlightBrush = SelectedRowInactiveBrush;
-										} else {
-											ctx.FillRectangle (SelectedRowInactiveBrush, R);
-										}
-										bHighLightRow = true;
-									}
-								} else if (!AlternatingRowColor.IsEmpty && rowIndex % 2 > 0) {
-									ctx.FillRectangle (m_AlternatingRowColorBrush, R);
-								} else {
-									//ctx.FillRectangle (RowColorBrush, R);
-								}
-
-								if (m_RowBorderPen.Width > 0)
-									ctx.DrawLine (m_RowBorderPen, R.Left, R.Bottom, R.Right, R.Bottom);
-							}
-
-							// draw columns
-							using (var reg2Clip = new ClipBoundClip (ctx, Region2, false)) {
-								
-								// DrawCellStart >>>>>>>>>>>>>>>>>>>>>>>
-								int iColStart = colStartX;
-								int INDENT = 0;
-								string text = "";
-								//int TextIndent = 0;                        
-
-								int colNumber = -1;
-								int iColl = -1;
-								foreach (DataGridColumn col in Columns) {
-									iColl++;
-									int colWidth = col.AbsoluteWidth (clientRectangle.Width);
-									//if (col.IsTreeColumn)
-									//	treeLinesMaxX = iColStart + colWidth;
-
-									Rectangle RectangleCell = new Rectangle (iColStart, (int)(R.Top + 0.5f), colWidth, (int)(R.Height + 0.5f));
-									bool bCellVisible = RectangleCell.IntersectsWith (bounds.Ceil());
-
-									if (col.Visible)
-										colNumber++;
-
-									if (col.Visible && (bCellVisible || col.IsTreeColumn)) {
-										bool bSelectedCell = bCellVisible && HighlightSelection && this.IsFocused && SelectionManager.SelectionMode == DataGridSelectionModes.Cell && rowIndex == RowIndex && colNumber == ColumnIndex && m_EditControl == null;
-
-										/***
-										switch (col.LineAlignment)
-										{
-										case VerticalFontAlignment.Center:
-											CenterYCell = R.Top - 1 + R.Height / 2;
-											break;
-
-										case VerticalFontAlignment.Top:
-											CenterYCell = R.Top + (int)Font.LineHeight - 1;
-											break;
-
-										case VerticalFontAlignment.Bottom:
-										case VerticalFontAlignment.Baseline:
-											CenterYCell = R.Bottom - (int)Font.LineHeight - 1;
-											break;
-										}
-										***/
-
-										INDENT = (int)CellPadding.Left;
-
-										if (bCellVisible) {
-											//INDENT += 0;
-
-											if (highlightBrush != null) {												
-												ctx.FillRectangle (highlightBrush, new RectangleF (RectangleCell.X, RectangleCell.Y, RectangleCell.Width - m_RowBorderPen.Width, RectangleCell.Height - m_RowBorderPen.Width));
-											}
-
-											Rectangle RText = new Rectangle ((int)(iColStart + INDENT), (int)(R.Top), (int)(colWidth - INDENT - 4), (int)(R.Height));
-											text = DataProvider.GetValue (rowIndex, iColl);
-											using (var clpTextCell = new ClipBoundClip (ctx, RText)) {
-												DrawTextCell (ctx, col, RText, text, Bounds, bHighLightRow);												
-											}
-										}
-
-										//if (col.IsTreeColumn)
-										//	ctx.SetClip (Region2);
-
-										if (bSelectedCell) {                                    
-											RectangleF rSelect = new RectangleF (RectangleCell.Location, RectangleCell.Size);
-											DrawSelectionBorder (ctx, rSelect);
-										}								
-									}	
-
-									if (col.Visible) {
-										iColStart += colWidth;
-									}
-									if (iColStart > bounds.Right)
-										break;
-								}
-							}
-
-							// Selection Rectangle / RowHeader Selection Triangle                                                
-							if (RowHeaders && rowIndex == RowIndex && RowHeaderWidth > 0 && !m_PrintingFlag) {
-								using (var clipSelection = new ClipBoundClip (ctx, Region1, false)) {
-									float iCenter = R.Top + (R.Height / 2f) - 1;
-									PointF[] points = new PointF[3];
-
-									float srDX = Bounds.Left + (6f * ScaleFactor).Ceil ();
-									float srDY = (4f * ScaleFactor).Ceil ();
-
-									points [0] = new PointF (srDX, iCenter - srDY);
-									points [1] = new PointF (srDX, iCenter + srDY);
-									points [2] = new PointF (srDX + srDY, iCenter);
-									ctx.FillPolygon (Theme.Brushes.Base01, points);
-								}						
-							}						
-						}						
-						//LastGroupLevel = item.GroupLevel;					
-					}
-				}					
-			}
-
-			// finalize drawing, complete some vertical lines
-			// Pay attention not to draw outside the screen bounds. This will slow down the entire program dramatically.
-			//int LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
-			int LastBottomline = (RowManager.LastRowBottom + VerticalScrollOffset).Ceil();
-
-			ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Top + HeadHeight - m_HeaderHeight, Bounds.Width, Bounds.Height - HeadHeight + m_HeaderHeight);
-			using (var clip = new  ClipBoundClip(ctx, ClipRect)) {
-				if (LastBottomline > 0)
-					ctx.DrawLine(HeaderBorder, Bounds.X + RowHeaderWidth, Bounds.Top, Bounds.X + RowHeaderWidth, LastBottomline - 1);			
-
-				if (VerticalLines) {
-					// Vertical Lines
 					float iColStartX = ColumnStartX ();
-					foreach (DataGridColumn col in Columns) {
-						if (col.Visible) {
+					int iCol = 0;
+					foreach (DataGridColumn col in Columns) 
+					{
+						if (col.Visible) 
+						{
 							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
-							float ColumnDeviderX = iColStartX + colWidth;
-							if (m_RowBorderPen.Width > 0 && ColumnDeviderX > Left) {
-								ctx.DrawLine (this.m_RowBorderPen, ColumnDeviderX - 0.5f, Top + HeadHeight, ColumnDeviderX, LastBottomline);
-							}
+							float columnDeviderX = iColStartX + colWidth;
+							if (columnDeviderX > Left) {
+								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
+								//RText.Offset(0, -1);
+								string text = DataProvider.GetValue (rowIndex, iCol);								
+								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
+							}	
+
 							iColStartX += colWidth;
 							if (iColStartX > bounds.Right)
 								break;
 						}
+						iCol++;
 					}
 				}
-
 			}
 
 			if (m_MaxColumnWidth != oldMaxColumnWidth) {
 				SetupScrollBars ();
 			}
-		}			
+		}
 
 		public virtual void DrawSelectionBorder(IGUIContext ctx, RectangleF rSelect)
 		{
@@ -1709,13 +1623,14 @@ namespace SummerGUI
 				if (bSeekRow)
 				{					
 					if (e.Shift)
-					{										
+					{
 						SelectionManager.SelectRow(oldRowIndex);
-						SelectionManager.SelectRow(RowIndex);					
+						SelectionManager.SelectRow(RowIndex);
 					}
 					else
 					{   
 						SelectionManager.SelectNone();
+						SelectionManager.SelectRow(RowIndex);
 					}
 
 					this.Invalidate();
@@ -1741,7 +1656,7 @@ namespace SummerGUI
 			OnSelectionChanged ();
 		}
 
-		protected void SetCurrentRowAndCellFromPoint(int x, int y)
+		protected void SetCurrentRowAndCellFromPoint(float x, float y)
 		{
 			if (y < HeadHeight || !HasData)
 				return;
@@ -1786,7 +1701,7 @@ namespace SummerGUI
 				{
 				case MouseControlItemTypes.PlusMinus:
 					//ToggleCollapse(mc.Tag as IExpandableItem);                        
-					return;                        
+					return;
 
 				case MouseControlItemTypes.ColumnHeaderBorder:
 					m_ColumnResizingColumn = (DataGridColumn)mc.Tag;
@@ -1805,7 +1720,7 @@ namespace SummerGUI
 				this.Focus();
 
 			if (e.Button == MouseButton.Left) {
-				SetCurrentRowAndCellFromPoint (e.X, e.Y);
+				SetCurrentRowAndCellFromPoint (e.X, e.Y);				
 
 				if (bShiftPressed) {
 					if (lastSelectedRowIndex < 0)
@@ -1816,7 +1731,7 @@ namespace SummerGUI
 					for (int i = Math.Min (lastSelectedRowIndex, RowIndex); i <= Math.Max (lastSelectedRowIndex, RowIndex); i++) {
 						SelectionManager.SelectRow (i);
 					}
-				} else if (bControlPressed) {				
+				} else if (bControlPressed) {
 					if (SelectionManager.IsRowSelected (RowIndex) && SelectionManager.SelectedRowsCount > 1) {
 						int idx = RowIndex;
 						RowIndex = lastSelectedRowIndex;
@@ -1832,18 +1747,20 @@ namespace SummerGUI
 			Invalidate ();
 		}			
 
-		Point lastMousePos;
-		void HideTooltip(CellInfo cell, Point pos)
-		{									
+		PointF lastMousePos;
+		void HideTooltip(CellInfo cell, PointF pos)
+		{					
 			if (cell != lastTooltipCell || pos.Distance(lastMousePos) > RowHeight * 2) {
-				Concurrency.WaitSpinning (3);
+				Concurrency.WaitSpinning (3);				
+				lastTooltipCell = cell;
+				lastMousePos = pos;
 				Tooltip = null;
 				Root.HideTooltip ();
 			}
 		}
 
 		CellInfo lastTooltipCell;
-		void ShowTooltip(string text, PointF location, CellInfo cell, Point pos)
+		void ShowTooltip(string text, PointF location, CellInfo cell, PointF pos)
 		{				
 			if (cell == lastTooltipCell)
 				return;
@@ -1854,10 +1771,10 @@ namespace SummerGUI
 			Root.ShowTooltip (text, location);
 		}
 
-		private Point m_LastMouseMovePoint = Point.Empty;		
+		private PointF m_LastMouseMovePoint = Point.Empty;		
 		public override void OnMouseMove (MouseMoveEventArgs e)
 		{
-			m_LastMouseMovePoint = new Point((int)e.Position.X, (int)e.Position.Y);
+			m_LastMouseMovePoint = new PointF(e.Position.X, e.Position.Y);
 
 			//base.OnMouseMove (e);
 
@@ -1958,20 +1875,24 @@ namespace SummerGUI
 			}			
 
 			// *** Clickable areas ***
-			MouseControlItem mc = FindControlItem((int)e.Position.X, (int)e.Position.Y);
+			PointF position = new PointF(e.Position.X, e.Position.Y);
+			MouseControlItem mc = FindControlItem(e.Position.X, e.Position.Y);			
 
 			switch (mc.ItemType)
 			{
 			case MouseControlItemTypes.Empty:
 				this.Cursor = Cursors.Default;
 				LastTooltipBounds = RectangleF.Empty;
-				lastTooltipCell = CellInfo.Empty;
+				lastTooltipCell = CellInfo.Empty;								
+				HideTooltip(CellInfo.Empty, position);
 				break;
 			case MouseControlItemTypes.PlusMinus:
 				//this.Cursor = Cursors.Hand;
+				HideTooltip(CellInfo.Empty, position);
 				break;
 
 			case MouseControlItemTypes.ColumnHeader:
+				HideTooltip(CellInfo.Empty, position);
 				if (AllowSort) {
 					//DataGridColumn col = ColumnFromPoint (e.X);
 					/***
@@ -1986,15 +1907,15 @@ namespace SummerGUI
 				break;
 
 			case MouseControlItemTypes.ColumnHeaderBorder:
+				HideTooltip(CellInfo.Empty, position);
 				this.Cursor = Cursors.VSplit;
 				break;
 
 			case MouseControlItemTypes.Tooltip:				
-				if (!CellToolTips || m_IsEditing || mc.Bounds == LastTooltipBounds) {					
+				if (!CellToolTips || m_IsEditing || mc.Bounds == LastTooltipBounds) {
 					return;	
 				}
-				LastTooltipBounds = mc.Bounds;
-				Point position = new Point((int)e.Position.X, (int)e.Position.Y);
+				LastTooltipBounds = mc.Bounds;				
 				ShowTooltip(mc.Tag.SafeString(), mc.Bounds.Location, CurrentCell(mc.Bounds.Location), position);
 				break;
 			}

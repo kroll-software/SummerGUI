@@ -29,9 +29,9 @@ namespace SummerGUI
 				if (Math.Abs(BorderDistance) > float.Epsilon)
 					rBorder.Inflate (BorderDistance, BorderDistance);
 
-				float top = rBorder.Top.Ceil() + 0.5f;
+				float top = rBorder.Top;
 				ctx.DrawLine (Theme.Pens.Base01, rBorder.Left, top, rBorder.Right, top);
-				float bottom = rBorder.Bottom.Ceil() - 0.5f;
+				float bottom = rBorder.Bottom;
 				ctx.DrawLine (BorderColorPen, rBorder.Left, bottom, rBorder.Right, bottom);
 			}
 		}

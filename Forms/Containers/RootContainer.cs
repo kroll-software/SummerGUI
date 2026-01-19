@@ -9,6 +9,7 @@ using OpenTK.Input;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
+using System.Diagnostics;
 
 namespace SummerGUI
 {	
@@ -93,10 +94,10 @@ namespace SummerGUI
 		{
             // Overlays.DisposeListObjects();
             Overlays.Clear ();
-		}
+		}		
 			
-		public new void Invalidate(int frames = 0)
-		{
+		public new void Invalidate(int frames = 0, Widget widget = null)
+		{			
 			CTX.Invalidate (frames);
 		}
 
@@ -360,7 +361,7 @@ namespace SummerGUI
 								if (w != FocusedWidget && w.CanFocus)
 									w.Focus ();
 								//ShowContextMenu (e.Position.ToPointF (), menu);
-								ShowContextMenu (e.Position.ToPointF (), menu);
+								ShowContextMenu (e.Position, menu);
 							}
 
 							/***
@@ -389,7 +390,7 @@ namespace SummerGUI
 
 		// *** The next both functions ()Show and Hide) are PUBLIC, the rest is PRIVATE.
 		public void ShowTooltip(string text, PointF location)
-		{
+		{	
 			if (String.IsNullOrEmpty (text)) {
 				HideTooltip ();
 				return;
@@ -405,7 +406,7 @@ namespace SummerGUI
 		}
 
 		public void HideTooltip()
-		{			
+		{				
 			if (m_Tooltip != null) {				
 				TooltipDelayAction.Stop();
 				m_Tooltip.OnClose();
@@ -425,7 +426,7 @@ namespace SummerGUI
 
 		readonly DelayedAction TooltipDelayAction;
 		void TooltipAction()
-		{
+		{			
 			try {				
 				if (IsDisposed || !TooltipDelayAction.Enabled)
 					return;				
@@ -441,7 +442,7 @@ namespace SummerGUI
 						m_Tooltip.Text = m_Tooltip.Text.WrapText((int)m_Tooltip.MaxSize.Width);
 					}
 					if (ttBounds.Right > Width)
-						ttBounds.X -= (ttBounds.Right - Width) + 4;
+						ttBounds.X -= ttBounds.Right - Width + 4;
 					m_Tooltip.SetBounds(ttBounds);
 					m_Tooltip.Visible = true;
 					m_Tooltip.OnShow();

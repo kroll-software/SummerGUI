@@ -63,7 +63,7 @@ namespace SummerGUI
 		}
 
 		public Brush IconBackgroundBrush { get; private set; }
-		public int IconColumnWidth  { get; set; }
+		public float IconColumnWidth  { get; set; }
 
 		public override void FillRectangle (IGUIContext ctx, Widget widget)
 		{

@@ -120,7 +120,7 @@ namespace SummerGUI
 		[DpiScalable]
 		public float MaxCircleRadius { get; set; }
 
-		protected virtual DateTime MouseToDate(int x, int y)
+		protected virtual DateTime MouseToDate(float x, float y)
 		{
 			RectangleF r = new RectangleF (x, y, 1, 1);
 			if (!r.IntersectsWith (Bounds))
@@ -146,7 +146,7 @@ namespace SummerGUI
 		bool prevArrowHover;
 		bool nextArrowHover;
 
-		private bool CheckArrows(int x, int y)
+		private bool CheckArrows(float x, float y)
 		{
 			RectangleF pt = new RectangleF (x, y, 1, 1);
 			prevArrowHover = prevRec.IntersectsWith (pt);
@@ -163,10 +163,10 @@ namespace SummerGUI
 		{
 			base.OnMouseMove (e);
 
-			if (CheckArrows ((int)e.X, (int)e.Y))
+			if (CheckArrows (e.X, e.Y))
 				return;
 
-			DateTime dthover = MouseToDate((int)e.X, (int)e.Y);
+			DateTime dthover = MouseToDate(e.X, e.Y);
 			if (dthover != HoverDate)
 			{
 				HoverDate = dthover;
@@ -285,7 +285,7 @@ namespace SummerGUI
 			}
 
 			for (int i = 0; i < 7; i++) {
-				RectangleF rx = new RectangleF ((int)(bounds.Left + Padding.Left + (i * szDay.Width)), (int)szDay.Height + bounds.Top + Padding.Top, (int)szDay.Width, (int)szDay.Height);
+				RectangleF rx = new RectangleF (bounds.Left + Padding.Left + (i * szDay.Width), szDay.Height + bounds.Top + Padding.Top, szDay.Width, szDay.Height);
 				string wd = m_Weekdays [i].Substring (0, 1);
 				if (i == 0 || i == 6)
 					ctx.DrawString (wd, DayFont, Theme.Brushes.Orange, rx, Format);
@@ -306,7 +306,7 @@ namespace SummerGUI
 			for (int i = 0; i < dayMax; i++) {
 				int col = i % 7;
 				int row = (i / 7);
-				Rectangle rx = new Rectangle((int)(bounds.Left + Padding.Left + ((float)col * szDay.Width)), (int)(bounds.Top + Padding.Top + ((float)(row + 2) * szDay.Height)), (int)szDay.Width, (int)szDay.Height);
+				RectangleF rx = new RectangleF(bounds.Left + Padding.Left + (col * szDay.Width), bounds.Top + Padding.Top + ((row + 2) * szDay.Height), szDay.Width, szDay.Height);
 
 				DateTime dt = m_MonthView [i];
 				string wd = dt.Day.ToString();
@@ -325,7 +325,7 @@ namespace SummerGUI
 				if (!color.IsEmpty) {
 					using (var brush = new SolidBrush(color))
 					{
-						ctx.FillCircle (brush, rx.Left + (rx.Width / 2f) - 0.5f, rx.Top + (rx.Height / 2f) - 1f, radius, 1);
+						ctx.FillCircle (brush, rx.Left + (rx.Width / 2f), rx.Top + (rx.Height / 2f) - 1f, radius, 1);
 					}
 
 					textColor = Style.ForeColorBrush.Color;

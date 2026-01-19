@@ -134,7 +134,7 @@ namespace SummerGUI
 					textSize = Text.PreferredSize (ctx, proposedSize);
 					textSize.Width += Text.Margin.Width;
 					if (Text.Font != null)
-						textSize.Height = Text.Font.LineHeight.Ceil ();
+						textSize.Height = Text.Font.LineHeight;
 				}
 
 				SizeF imgSize = SizeF.Empty;

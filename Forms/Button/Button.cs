@@ -176,11 +176,9 @@ namespace SummerGUI
 				float w = 0;
 				float h = 0;
 
-				if (!String.IsNullOrEmpty (Text) && DisplayStyle != ButtonDisplayStyles.Image) {
-					//SizeF sz = Font.MeasureMnemonicString (Text);
-					SizeF sz = Font.MeasureMnemonicString (Text);
-					//h = Font.Height * 1.5f;
-					h = sz.Height * 1.5f;
+				if (!String.IsNullOrEmpty (Text) && DisplayStyle != ButtonDisplayStyles.Image) {					
+					SizeF sz = Font.MeasureMnemonicString (Text);					
+					h = sz.Height * 1.2f;
 					w = sz.Width;
 				}
 
@@ -188,8 +186,7 @@ namespace SummerGUI
 					SizeF sz = IconFont.Measure (Icon.ToString ());
 
 					if (w > 0)
-						w += sz.Width * 1.42f;
-					//w += sz.Width.Ceil() * 1.5f;
+						w += sz.Width * 1.42f;					
 				else
 						w += sz.Width;
 					h = Math.Max (h, sz.Height);
@@ -302,8 +299,9 @@ namespace SummerGUI
 
 			if (String.IsNullOrEmpty (Text))
 				iconWidth = PaddingBounds.Width;
-			if (Icon != 0 && IconFont != null && DisplayStyle != ButtonDisplayStyles.Text) {								
-				RectangleF rt = new RectangleF (bounds.Left + Padding.Left, bounds.Top + TextOffsetY, iconWidth, bounds.Height);
+			if (Icon != 0 && IconFont != null && DisplayStyle != ButtonDisplayStyles.Text) {												
+				RectangleF rt = new RectangleF (bounds.Left + Padding.Left, bounds.Top + TextOffsetY, iconWidth, bounds.Height);				
+				
 				if (IconColor != Color.Empty && Enabled) {
 					using (Brush brush = new SolidBrush (IconColor)) {
 						iconWidth = ctx.DrawString(Icon.ToString(), IconFont, brush,
@@ -312,9 +310,7 @@ namespace SummerGUI
 				} else {					
 					iconWidth = ctx.DrawString(Icon.ToString(), IconFont, Style.ForeColorBrush,
 						rt, FontFormat.DefaultIconFontFormatCenter).Width;
-				}
-
-				//rt, FontFormat.DefaultSingleLineCentered).Width;
+				}				
 			}
 
 			if (!String.IsNullOrEmpty(Text) && DisplayStyle != ButtonDisplayStyles.Image) {

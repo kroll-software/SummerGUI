@@ -28,7 +28,7 @@ namespace SummerGUI.DataGrid
 		void EnsureRowindexVisible (int index);
 
 		int RowIndexFromPoint (float y);
-		RectangleF RowBoundsByRowIndex (int rowIndex);
+		
 		RowInfo RowInfoByRowIndex (int rowIndex);
 		RowInfo RowInfoFromPoint (float y);
 
@@ -156,11 +156,6 @@ namespace SummerGUI.DataGrid
 			get{
 				return Math.Min(RowCount - 1, RowIndexFromPoint (Owner.ScrollBounds.Bottom));
 			}
-		}			
-
-		void SelectNone()
-		{			
-			(Parent as IDataProvider).Do (data => data.SelectionManager.Do(sel => sel.SelectNone ()));
 		}
 
 		public void MoveFirst()
@@ -168,8 +163,7 @@ namespace SummerGUI.DataGrid
 			if (RowCount <= 0)
 				m_CurrentRowIndex = -1;			
 			else
-				m_CurrentRowIndex = 0;
-			SelectNone ();
+				m_CurrentRowIndex = 0;		
 			EnsureRowindexVisible (m_CurrentRowIndex);
 			OnRowsChanged ();
 		}			
@@ -177,8 +171,7 @@ namespace SummerGUI.DataGrid
 		public void MovePrevious ()
 		{
 			if (CanMoveBack) {
-				m_CurrentRowIndex--;
-				SelectNone ();
+				m_CurrentRowIndex--;				
 				EnsureRowindexVisible (m_CurrentRowIndex);
 				OnRowsChanged ();
 			}
@@ -187,8 +180,7 @@ namespace SummerGUI.DataGrid
 		public void MoveNext ()
 		{
 			if (CanMoveForward) {
-				m_CurrentRowIndex++;
-				SelectNone ();
+				m_CurrentRowIndex++;				
 				EnsureRowindexVisible (m_CurrentRowIndex);
 				OnRowsChanged ();
 			}
@@ -199,8 +191,7 @@ namespace SummerGUI.DataGrid
 			if (RowCount <= 0)
 				m_CurrentRowIndex = -1;
 			else
-				m_CurrentRowIndex = RowCount - 1;
-			SelectNone ();
+				m_CurrentRowIndex = RowCount - 1;			
 			EnsureRowindexVisible (m_CurrentRowIndex);
 			OnRowsChanged ();
 		}
@@ -217,7 +208,7 @@ namespace SummerGUI.DataGrid
 		public void MovePageUp()
 		{
 			if (CanMoveBack) {
-				m_CurrentRowIndex = (int)Math.Max (0, m_CurrentRowIndex - PageSize);
+				m_CurrentRowIndex = (int)Math.Max (0, m_CurrentRowIndex - PageSize + 0.5f);
 				EnsureRowindexVisible (m_CurrentRowIndex);
 				OnRowsChanged ();
 			}
@@ -226,7 +217,7 @@ namespace SummerGUI.DataGrid
 		public void MovePageDown()
 		{
 			if (CanMoveForward) {
-				m_CurrentRowIndex = (int)Math.Min (RowCount - 1, m_CurrentRowIndex + PageSize);
+				m_CurrentRowIndex = (int)Math.Min (RowCount - 1, m_CurrentRowIndex + PageSize + 0.5f);
 				EnsureRowindexVisible (m_CurrentRowIndex);
 				OnRowsChanged ();
 			}
@@ -316,26 +307,18 @@ namespace SummerGUI.DataGrid
 
 		public int RowIndexFromPoint(float y)
 		{
-			if (!HasVariableHeightRows)
-			{
-				//return (int)((y - VerticalOffset) / RowHeight + 0.5f);
-				return (int)((int)(y - VerticalOffset) / RowHeight);
-			}
-			else
+			if (HasVariableHeightRows)
 			{
 				if (RowOffsets == null || RowOffsets.Count == 0)
 					return -1;
-
-				y -= VerticalOffset;
-				return RowOffsets.IndexOfElementOrSuccessor(y);
+				
+				return RowOffsets.IndexOfElementOrSuccessor(y - VerticalOffset);
 			}
-		}
-
-		public RectangleF RowBoundsByRowIndex(int rowIndex)
-		{            
-			RowInfo info = RowInfoByRowIndex(rowIndex);
-			return new RectangleF(0, info.RowTop + ScrollOffsetY, 500, info.RowHeight);
-		}
+			else
+			{
+				return (int)((y - VerticalOffset) / RowHeight);				
+			}
+		}		
 
 		public RowInfo RowInfoByRowIndex(int rowIndex)
 		{

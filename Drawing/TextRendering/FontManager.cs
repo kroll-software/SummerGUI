@@ -139,7 +139,7 @@ namespace SummerGUI
 				FallbackTag = CommonFontTags.Default.ToString(),
 				Path = "Fonts/Antonio-Regular.ttf",
 				Size = 12.25f,
-				YOffset = 0.75f
+				//YOffset = 0.75f
 			});
 
 			AddFontAlias (CommonFontTags.Status.ToString(), CommonFontTags.Menu.ToString());
@@ -151,7 +151,6 @@ namespace SummerGUI
 				FallbackTag = CommonFontTags.Default.ToString(),
 				Path = "Fonts/DroidSerif-Regular.ttf",
 				Size = 11f,
-				YOffset = 0f
 			});
 			
 			AddFontConfig (new GUIFontConfiguration
@@ -200,7 +199,6 @@ namespace SummerGUI
 					FallbackTag = CommonFontTags.Default.ToString(),
 					Path = "Fonts/DejaVuSansMono.ttf",
 					Size = 11.25f,
-					//Size = 12f,
 				});
 
 			AddFontConfig (new GUIFontConfiguration
@@ -209,18 +207,17 @@ namespace SummerGUI
 					FallbackTag = null,
 					Path = "Fonts/FontAwesome.otf",
 					Size = 12f,
-					YOffset = -0.25f,
-					Filter = GlyphFilterFlags.OnDemand,
+					YOffset = -2f,
+					Filter = GlyphFilterFlags.OnDemand,					
 				});
 
 			AddFontConfig (new GUIFontConfiguration
 				{
 					Tag = CommonFontTags.MediumIcons.ToString(),
 					FallbackTag = CommonFontTags.SmallIcons.ToString(),
-					Path = "Fonts/FontAwesome.otf",
-					//Size = 22.5f,
+					Path = "Fonts/FontAwesome.otf",					
 					Size = 21f,
-					YOffset = 0,
+					YOffset = -4f,
 					Filter = GlyphFilterFlags.OnDemand,
 				});
 
@@ -230,7 +227,7 @@ namespace SummerGUI
 					FallbackTag = CommonFontTags.MediumIcons.ToString(),
 					Path = "Fonts/FontAwesome.otf",
 					Size = 42f,
-					YOffset = 0,
+					YOffset = -8f,
 					Filter = GlyphFilterFlags.OnDemand,
 				});
 		}			
@@ -468,115 +465,7 @@ namespace SummerGUI
 				ex.LogError ();
 				return null;
 			}
-		}
-
-		// ************* Implementation / Forwards to selected IGUIFont
-
-		public SizeF Measure(CommonFontTags fontTag, string text, int start = 0, int len = -1)
-		{
-			return Measure (fontTag.ToString(), text, start, len);
-		}
-
-		public SizeF Measure(string fontTag, string text, int start = 0, int len = -1)
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return SizeF.Empty;
-			return font.Measure (text, start, len);
-		}
-
-		public SizeF Measure(CommonFontTags fontTag, string text, float width, FontFormat format)
-		{
-			return Measure (fontTag.ToString(), text, width, format);
-		}
-
-		public SizeF Measure(string fontTag, string text, float width, FontFormat format)
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return SizeF.Empty;
-			return font.Measure (text, width, format);
-		}
-
-		public SizeF MeasureMnemonicString (CommonFontTags fontTag, string text)
-		{
-			return MeasureMnemonicString (fontTag.ToString(), text);
-		}
-
-		public SizeF MeasureMnemonicString (string fontTag, string text)
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return SizeF.Empty;
-			return font.MeasureMnemonicString (text);
-		}
-
-		public SizeF Print(IGUIContext ctx, CommonFontTags fontTag, string text, RectangleF bounds, FontFormat format, Color color = default(Color))
-		{
-			return Print (ctx, fontTag.ToString (), text, bounds, format, color);
-		}
-
-		public SizeF Print(IGUIContext ctx, string fontTag, string text, RectangleF bounds, FontFormat format, Color color = default(Color))
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return SizeF.Empty;
-
-			font.Begin ();
-			try {
-				return font.Print (text, bounds, format, color);	
-			} catch (Exception ex) {
-				ex.LogError ();
-				return SizeF.Empty;
-			}
-			finally {
-				font.End ();
-			}
-		}
-
-		public SizeF PrintSelectedString (IGUIContext ctx, CommonFontTags fontTag, string text, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
-		{
-			return PrintSelectedString (ctx, fontTag.ToString (), text, selStart, selLength, 
-				bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
-		}
-
-		public SizeF PrintSelectedString (IGUIContext ctx, string fontTag, string text, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return SizeF.Empty;
-			font.Begin ();
-			try {
-				return font.PrintSelectedString (text, selStart, selLength, bounds, offsetX, format, foreColor, selectionBackColor, selectionForeColor);
-			} catch (Exception ex) {
-				ex.LogError ();
-				return SizeF.Empty;
-			}
-			finally {
-				font.End ();
-			}
-		}
-
-		public void PrintTextLine (IGUIContext ctx, CommonFontTags fontTag, uint[] glyphs, RectangleF bounds, Color foreColor)
-		{
-			PrintTextLine (ctx, fontTag.ToString (), glyphs, bounds, foreColor);
-		}
-
-		public void PrintTextLine (IGUIContext ctx, string fontTag, uint[] glyphs, RectangleF bounds, Color foreColor)
-		{
-			IGUIFont font = FontByTag (fontTag);
-			if (font == null)
-				return;			
-			font.Begin ();
-			try {
-				font.PrintTextLine (glyphs, bounds, foreColor);
-			} catch (Exception ex) {
-				ex.LogError ();
-			}
-			finally {
-				font.End ();
-			}
-		}
+		}		
 
 		protected override void CleanupUnmanagedResources ()
 		{			

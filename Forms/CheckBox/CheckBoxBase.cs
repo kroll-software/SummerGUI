@@ -61,6 +61,8 @@ namespace SummerGUI
 		}
 
 		protected char[] CheckChars;
+		
+		[DpiScalable]
 		protected float IconOffsetY;
 
 		protected CheckBoxBase (string name, string text)
@@ -71,7 +73,7 @@ namespace SummerGUI
 			Margin = Padding.Empty;
 			//Padding = new Padding (8, 4, 4, 4);
 			Padding = new Padding (8, 0, 4, 0);
-			IconOffsetY = 0.25f;
+			IconOffsetY = 1f;
 
 			Styles.SetStyle (new DisabledTextWidgetStyle (), WidgetStates.Disabled);
 			Styles.SetStyle (new ActiveTextWidgetStyle (), WidgetStates.Active);
@@ -118,7 +120,7 @@ namespace SummerGUI
 				RectangleF iconBounds = bounds;
 				float cp = Font.CaptionHeight;
 				iconBounds.Offset (cp * Indent, IconOffsetY);
-				ctx.DrawString (icon.ToString (), IconFont, Style.ForeColorBrush, iconBounds, FontFormat.DefaultSingleBaseLine);
+				ctx.DrawString (icon.ToString(), IconFont, Style.ForeColorBrush, iconBounds, FontFormat.DefaultIconFontFormatLeft);
 				iconWidth = cp * (Indent + 1);
 			}
 

@@ -29,13 +29,13 @@ namespace SummerGUI
 	}
 
 	public struct Padding : IEquatable<Padding>
-	{				
-        public static readonly Padding Empty = new Padding(0, 0, 0, 0);
+	{				        
+		public static Padding Empty => default;
 
 		public readonly float Left;
 		public readonly float Top;
 		public readonly float Right;
-		public readonly float Bottom;
+		public readonly float Bottom;		
 
 		public Padding(float all) : this (all, all, all, all) {}
 		public Padding(float leftright, float topbottom) : this (leftright, topbottom, leftright, topbottom) {}

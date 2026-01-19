@@ -97,12 +97,12 @@ namespace SummerGUI
 			//Padding = new Padding (3);
 		}			
 
-		Point DragStartPoint = Point.Empty;
+		PointF DragStartPoint = PointF.Empty;
 		public override void OnMouseDown (MouseButtonEventArgs e)
 		{
 			base.OnMouseDown (e);
 			if (e.Button == MouseButton.Left) {
-				DragStartPoint = new Point (e.X, e.Y);
+				DragStartPoint = new PointF (e.X, e.Y);
 			}
 		}
 

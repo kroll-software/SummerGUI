@@ -1,6 +1,6 @@
 using System;
 
-namespace SummerGUI.Timers;
+namespace SummerGUI;
 
 public class LoopTimer
 {

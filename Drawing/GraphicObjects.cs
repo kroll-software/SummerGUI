@@ -30,33 +30,7 @@ namespace SummerGUI
 
 		public System.Drawing.Color Color { get; set; }
 		public float Width { get; set; }
-		public LineStyles LineStyle { get; set; }
-
-		public void DoGL()
-		{
-			switch (LineStyle) {
-			case LineStyles.Solid:
-				break;
-			case LineStyles.Dotted:
-				GL.Enable (EnableCap.LineStipple);
-				GL.LineStipple (2, 0xAAAA);
-				break;
-			case LineStyles.Dashed:
-				GL.Enable (EnableCap.LineStipple);
-				GL.LineStipple (1, 0x00FF);
-				break;
-			case LineStyles.DashDot:
-				GL.Enable (EnableCap.LineStipple);
-				GL.LineStipple (2, 0x1C47);
-				break;
-			}
-		}
-
-		public void UndoGL()
-		{
-			if (LineStyle != LineStyles.Solid)
-				GL.Disable (EnableCap.LineStipple);
-		}
+		public LineStyles LineStyle { get; set; }		
 
 		public void Dispose()
 		{

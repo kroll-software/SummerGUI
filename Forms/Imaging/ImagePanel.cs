@@ -202,7 +202,7 @@ namespace SummerGUI
 				return;
 			}
 
-			int borderX2 = (int)(Style.Border * 2f);
+			float borderX2 = Style.Border * 2f;
 			RectangleF dst = DestRect (new RectangleF (x, y, width, height));
 			base.SetBounds (x, y, Math.Max(width, dst.Width + Padding.Width + borderX2), Math.Max(height, dst.Height + Padding.Height + borderX2));
 		}
@@ -219,89 +219,98 @@ namespace SummerGUI
 		}
 
 		protected RectangleF DestRect(RectangleF bounds)
-		{			
-			RectangleF rDest = RectangleF.Empty;
-			if (Image == null)
-				return rDest;			
+		{           
+			if (Image == null || Image.Width <= 0 || Image.Height <= 0)
+				return RectangleF.Empty;           
 
+			// 1. Nutzbaren Bereich (Canvas) berechnen: Bounds minus Padding und Border
 			float border = Style.Border;
-			float borderX2 = Style.Border * 2f;
+			float borderX2 = border * 2f;
 
-			RectangleF paddedBounds = new RectangleF (bounds.Left + Padding.Left + border, bounds.Top + Padding.Top + border, bounds.Width - Padding.Width - borderX2, bounds.Height - Padding.Height - borderX2);
-			bounds = paddedBounds;
+			RectangleF canvas = new RectangleF (
+				bounds.Left + Padding.Left + border, 
+				bounds.Top + Padding.Top + border, 
+				bounds.Width - Padding.Width - borderX2, 
+				bounds.Height - Padding.Height - borderX2
+			);
 
-			float w = (float)Image.Width;
-			float h = (float)Image.Height;
-			float zoom = 1;
+			// Falls das Panel kleiner als Border/Padding ist
+			//if (canvas.Width <= 0 || canvas.Height <= 0)
+			//	return RectangleF.Empty;
 
-			switch (SizeMode) {
-			case ImageSizeModes.None:
-			case ImageSizeModes.AutoSize:
-				rDest = new RectangleF (PointF.Empty, Image.Size);
-				break;
-			case ImageSizeModes.ShrinkToFitHorizontal:
-				if (w > bounds.Width) {
-					zoom = bounds.Width / w;
-					rDest.Width = w * zoom;
-					rDest.Height = h * zoom;
-				} 
-				else
-					rDest = new RectangleF (PointF.Empty, Image.Size);
-				break;
-			case ImageSizeModes.ShrinkToFitVertical:
-				if (h > bounds.Height) {
-					zoom = bounds.Height / h;
-					rDest.Width = w * zoom;
-					rDest.Height = h * zoom;
-				}
-				else
-					rDest = new RectangleF (PointF.Empty, Image.Size);
-				break;
-			case ImageSizeModes.ShrinkToFit:
-				if (w > bounds.Width || h > bounds.Height) {
-					zoom = Math.Min (bounds.Width / w, bounds.Height / h);
-					rDest.Width = w * zoom;
-					rDest.Height = h * zoom;
-				}
-				else
-					rDest = new RectangleF (PointF.Empty, Image.Size);
-				break;
+			float imgW = (float)Image.Width;
+			float imgH = (float)Image.Height;
+			
+			// Zielmaße initialisieren
+			float destW = imgW;
+			float destH = imgH;
+			float zoom = 1.0f;
 
-			case ImageSizeModes.AlwaysFit:
-				zoom = Math.Min (bounds.Width / w, bounds.Height / h);
-				rDest.Width = w * zoom;
-				rDest.Height = h * zoom;			
-				break;
+			// 2. Größe basierend auf SizeMode berechnen
+			switch (SizeMode) 
+			{
+				case ImageSizeModes.None:
+				case ImageSizeModes.AutoSize:
+					// Bleibt bei Originalgröße (imgW, imgH)
+					break;
 
-			case ImageSizeModes.Stretch:
-			case ImageSizeModes.TileHorizontal:
-			case ImageSizeModes.TileVertical:
-			case ImageSizeModes.TileAll:
-				rDest = new RectangleF(PointF.Empty, bounds.Size);
-				break;
+				case ImageSizeModes.ShrinkToFitHorizontal:
+					if (imgW > canvas.Width) {
+						zoom = canvas.Width / imgW;
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					} 
+					break;
+
+				case ImageSizeModes.ShrinkToFitVertical:
+					if (imgH > canvas.Height) {
+						zoom = canvas.Height / imgH;
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					}
+					break;
+
+				case ImageSizeModes.ShrinkToFit:
+					if (imgW > canvas.Width || imgH > canvas.Height) {
+						zoom = Math.Min(canvas.Width / imgW, canvas.Height / imgH);
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					}
+					break;
+
+				case ImageSizeModes.AlwaysFit:
+					zoom = Math.Min(canvas.Width / imgW, canvas.Height / imgH);
+					destW = imgW * zoom;
+					destH = imgH * zoom;            
+					break;
+
+				case ImageSizeModes.Stretch:
+				case ImageSizeModes.TileHorizontal:
+				case ImageSizeModes.TileVertical:
+				case ImageSizeModes.TileAll:
+					// Füllt den gesamten Canvas aus
+					destW = canvas.Width;
+					destH = canvas.Height;
+					break;
 			}
 
-			switch (HAlign) {
-			case Alignment.Center:
-				//rDest.X = bounds.Width / 2;
-				rDest.X = Math.Max(0, (bounds.Width - rDest.Width) / 2f);
-				break;				
-			case Alignment.Far:
-				rDest.X = bounds.Width - rDest.Width;
-				break;				
-			}
+			// 3. Position innerhalb des Canvas berechnen (Alignment)
+			float destX = canvas.X; 
+			float destY = canvas.Y;
 
-			switch (VAlign) {
-			case Alignment.Center:				
-				rDest.Y = Math.Max(0, (bounds.Height - rDest.Height) / 2);
-				break;				
-			case Alignment.Far:
-				rDest.Y = bounds.Height - rDest.Height;
-				break;				
-			}
-				
-			rDest.Offset(TooltipLocation.X + Padding.Left + border, TooltipLocation.Y + Padding.Top + border);
-			return rDest;
+			// Horizontale Ausrichtung
+			if (HAlign == Alignment.Center)
+				destX += Math.Max(0, (canvas.Width - destW) / 2f);
+			else if (HAlign == Alignment.Far)
+				destX += canvas.Width - destW;
+
+			// Vertikale Ausrichtung
+			if (VAlign == Alignment.Center)
+				destY += Math.Max(0, (canvas.Height - destH) / 2f);
+			else if (VAlign == Alignment.Far)
+				destY += canvas.Height - destH;
+
+			return new RectangleF(destX, destY, destW, destH);
 		}
 
 		protected override void CleanupManagedResources ()

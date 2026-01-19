@@ -201,7 +201,7 @@ namespace SummerGUI
 			DlgAbout.AddCreditsImage(Strings.ApplicationPath(true) + "Assets/Logo/kroll-software-logo.png", this, 0.85f);
 
 			DlgAbout.Show (this);
-			DlgAbout.Dispose();
+			DlgAbout.Dispose();					
 		}
 
 
