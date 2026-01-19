@@ -246,13 +246,13 @@ namespace SummerGUI
 		public override void OnProcessEvents ()
 		{
 			base.OnProcessEvents ();			
-			//ParentWindow?.OnProcessEvents ();
+			ParentWindow?.OnProcessEvents ();
 		}
 
 		public override void OnDispatchUpdateAndRenderFrame()
 		{
 			base.OnDispatchUpdateAndRenderFrame ();			
-			//ParentWindow?.OnDispatchUpdateAndRenderFrame ();
+			ParentWindow?.OnDispatchUpdateAndRenderFrame ();
 		}
 
 		protected override void OnUnload (EventArgs e)
