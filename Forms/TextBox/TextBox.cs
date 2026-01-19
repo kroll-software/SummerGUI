@@ -692,7 +692,10 @@ namespace SummerGUI
 			if (!CanCut)
 				return;
 			this.SetUndoDelete (CursorPosition, 0);
-			PlatformExtensions.SetClipboardText (SelectedText);
+			try{
+				Root.CTX.GlWindow.ClipboardString = SelectedText;
+			}
+			catch{}
 			Text = Text.Remove (SelStart, SelLength);
 			ResetSelection ();
 			Modified = true;
@@ -703,7 +706,10 @@ namespace SummerGUI
 		{
 			if (!CanCopy)
 				return;
-			PlatformExtensions.SetClipboardText (SelectedText);
+			try{
+				Root.CTX.GlWindow.ClipboardString = SelectedText;
+			}
+			catch{}
 			Modified = true;
 		}
 
@@ -711,7 +717,10 @@ namespace SummerGUI
 		{
 			if (!CanPaste)
 				return;				
-			string content = PlatformExtensions.GetClipboardText ();
+			
+			string content = Root?.CTX.GlWindow.ClipboardString;
+			if (String.IsNullOrEmpty (content))
+				return;
 
 			// Important: filter valid characters
 			if (content != null) {
@@ -768,7 +777,7 @@ namespace SummerGUI
 		public virtual bool CanPaste
 		{
 			get{
-				return IsVisibleEnabled && !ReadOnly && PlatformExtensions.IsClipboardTextAvailable();
+				return IsVisibleEnabled && !ReadOnly && Root != null;
 			}
 		}
 

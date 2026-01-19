@@ -63,19 +63,16 @@ namespace SummerGUI
 				//MaximumClientSize = new Vector2i(100, 100),
 				
 				AutoLoadBindings = true,
-				WindowState = WindowState.Normal,				
+				WindowState = WindowState.Normal,
 				//API = ContextAPI.OpenGL,
-				//APIVersion = new Version(3, 3), 				
+				//APIVersion = new Version(3, 3),
 				Profile = ContextProfile.Core,
 				NumberOfSamples = 4,
 				WindowBorder = sizable ? WindowBorder.Resizable : WindowBorder.Fixed,				
 			}, parent, frameRate)
 		{
 			if (String.IsNullOrEmpty (name))
-				name = "ChildWindow";
-			
-			//NativeWindowSettings test = new NativeWindowSettings();
-			//test.StartVisible = false
+				name = "ChildWindow";			
 			
 			Name = name;
 			IsModal = modal;
@@ -90,35 +87,14 @@ namespace SummerGUI
 				ShowInTaskBar = false;
 				AllowMinimize = false;
 				AllowMaximize = false;
-				// ToDo: FixMe:
-				this.HideFromTaskbar ();
 			}
 
 			if (position == WindowPositions.CenterParent)
 			{
 				CenterWindowOnParent(ParentWindow, this);
-			}
-			
-			if (parent != null){
-				//this.SetModalState(parent, modal);
-				this.SetParent(parent);
-			}
+			}			
 
-			ParentWindow?.AddChildWindow (this);
-
-			// ToDo: Set Window Modal State on Platform
-			/**	ToDo:
-			m_pDisplay->Create( NULL,  //CWnd default
-				NULL,   //has no name
-				WS_CHILD|WS_CLIPSIBLINGS|WS_CLIPCHILDREN|WS_VISIBLE,
-				rect,
-				this,   //this is the parent
-				0);     //this should really be a different 
-			//  number... check resource.h
-
-			return TRUE;  // return TRUE  unless you set 
-			//    the focus to a control
-			**/			
+			ParentWindow?.AddChildWindow (this);			
 		}
 
 		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
@@ -242,18 +218,30 @@ namespace SummerGUI
             base.OnRenderFrame(elapsedSeconds);
         }
 
-		public void Show(SummerGUIWindow parent)
-		{
+		
+
+		private WindowBorder _oldParentWindowsBorder;
+
+		public void ShowDialog(SummerGUIWindow parent)
+		{						
 			if (ParentWindow != parent)
-				this.LogWarning ("Parent should equal ParentWindow");
-									
-			this.IsVisible = true;			
-			this.Focus();			
-			this.BringToFront();
+				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
+
+			this.IsVisible = true;
+
+			PlatformExtensions.MakeWindowModal(this, ParentWindow);
+
+			_oldParentWindowsBorder = ParentWindow.WindowBorder;
+			ParentWindow.WindowBorder = WindowBorder.Fixed;
+
+			this.Focus();
 			
 			Batcher.BindContext(this);
 			this.Run ();
-		}        
+
+			PlatformExtensions.EnableWindow(ParentWindow);
+			ParentWindow.WindowBorder = _oldParentWindowsBorder;
+		}
 
 		public override void OnProcessEvents ()
 		{
@@ -269,8 +257,8 @@ namespace SummerGUI
 
 		protected override void OnUnload (EventArgs e)
 		{				
-			if (ParentWindow != null) {
-				ParentWindow.RemoveChildWindow (this);			
+			if (ParentWindow != null) {				
+				ParentWindow.RemoveChildWindow (this);				
 				ParentWindow.Focus ();				
 			}			
 

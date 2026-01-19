@@ -69,13 +69,13 @@ namespace SummerGUI
 			IconText.Padding = new Padding (6, 18, 6, 6);
 		}
 
-		public void InitCopyButton()
+		public void InitCopyButton(IGUIContext ctx)
 		{		
 			CopyButton = ImagePanelContainer.AddChild (new Button ("copy", "Copy", (char)FontAwesomeIcons.fa_copy, ColorContexts.Default));
 			CopyButton.Dock = Docking.Bottom;
 			CopyButton.Margin = new Padding (6, 0, 6, 6);
-			CopyButton.Click += delegate {				
-				PlatformExtensions.SetClipboardText(Message);
+			CopyButton.Click += delegate {
+				ctx.GlWindow.ClipboardString = Message;				
 			};
 		}
 			
@@ -237,11 +237,11 @@ namespace SummerGUI
 			box.InitText (message);
 
 			if (msgType == MessageBoxTypes.Error) {
-				box.InitCopyButton ();
+				box.InitCopyButton (parent);
 			}				
 
 			box.ShowInTaskBar = false;
-			box.Show (parent);
+			box.ShowDialog (parent);
 			if (box != null)
 				box.Dispose ();			
 

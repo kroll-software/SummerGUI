@@ -1073,7 +1073,12 @@ namespace SummerGUI
 
 			string content = RowManager.GetCharRange(SelStart, SelLength);
 			DeleteSelection ();
-			PlatformExtensions.SetClipboardText (content);
+
+			try{
+				Root.CTX.GlWindow.ClipboardString = content;
+			}
+			catch{}
+
 			ResetSelection ();
 			Invalidate ();
 		}
@@ -1082,8 +1087,12 @@ namespace SummerGUI
 		{
 			if (!CanCopy)
 				return;
+			
 			string content = RowManager.GetCharRange(SelStart, SelLength);
-			PlatformExtensions.SetClipboardText (content);
+			try{
+				Root.CTX.GlWindow.ClipboardString = content;
+			}
+			catch{}
 			Modified = true;
 		}
 
@@ -1091,8 +1100,10 @@ namespace SummerGUI
 		{
 			if (!CanPaste)
 				return;
-
-			string content = PlatformExtensions.GetClipboardText ();
+			
+			string content = Root?.CTX.GlWindow.ClipboardString;
+			if (String.IsNullOrEmpty (content))
+				return;
 
 			// Important: filter valid characters
 			if (content != null) {
@@ -1171,14 +1182,15 @@ namespace SummerGUI
 		public virtual bool CanCopy
 		{
 			get{
-				return IsVisibleEnabled && SelLength > 0;
+				return Root != null && IsVisibleEnabled && SelLength > 0;
 			}
 		}
 
 		public virtual bool CanPaste
 		{
-			get{
-				return IsVisibleEnabled && !ReadOnly && PlatformExtensions.IsClipboardTextAvailable();
+			get{				
+				//return IsVisibleEnabled && !ReadOnly && Root != null && !String.IsNullOrEmpty(Root.CTX.GlWindow.ClipboardString);
+				return IsVisibleEnabled && !ReadOnly && Root != null;
 			}
 		}
 

@@ -99,6 +99,26 @@ namespace SummerGUI
 
 		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
         extern public static IntPtr XRootWindow(IntPtr display, int screen_number);
+
+		[DllImport("libX11", CallingConvention = CallingConvention.Cdecl)]
+		public static extern int XChangeProperty(
+			IntPtr display, 
+			IntPtr window, 
+			IntPtr property, 
+			IntPtr type, 
+			int format, 
+			int mode, 
+			ref IntPtr data, 
+			int nelements
+		);
+
+		// Hilfswerte für 'mode'
+		public const int PropModeReplace = 0;
+		public const int PropModePrepend = 1;
+		public const int PropModeAppend = 2;
+
+		// Der Typ für Atome in X11 (XA_ATOM) ist vordefiniert als 4
+		public static readonly IntPtr XA_ATOM = (IntPtr)4;
     }
 }
 

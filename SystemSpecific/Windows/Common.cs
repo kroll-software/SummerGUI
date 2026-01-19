@@ -28,6 +28,71 @@ namespace SummerGUI.SystemSpecific.Windows
 			return !String.IsNullOrEmpty (_ClipboardText);
 		}
 
+		public const int GWL_STYLE = -16;
+		//public const int GWL_EXSTYLE = -20;
+
+		public const uint WS_MAXIMIZEBOX = 0x00010000;
+		public const uint WS_MINIMIZEBOX = 0x00020000;
+		public const uint WS_EX_DLGMODALFRAME = 0x00000001;
+		//public const uint WS_EX_TOOLWINDOW = 0x00000080; // Versteckt das Fenster in der Taskleiste
+
+		// Zusätzliche P/Invokes für den Refresh
+		[DllImport("user32.dll")]
+		public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+		public const uint SWP_NOSIZE = 0x0001;
+		public const uint SWP_NOMOVE = 0x0002;
+		public const uint SWP_NOZORDER = 0x0004;
+		public const uint SWP_FRAMECHANGED = 0x0020; // WICHTIG: Erzwingt Neuzeichnen des Rahmens
+
+				
+		// In SummerGUI.SystemSpecific.Windows.PlatformExtensions
+		public static unsafe void MakeWindowModal(NativeWindow child, NativeWindow parent)
+		{
+			IntPtr childHwnd = GLFW.GetWin32Window(child.WindowPtr);
+			IntPtr parentHwnd = GLFW.GetWin32Window(parent.WindowPtr);
+
+			if (childHwnd != IntPtr.Zero && parentHwnd != IntPtr.Zero)
+			{
+				// 1. Owner setzen (Owner != Parent im Win32-Sinn)
+				// Das sorgt dafür, dass das Child-Fenster KEIN Icon in der Taskleiste hat,
+				// solange es einen validen Owner besitzt und kein AppWindow-Style gesetzt ist.
+				SetWindowLongPtr(childHwnd, -8, parentHwnd);
+
+				// 2. Styles anpassen: Normaler Dialog-Look ohne Min/Max
+				uint style = GetWindowLong(childHwnd, GWL_STYLE);
+				style &= ~(WS_MAXIMIZEBOX | WS_MINIMIZEBOX);
+				SetWindowLong(childHwnd, GWL_STYLE, style);
+
+				// 3. Extended Styles: 
+				// Wir entfernen TOOLWINDOW und setzen DLGMODALFRAME für den Dialog-Rahmen.
+				// Das normale 'X' bleibt erhalten.
+				uint exStyle = GetWindowLong(childHwnd, GWL_EXSTYLE);
+				exStyle &= ~WS_EX_TOOLWINDOW; // Tool-Look entfernen
+				exStyle |= WS_EX_DLGMODALFRAME;
+				SetWindowLong(childHwnd, GWL_EXSTYLE, exStyle);
+
+				// 4. Hauptfenster deaktivieren
+				EnableWindow(parentHwnd, false);
+				
+				// 5. Fenster-Update erzwingen (damit die Rahmenänderung sofort sichtbar wird)
+				SetWindowPos(childHwnd, IntPtr.Zero, 0, 0, 0, 0, 
+					SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+			}
+		}
+		public static unsafe void EnableWindow(NativeWindow window)
+		{
+			IntPtr hwnd = GLFW.GetWin32Window(window.WindowPtr);
+			EnableWindow(hwnd, true);
+			SetForegroundWindow(hwnd);
+		}
+
+		[DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+		private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+		[DllImport("user32.dll")]
+		private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
+
 		[DllImport("user32.dll", SetLastError = true)]
     	public static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
 
@@ -42,9 +107,9 @@ namespace SummerGUI.SystemSpecific.Windows
 
 		// Hide from Taskbar
 		[DllImport("User32.dll")]
-		public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+		public static extern uint SetWindowLong(IntPtr hWnd, int nIndex, uint dwNewLong);
 		[DllImport("User32.dll")]
-		public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+		public static extern uint GetWindowLong(IntPtr hWnd, int nIndex);
 
 		[DllImport("user32.dll", SetLastError = true)]
 		static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
@@ -121,9 +186,9 @@ namespace SummerGUI.SystemSpecific.Windows
 		const int SW_SHOWDEFAULT = 10;
 		const int WS_EX_APPWINDOW = 0x40000;
 		public const int GWL_EXSTYLE = -0x14;
-		public const int WS_EX_NOACTIVATE = 0x08000000;
+		public const uint WS_EX_NOACTIVATE = 0x08000000;
 		const int GWL_HWNDPARENT = -8;
-		const int WS_EX_TOOLWINDOW = 0x00000080;
+		const uint WS_EX_TOOLWINDOW = 0x00000080;
 
         [StructLayout(LayoutKind.Sequential)]
         struct POINT
@@ -179,7 +244,7 @@ namespace SummerGUI.SystemSpecific.Windows
 			if (parentHandle != IntPtr.Zero)
 			{
 				// Hole die aktuellen erweiterten Stile
-				int exStyle = GetWindowLong(childHandle, GWL_EXSTYLE);
+				uint exStyle = GetWindowLong(childHandle, GWL_EXSTYLE);
 				
 				// Füge den WS_EX_TOOLWINDOW Stil hinzu
 				exStyle |= WS_EX_TOOLWINDOW;
@@ -244,7 +309,7 @@ namespace SummerGUI.SystemSpecific.Windows
 					
 				// 4. Win32 Aufrufe
 				// Die Logik zur Modifizierung der Fensterstile bleibt unverändert.
-				int windowStyle = GetWindowLong(windowHandle, GWL_EXSTYLE);
+				uint windowStyle = GetWindowLong(windowHandle, GWL_EXSTYLE);
 				
 				// Fügt den WS_EX_TOOLWINDOW-Stil hinzu
 				SetWindowLong(windowHandle, GWL_EXSTYLE, windowStyle | WS_EX_TOOLWINDOW);

@@ -25,7 +25,55 @@ namespace SummerGUI.SystemSpecific.Linux
 		public static bool IsClipboardTextAvailable()
 		{
 			return !String.IsNullOrEmpty (_ClipboardText);
-		}		
+		}
+
+		public static unsafe void SetWindowTypeDialog(IntPtr display, IntPtr xid)
+		{
+			IntPtr windowTypeAtom = X11Interface.XInternAtom(display, "_NET_WM_WINDOW_TYPE", false);
+			IntPtr dialogAtom = X11Interface.XInternAtom(display, "_NET_WM_WINDOW_TYPE_DIALOG", false);
+
+			// Wir setzen die Property _NET_WM_WINDOW_TYPE auf den Wert _NET_WM_WINDOW_TYPE_DIALOG
+			X11Interface.XChangeProperty(
+				display, 
+				xid, 
+				windowTypeAtom, 
+				(IntPtr)4, // XA_ATOM (Atom-Typ)
+				32,        // Format 32-bit
+				0,         // PropModeReplace
+				ref dialogAtom, 
+				1          // Anzahl der Elemente
+			);
+		}
+
+		public static unsafe void MakeWindowModal(NativeWindow child, NativeWindow parent)
+		{
+			IntPtr display = GLFW.GetX11Display();
+			if (display == IntPtr.Zero) return;
+
+			IntPtr childXid = (IntPtr)GLFW.GetX11Window((Window*)child.WindowPtr);
+			IntPtr parentXid = (IntPtr)GLFW.GetX11Window((Window*)parent.WindowPtr);
+
+			if (childXid != IntPtr.Zero && parentXid != IntPtr.Zero)
+			{
+				// A) Fenstertyp auf Dialog setzen (verhindert sep. Taskleisten-Icon)
+				SetWindowTypeDialog(display, childXid);
+
+				// B) Parent-Kind Beziehung (Transient Hint)
+				X11Interface.XSetTransientForHint(display, childXid, parentXid);
+
+				// C) Modal-Status (EWMH Standard)
+				SystemDialogs.ApplyModalStateDirect(display, childXid, parentXid, true);
+
+				// D) Explizit Taskleiste überspringen (Sicherheitshalber)
+				SystemDialogs.ApplyHideFromTaskbarDirect(display, childXid);
+
+				X11Interface.XFlush(display);
+			}
+		}
+
+		public static unsafe void EnableWindow(NativeWindow window)
+		{			
+		}
 
 		public static unsafe void SetParent(NativeWindow window, NativeWindow parent)
         {

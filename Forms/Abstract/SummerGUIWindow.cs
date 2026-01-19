@@ -202,7 +202,7 @@ namespace SummerGUI
 
 			this.ParentWindow = parent;
 			if (ParentWindow != null)
-				this.SetParent(ParentWindow);
+				this.SetParent(ParentWindow);			
         }
 
 		// Die Basisklasse NativeWindow erwartet die Settings im "base" Aufruf.
@@ -214,10 +214,10 @@ namespace SummerGUI
 				ClientSize = new Vector2i(width, height),
 				AutoLoadBindings = true,
 				StartVisible = false,				
-				Profile = ContextProfile.Compatability,
-				NumberOfSamples = 4,								
+				Profile = ContextProfile.Core,
+				NumberOfSamples = 4,
 				TransparentFramebuffer = false,
-			}, parent, frameRate) {}		
+			}, parent, frameRate) {}
 
 		public unsafe void AddChildWindow(ChildFormWindow wnd)
 		{
@@ -838,29 +838,10 @@ namespace SummerGUI
 			}
 		}
 
-		protected virtual void OnPaint(RectangleF bounds)
-		{				
-			this.Controls.Update (this);
-			return;			
-
+		private void Test_Fonts()
+		{
 			ClipBoundStack.Clear();
-			this.FillRectangle(new SolidBrush(Theme.Colors.Base02), new RectangleF(0, 0, this.Width, this.Height));
-
-			//RectangleF r = new RectangleF(513.9219f, 35f, 24.84375f, 40);
-			RectangleF r = new RectangleF(513.9219f, 35f, 44f, 40);
-			//var f = FontFormat.DefaultIconFontFormatCenter;			
-			var f = new FontFormat(Alignment.Near, Alignment.Center, FontFormatFlags.None);
-			Pen p = new Pen(Color.Yellow);
-			Brush b = new SolidBrush(Color.AliceBlue);
-			this.DrawRectangle(p, r);
-			var fo = FontManager.Manager.FontByTag(CommonFontTags.MediumIcons);
-			string s = ((char)FontAwesomeIcons.fa_info_circle).ToString();
-			this.DrawString(s, fo, b, r, f);
-			return;
-
-
-			
-
+			this.FillRectangle(new SolidBrush(Theme.Colors.Base02), new RectangleF(0, 0, this.Width, this.Height));			
 
 			float xStart = 100;
 			float yStart = 100;
@@ -901,6 +882,12 @@ namespace SummerGUI
 					xStart += width + distance;
 				}
 			}
+		}
+
+		protected virtual void OnPaint(RectangleF bounds)
+		{				
+			this.Controls.Update (this);
+			return;			
 		}
 
 		protected virtual void OnAfterPaint()
@@ -961,7 +948,7 @@ namespace SummerGUI
 		protected virtual void OnRenderFrame(double elapsedSeconds)
 		{							
 			// Vor dem Zeichnen: Batcher auf dieses Fenster "eichen"
-    		//GUIRenderBatcher.Batcher.BindContext(this);
+    		GUIRenderBatcher.Batcher.BindContext(this);
 
 			if (Animator.IsStarted) {
 				Animator.Animate ();
@@ -1252,10 +1239,11 @@ namespace SummerGUI
 				_instanceCount--;				
 				if (_instanceCount <= 0)
 				{
+					this.IsVisible = false;
 					this.ShutdownFramework();
 				}
 			}
-		}				
+		}
 
 		/***
 		public VSyncMode VSync

@@ -102,6 +102,42 @@ namespace SummerGUI
 			return path;
 		}
 
+		public static void MakeWindowModal(NativeWindow child, NativeWindow parent)
+		{			
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				SystemSpecific.Linux.Common.MakeWindowModal (child, parent);
+				break;			
+
+			case OS.Windows:
+				SystemSpecific.Windows.Common.MakeWindowModal (child, parent);
+				break;
+
+			case OS.Mac:				
+				SystemSpecific.Mac.Common.MakeWindowModal (child, parent);
+				break;
+			}			
+		}
+
+		public static void EnableWindow(NativeWindow window)
+		{
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				SystemSpecific.Linux.Common.EnableWindow (window);
+				break;			
+
+			case OS.Windows:
+				SystemSpecific.Windows.Common.EnableWindow (window);
+				break;
+
+			case OS.Mac:				
+				SystemSpecific.Mac.Common.EnableWindow (window);
+				break;
+			}			
+		}
+
 		public static void BringToFront(this NativeWindow window)
 		{						
 			if (window.WindowState == WindowState.Minimized)
@@ -158,7 +194,7 @@ namespace SummerGUI
 
 			case OS.Windows:
 				//SystemSpecific.Windows.Common.MakeParent (window, parent);
-				break;
+				break;			
 			}
 		}
 
@@ -179,55 +215,7 @@ namespace SummerGUI
 				break;
 			}
 		}
-
-		public static void SetClipboardText(string text)
-		{						
-			switch (CurrentOS) {
-			case OS.Android:
-			case OS.Linux:
-				SystemSpecific.Linux.Common.SetClipboardText(text);
-				break;
-
-			case OS.Mac:
-				SystemSpecific.Mac.Common.SetClipboardText(text);
-				break;
-
-			case OS.Windows:
-				SystemSpecific.Windows.Common.SetClipboardText(text);
-				break;
-			}
-		}
-
-		public static string GetClipboardText()
-		{						
-			switch (CurrentOS) {
-			case OS.Android:
-			case OS.Linux:
-				return SystemSpecific.Linux.Common.GetClipboardText ();
-			case OS.Mac:
-				return SystemSpecific.Mac.Common.GetClipboardText ();
-			case OS.Windows:
-				return SystemSpecific.Windows.Common.GetClipboardText ();
-			default:
-				return null;
-			}				
-		}
-
-		public static bool IsClipboardTextAvailable()
-		{						
-			switch (CurrentOS) {
-			case OS.Android:
-			case OS.Linux:
-				return SystemSpecific.Linux.Common.IsClipboardTextAvailable ();
-			case OS.Mac:
-				return SystemSpecific.Mac.Common.IsClipboardTextAvailable ();
-			case OS.Windows:
-				return SystemSpecific.Windows.Common.IsClipboardTextAvailable ();
-			default:
-				return true;
-			}				
-		}
-
+				
         public static void RefreshCursor()
         {
             switch (CurrentOS)
@@ -236,7 +224,7 @@ namespace SummerGUI
                     SystemSpecific.Windows.Common.RefreshCursor();
                 break;
             }
-        }
+        }		
 	}
 }
 

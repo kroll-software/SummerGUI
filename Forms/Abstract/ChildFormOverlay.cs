@@ -67,7 +67,7 @@ namespace SummerGUI
 		public DialogResults Result { get; set; }
 				
 
-		public virtual void Show (SummerGUIWindow parent)
+		public virtual void ShowDialog (SummerGUIWindow parent)
 		{									
 			if (parent != null) {				
 				parent.Controls.AddChild (this);

@@ -61,8 +61,8 @@ namespace SummerGUI
 		//IGUIContext GUIContext { get; }
 		//SummerGUIWindow ParentWindow { get; }
 		//RootContainer Controls { get; }
-		void OnOK ();
-		void OnCancel ();
+		void OnOK();
+		void OnCancel();
 		bool AllowMinimize { get; }
 		bool AllowMaximize { get; }
 		bool IsModal { get; }
@@ -70,7 +70,7 @@ namespace SummerGUI
 		//ToolBar Tools { get; }
 		//NotificationPanel Notifications { get; }
 		DialogResults Result { get; }
-		void Show (SummerGUIWindow parent);
+		void ShowDialog(SummerGUIWindow parent);
 	}
 
 	public interface IChildForm

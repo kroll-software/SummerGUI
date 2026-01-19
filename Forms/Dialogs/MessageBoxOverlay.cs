@@ -54,10 +54,10 @@ namespace SummerGUI
 				ButtonContainer.Children.First.Focus();			
 		}
 
-		public override void Show (SummerGUIWindow parent)
+		public override void ShowDialog (SummerGUIWindow parent)
 		{
 			//ParentWindow = parent;
-			base.Show (parent);
+			base.ShowDialog (parent);
 			InitAnimation ();
 			Invalidate ();
 		}
@@ -266,7 +266,7 @@ namespace SummerGUI
 				Color.FromArgb(30, Color.DarkSlateGray);
 			/*** ***/				
 
-			box.Show (parent);
+			box.ShowDialog (parent);
 			box.Focus ();			
 
             return DialogResults.OK;

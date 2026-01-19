@@ -198,8 +198,8 @@ namespace SummerGUI
             
             IntPtr currentContext = ctx.GlWindow.Context.WindowPtr; // OpenTK 4 Handle
 
-            if (currentContext == _lastActiveContext)
-                return;
+            //if (currentContext == _lastActiveContext)
+            //    return;
             
             _lastActiveContext = currentContext;            
 
@@ -253,8 +253,8 @@ namespace SummerGUI
             }
             
             // 6. Textur-Reset            
-            //GL.ActiveTexture(TextureUnit.Texture0);
-            //GL.BindTexture(TextureTarget.Texture2D, whiteTextureId);            
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, whiteTextureId);            
             
             //GL.Disable(EnableCap.ScissorTest);
         }

@@ -117,16 +117,8 @@ namespace SummerGUI
 		}
 			
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
-		{		
-			//Format = FontFormat.DefaultSingleLine;
-
-			//Brush sb = new SolidBrush(Color.Red);
-			//ctx.FillRectangle(sb, bounds);
-
-			//bounds = bounds.Inflate(Padding);
+		{					
 			bounds = PaddingBounds;
-			Debug.WriteLine($"Bounds: {bounds}");			
-
 			if (Font != null && Text != null)
 			{
 				ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format);							
