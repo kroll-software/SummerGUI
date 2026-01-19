@@ -191,7 +191,6 @@ namespace SummerGUI
 			}
 
 			if (Font != null && !String.IsNullOrEmpty(Text)) {				
-				Debug.WriteLine($"Bounds: {bounds}");
 				if (ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, Format).Width > bounds.Width && !Format.HasFlag(FontFormatFlags.WrapText))
 					Tooltip = Text;
 				else
