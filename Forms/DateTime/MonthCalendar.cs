@@ -69,7 +69,7 @@ namespace SummerGUI
 			this.Padding = new Padding (8);
 			Timer = new TaskTimer (150, TimerAction, 500);
 
-			MinCircleRadius = DayFont.Measure ("0").Height * 0.75f;
+			MinCircleRadius = DayFont.Measure ("0").Height * 0.55f;
 			MaxCircleRadius = MinCircleRadius * 1.5f;
 
 			ShowDate ();
