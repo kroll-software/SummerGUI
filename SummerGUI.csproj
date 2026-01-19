@@ -27,8 +27,7 @@
     <None Include="Fonts\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="ThemeColors.config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="SummerGUI-Credits.txt" CopyToOutputDirectory="PreserveNewest" />    
-    <None Include="LICENSE" />
-    <None Include="README" />    
+    <None Include="LICENSE" />    
   </ItemGroup>  
 
   <ItemGroup>
