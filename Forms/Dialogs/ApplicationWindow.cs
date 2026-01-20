@@ -186,8 +186,7 @@ namespace SummerGUI
 		{
 			AboutScreen DlgAbout = new AboutScreen("About Summer GUI", this);
 			DlgAbout.ProgramTitle = "Summer GUI";
-			DlgAbout.ProgramSubTitle = "by John Summer. A lightweight X-Platform GUI Framework written in C#";
-			//DlgAbout.UrlCaption = "Visit website:";
+			DlgAbout.ProgramSubTitle = "by John Summer. A lightweight X-Platform GUI Framework written in C#";			
 			DlgAbout.LicenseInfo = "License: MIT";
 			DlgAbout.Url = "http://www.kroll-software.ch";
 			DlgAbout.UrlText = "www.kroll-software.ch";

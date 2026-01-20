@@ -73,7 +73,7 @@ namespace SummerGUI
 			MaxCircleRadius = MinCircleRadius * 1.5f;
 
 			ShowDate ();
-		}			
+		}
 			
 		private DateTime m_CurrentDate;
 		public DateTime CurrentDate

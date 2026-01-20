@@ -32,7 +32,7 @@ This Software uses KS.Foundation
 on a threadsafe foundation without the hassle"
 
 Licensed under the MIT License
-Copyright (c) 2015-2016 by Kroll Software-Entwicklung
+Copyright (c) 2015-2026 by Kroll Software-Entwicklung
 
 ********************************
 
