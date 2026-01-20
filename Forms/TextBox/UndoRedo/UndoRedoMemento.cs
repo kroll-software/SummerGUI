@@ -122,7 +122,7 @@ namespace SummerGUI.Editor
 		public override void PerformUndo (ITextBox textbox)
 		{	
 			if (SelLength > 0) {
-				textbox.SetCursorPosition (SelStart);
+				textbox.SetCursorPosition (SelStart);				
 				textbox.InsertRange (SelectedText);
 			} else {
 				textbox.SetCursorPosition (Position);
@@ -131,7 +131,7 @@ namespace SummerGUI.Editor
 
 			textbox.SelStart = SelStart;
 			textbox.SelLength = SelLength;
-			textbox.SetCursorPosition (Position);
+			textbox.SetCursorPosition (Position + SelLength);
 
 			base.PerformUndo (textbox);
 		}
