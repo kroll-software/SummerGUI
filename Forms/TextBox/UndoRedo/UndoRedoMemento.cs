@@ -130,8 +130,8 @@ namespace SummerGUI.Editor
 			}
 
 			textbox.SelStart = SelStart;
-			textbox.SelLength = SelLength;
-			textbox.SetCursorPosition (Position + SelLength);
+			textbox.SelLength = SelLength;			
+			textbox.SetCursorPosition (Position);
 
 			base.PerformUndo (textbox);
 		}

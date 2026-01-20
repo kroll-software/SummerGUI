@@ -1139,15 +1139,11 @@ namespace SummerGUI
 				return;
 
 			int pos = RowManager.AbsCursorPosition;
-			if (SelLength > 0) {
-				// Speichere die exakte zu löschende Region (Start und Length)
-				// SelStart ist die absolute Startposition der Selection
-				SetUndoDelete(SelStart, SelLength);
+			if (SelLength > 0) {				
+				SetUndoDelete(pos, SelLength);
 				DeleteSelection();
-			} else {
-				// keine Auswahl: entferne das aktuelle Zeichen
-				// hier war bereits Do(new UndoRedoBackspaceMemento{ Position = pos - 1, ... })
-				SetUndoDelete(pos, 1); // oder wie dein BackspaceMemento es erwartet
+			} else {				
+				SetUndoDelete(pos, 1);
 				RowManager.DeleteCurrentChar ();
 			}
 		}

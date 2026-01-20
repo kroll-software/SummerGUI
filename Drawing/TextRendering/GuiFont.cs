@@ -614,16 +614,8 @@ namespace SummerGUI
 			string measureText;
 			if (len == -1 && start == 0)
 				measureText = text;
-			else
-			{
-				// Substring-Logik sicherstellen
-				if (start < 0)
-					start = 0;
-				if (len < 0 || start + len > text.Length)
-					len = text.Length - start;			
-				
-				measureText = text.Substring(start, len);
-			}
+			else			
+				measureText = Strings.StrMid(text, start + 1, len);			
 
 			return new SizeF(ShapeText(measureText).Sum(g => g.XAdvance), Height);
 		}
@@ -636,16 +628,8 @@ namespace SummerGUI
 			string measureText;
 			if (len == -1 && start == 0)
 				measureText = text;
-			else
-			{
-				// Substring-Logik sicherstellen
-				if (start < 0)
-					start = 0;
-				if (len < 0 || start + len > text.Length)
-					len = text.Length - start;			
-				
-				measureText = text.Substring(start, len);
-			}
+			else			
+				measureText = Strings.StrMid(text, start + 1, len);
 
 			float adv = 0;
 			GlyphInfo gi;
