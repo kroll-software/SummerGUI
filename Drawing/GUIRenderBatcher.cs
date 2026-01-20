@@ -185,7 +185,7 @@ namespace SummerGUI
         private IntPtr _lastActiveContext = IntPtr.Zero;
 
         public void BindContext(IGUIContext ctx)
-        {
+        {            
             ctx.GlWindow.MakeCurrent();
 
             var clientSize = ctx.GlWindow.ClientSize;
@@ -260,7 +260,7 @@ namespace SummerGUI
         }
 
         public void UnbindContext(IGUIContext ctx)
-        {
+        {                
             IntPtr currentContext = ctx.GlWindow.Context.WindowPtr; // OpenTK 4 Handle
 
             if (contextVAOs.TryGetValue(currentContext, out int vaoId))
@@ -731,15 +731,15 @@ namespace SummerGUI
         public void Flush()
         {                        
             // nichts zu tun?
-            if (vertexCount == 0 && indexCount == 0) return;
-
-            FlushCount++;            
-
+            if (vertexCount == 0 && indexCount == 0) return;            
+            
+            FlushCount++;
+            
             _uiShader.Use();
             _uiShader.SetMatrix4("projection", _projectionMatrix);
 
             // Texturhandling
-            if (currentTexture != -1)
+            if (currentTexture != -1)            
             {
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, currentTexture);
@@ -781,7 +781,7 @@ namespace SummerGUI
             vertexCount = 0;
             indexCount = 0;
             
-            //_currentType = PrimitiveType.Triangles;
+            //_currentType = PrimitiveType.Triangles;            
             //currentTexture = -1;            
         }
 

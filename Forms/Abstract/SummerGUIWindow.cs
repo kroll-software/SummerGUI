@@ -58,9 +58,7 @@ namespace SummerGUI
 		public void OnDragLeave(EventArgs e) => DragLeave?.Invoke(e);
 		public void OnDragDrop(DragEventArgs e) => DragDrop?.Invoke(e);
 		public void OnDragOver(DragEventArgs e) => DragOver?.Invoke(e);
-		***/
-
-		private static int _instanceCount = 0;
+		***/		
 
 		public GUIRenderBatcher Batcher 
 		{ 
@@ -154,10 +152,14 @@ namespace SummerGUI
 		public SummerGUIWindow ParentWindow  { get; protected set; }
 
 		public ClipBoundStackClass ClipBoundStack { get; private set; }
+
+		public static readonly object SyncObject = new object();		
 		
+		private static int _instanceCount = 0;
+
 		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
         {
-			_instanceCount++;
+			Interlocked.Increment(ref _instanceCount);
 
 			this.Context.MakeCurrent();
 
@@ -813,8 +815,7 @@ namespace SummerGUI
 
 			GL.Enable(EnableCap.ScissorTest);
 		}
-			
-		public readonly object SyncObject = new object ();
+					
 		private void DoPaint(RectangleF bounds)
 		{				
 			int clipCount = ClipBoundStack.Count;
@@ -1157,8 +1158,13 @@ namespace SummerGUI
 			}			
 		}
 
+		public bool IsDisposed {get; private set;}
+
 		protected override void Dispose(bool manual)
-		{
+		{			
+			if (IsDisposed)
+				return;			
+
 			if (manual) {
 				try {
 					// first of all, stop all running animations					
@@ -1173,6 +1179,8 @@ namespace SummerGUI
 					ex.LogError ();
 				}					
 			}
+
+			IsDisposed = true;
 
 			base.Dispose (manual);
 		}
@@ -1219,8 +1227,18 @@ namespace SummerGUI
 			}
 		}
 
+		private bool _isAlreadyClosing = false; // Instanz-Variable		
+
 		protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
 		{
+			if (_isAlreadyClosing)
+			{				
+				e.Cancel = true;
+				return;
+			}
+
+			_isAlreadyClosing = true;
+
 			base.OnClosing(e);
 			if (!e.Cancel)
 			{
@@ -1234,14 +1252,18 @@ namespace SummerGUI
 					ex.LogError ();
 				}
 
-				OnUnload (EventArgs.Empty);
-
-				_instanceCount--;				
+				OnUnload (EventArgs.Empty);				
+				
+				Interlocked.Decrement(ref _instanceCount);
 				if (_instanceCount <= 0)
-				{
+				{					
 					this.IsVisible = false;
-					this.ShutdownFramework();
-				}
+					if (ParentWindow == null && !HasChildWindow)
+					{
+						Debug.WriteLine("Shutting Down Framework ...");
+						this.ShutdownFramework();
+					}
+				}			
 			}
 		}
 

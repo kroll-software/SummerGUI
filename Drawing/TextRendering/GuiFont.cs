@@ -624,7 +624,7 @@ namespace SummerGUI
 				
 				measureText = text.Substring(start, len);
 			}
-						
+
 			return new SizeF(ShapeText(measureText).Sum(g => g.XAdvance), Height);
 		}
 
@@ -761,7 +761,7 @@ namespace SummerGUI
 		private float MeasureSegment(ReadOnlySpan<char> segment)
 		{
 			if (segment.IsEmpty) return 0;
-			return ShapeText(segment.ToString()).Sum(g => g.XAdvance);
+			return ShapeText(segment.ToString()).Sum(g => g.XAdvance);			
 		}		
 				
 		private void Clear()

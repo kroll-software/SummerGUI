@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Threading;
+using System.ComponentModel;
+using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
 using OpenTK;
 using OpenTK.Input;
 using OpenTK.Graphics;
@@ -8,7 +12,6 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Desktop;
 using KS.Foundation;
-using System.Runtime.CompilerServices;
 using System.Drawing;
 
 namespace SummerGUI
@@ -184,16 +187,16 @@ namespace SummerGUI
 		}
 
 		public virtual void OnOK()
-		{
+		{				
 			Result = DialogResults.OK;
 			this.Close ();
 		}
 
 		public virtual void OnCancel()
-		{
+		{			
 			Result = DialogResults.Cancel;
 			this.Close ();
-		}
+		}		
 
         /***
 		protected override void OnKeyDown (KeyboardKeyEventArgs e)
@@ -220,7 +223,7 @@ namespace SummerGUI
 
 		
 
-		private WindowBorder _oldParentWindowsBorder;
+		private WindowBorder _oldParentWindowsBorder;		
 
 		public void ShowDialog(SummerGUIWindow parent)
 		{						
@@ -234,17 +237,25 @@ namespace SummerGUI
 			_oldParentWindowsBorder = ParentWindow.WindowBorder;
 			ParentWindow.WindowBorder = WindowBorder.Fixed;
 
-			this.Focus();
+			this.Focus();			
 			
-			Batcher.BindContext(this);
-			this.Run ();
+			Batcher.BindContext(this);		
 
-			PlatformExtensions.EnableWindow(ParentWindow);
-			ParentWindow.WindowBorder = _oldParentWindowsBorder;
+			this.Run ();	
+
+			if (ParentWindow != null) 
+			{
+				ParentWindow.WindowBorder = _oldParentWindowsBorder;
+				PlatformExtensions.EnableWindow(ParentWindow);				
+				ParentWindow.RemoveChildWindow (this);				
+				ParentWindow.Focus ();				
+			}			
 		}
 
+		
+
 		public override void OnProcessEvents ()
-		{
+		{			
 			base.OnProcessEvents ();			
 			ParentWindow?.OnProcessEvents ();
 		}
@@ -255,18 +266,69 @@ namespace SummerGUI
 			ParentWindow?.OnDispatchUpdateAndRenderFrame ();
 		}
 
-		protected override void OnUnload (EventArgs e)
-		{				
-			if (ParentWindow != null) {				
-				ParentWindow.RemoveChildWindow (this);				
-				ParentWindow.Focus ();				
-			}			
+		private readonly object _lifecycleLock = new object();
+    	private bool _isClosing = false;
+    	private bool _isRendering = false;
 
-			base.OnUnload (e);
+        protected override void OnPaint(RectangleF bounds)
+		{
+			// 1. Non-blocking Check: Wenn wir entladen, sofort raus.
+			if (_isClosing) return;
+
+			// 2. Markieren, dass wir im kritischen Bereich sind (kein Lock nötig für bool-Assign)
+			_isRendering = true;
+
+			try 
+			{
+				// Hier passiert dein HarfBuzz / LINQ / unsafe Code
+				base.OnPaint(bounds);
+			}
+			finally 
+			{
+				_isRendering = false;
+			}
 		}
+
+		protected override void OnAfterPaint()
+		{
+			base.OnAfterPaint();
+
+			// 3. Signalisiere dem wartenden Unload-Thread, dass dieser Frame fertig ist.
+			// Wir locken nur kurz für das Pulse, das behindert die Loop kaum.
+			lock (_lifecycleLock)
+			{
+				System.Threading.Monitor.PulseAll(_lifecycleLock);
+			}
+		}
+
+		protected override void OnClosing(CancelEventArgs e)
+		{
+			// Sofort das Flag setzen, damit OnPaint im nächsten Frame (oder sofort) abbricht
+			_isClosing = true; 
+			base.OnClosing(e);
+		}
+
+		protected override void OnUnload(EventArgs e)
+		{
+			// 4. Hier warten wir nun geduldig, bis die Renderloop signalisiert: "Ich bin raus!"
+			lock (_lifecycleLock)
+			{
+				// Falls OnPaint gerade noch läuft, warten wir auf das Pulse von OnAfterPaint
+				if (_isRendering)
+				{
+					// Timeout als Safety-Net, falls die Loop abstürzt
+					System.Threading.Monitor.Wait(_lifecycleLock, 100); 
+				}
+			}
+			
+			base.OnUnload(e);
+		}		
 
         protected override void Dispose(bool manual)
         {
+			if (IsDisposed)
+				return;
+				
 			Batcher.UnbindContext(this);
             base.Dispose(manual);
         }
