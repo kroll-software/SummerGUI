@@ -36,7 +36,8 @@ namespace SummerGUI.Editor
 		public void OnKeyUp()
 		{
 			if (RequiresFullRefresh) {
-				OnUpdateAsync (refreshLastIndex, BreakWidth);
+				//OnUpdateAsync (refreshLastIndex, BreakWidth);
+				OnUpdate (refreshLastIndex, BreakWidth);
 			}
 		}
 
@@ -185,7 +186,7 @@ namespace SummerGUI.Editor
 		public void OnUpdate(int startIndex, float breakwidth, bool forceAll = false, int maxRows = 0)
 		{	
 			this.RWLock.EnterReadLock();
-			try {				
+			try {
 				bool doWordWrap = breakwidth != BreakWidth || forceAll;
 				BreakWidth = breakwidth;
 

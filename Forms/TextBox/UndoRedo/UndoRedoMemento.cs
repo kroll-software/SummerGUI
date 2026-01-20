@@ -89,28 +89,28 @@ namespace SummerGUI.Editor
             base.PerformUndo (textbox);
 		}
 
-		public override void PerformRedo (ITextBox textbox)
-		{				
-            if (SelLength > 0)
-            {
-                textbox.DeleteRange(SelStart, SelLength);
-                textbox.SelLength = 0;
-                textbox.SetCursorPosition(Position);
-                textbox.InsertRange(Data);
-                textbox.SetCursorPosition(Position + DataLength);
-                textbox.SelStart = Position + DataLength;
-            }
-            else
-            {
-                textbox.SetCursorPosition(Position);
-                textbox.InsertRange(Data);
-                textbox.SetCursorPosition(Position + DataLength);
-                textbox.SelStart = Position + DataLength;
-                textbox.SelLength = 0;
-            }
+		public override void PerformRedo(ITextBox textbox)
+		{
+			// 1. Falls etwas markiert war, muss es zuerst weg
+			if (SelLength > 0)
+			{
+				textbox.DeleteRange(SelStart, SelLength);
+			}
 
-			base.PerformRedo (textbox);
-		}
+			// 2. Neue Daten einfügen
+			// Wir nutzen hier SelStart als stabilen Anker, falls Position 
+			// durch das Löschen ungültig geworden wäre.
+			textbox.SetCursorPosition(SelStart); 
+			textbox.InsertRange(Data);
+
+			// 3. Cursor hinter den eingefügten Text setzen
+			int newPos = SelStart + DataLength;
+			textbox.SetCursorPosition(newPos);
+			textbox.SelStart = newPos;
+			textbox.SelLength = 0;
+
+			base.PerformRedo(textbox);
+		}		
 	}
 
 	public class UndoRedoDeleteMemento : UndoRedoMementoBase

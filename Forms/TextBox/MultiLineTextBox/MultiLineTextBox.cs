@@ -1113,7 +1113,7 @@ namespace SummerGUI
 			if (!String.IsNullOrEmpty (content)) {
 				SetUndoInsert (content);
 				if (SelLength > 0)
-					DeleteSelection ();
+					DeleteSelection ();				
 				SelLength = 0;
 				RowManager.InsertRange (content);
 				EnsureCurrentRowVisible ();
