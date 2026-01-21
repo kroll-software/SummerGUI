@@ -138,10 +138,10 @@ namespace SummerGUI
                 "    gl_Position = projection * vec4(aPos, 0.0, 1.0);\n" +
                 "}\n";
 
-            // Fragment Shader: Die Logik-Zentrale
+            // Fragment Shader: Jetzt mit Gamma-Korrektur für Text
             string fSource = "#version 330 core\n" +
                 "in vec4 fColor;\n" +
-                "in vec2 fTexCoord;\n" + // x = Distanz entlang der Linie (Pixel), y = Breite (0..1)
+                "in vec2 fTexCoord;\n" + 
                 "in float fType;\n" +
                 "out vec4 FragColor;\n" +
                 "uniform sampler2D uTexture;\n" +
@@ -170,7 +170,12 @@ namespace SummerGUI
                 "    } else if (fType > 0.5) {\n" + 
                 "        // --- TEXT-MODUS ---\n" +
                 "        vec4 texCol = texture(uTexture, fTexCoord);\n" +
-                "        FragColor = vec4(fColor.rgb, fColor.a * texCol.r);\n" +
+                "        \n" +
+                "        // Gamma-Korrektur: 1.0 / 1.8 bis 1.0 / 2.2 ist ideal für Text.\n" +
+                "        // Das verhindert, dass helle Schrift auf dunklem Grund 'wegfrisst'.\n" +
+                "        float alpha = pow(max(texCol.r, 0.00001), 1.0 / 1.8);\n" +
+                "        \n" +
+                "        FragColor = vec4(fColor.rgb, fColor.a * alpha);\n" +
                 "    } else {\n" + 
                 "        // --- BILD/SOLID-MODUS ---\n" +
                 "        vec4 texCol = texture(uTexture, fTexCoord);\n" +
@@ -180,7 +185,7 @@ namespace SummerGUI
 
             _uiShader = new GUIShader(vSource, fSource);
             UpdateSize(width, height);
-        }        
+        }
 
         private IntPtr _lastActiveContext = IntPtr.Zero;
 

@@ -18,7 +18,7 @@ namespace SummerGUI
         public static SizeF DrawStringVBO(this IGUIContext ctx, string text, IGUIFont font, Brush brush, PointF point, FontFormat format)
 		{
 			float currentX = point.X;
-			float baselineY = point.Y + font.Ascender;			
+			float baselineY = MathF.Round(point.Y + font.Ascender);
 
 			foreach (char c in text)
 			{				
@@ -229,7 +229,7 @@ namespace SummerGUI
 			if (start >= end) return;
 
 			float currentX = lineBounds.X;
-			float baselineY = lineBounds.Y + font.Ascender;
+			float baselineY = MathF.Round(lineBounds.Y + font.Ascender);
 
 			for (int j = start; j < end; j++)
 			{
@@ -240,7 +240,11 @@ namespace SummerGUI
 					{
 						ctx.Batcher.AddGlyph(
 							gi.TextureId,
-							new RectangleF(currentX + gi.Bearing.X + si.XOffset, baselineY - gi.Bearing.Y + si.YOffset, gi.Size.X, gi.Size.Y),
+							new RectangleF(
+								MathF.Round(currentX + gi.Bearing.X + si.XOffset), 
+								MathF.Round(baselineY - gi.Bearing.Y + si.YOffset), 
+								gi.Size.X, 
+								gi.Size.Y),
 							gi.UV,
 							brush.Color
 						);
@@ -256,7 +260,7 @@ namespace SummerGUI
 		{                       
 			float adv = 0;          
 			float currentX = bounds.Left;
-			float baselineY = bounds.Y + font.Ascender;			
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
 			
 			float mstart = -1, mend = 0;
 			bool flag = false;
@@ -283,8 +287,8 @@ namespace SummerGUI
 					if (gi.Size.X > 0 && gi.Size.Y > 0)
 					{
 						RectangleF destRect = new RectangleF(
-							currentX + gi.Bearing.X + si.XOffset,
-							baselineY - gi.Bearing.Y + si.YOffset,
+							MathF.Round(currentX + gi.Bearing.X + si.XOffset),
+							MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
 							gi.Size.X,
 							gi.Size.Y
 						);
@@ -301,7 +305,7 @@ namespace SummerGUI
 			if (showMnemonics && mstart >= 0) 
 			{                
 				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
-				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline				
+				float yPos = MathF.Round(baselineY + thickness * 2f); // Knapp unter der Baseline				
 				ctx.Batcher.AddRectangle(new RectangleF(mstart, yPos, mend - mstart, thickness), brush.Color);
 			}
 
@@ -312,7 +316,7 @@ namespace SummerGUI
 		{							
 			float adv = 0;			
 			float currentX = bounds.Left;
-			float baselineY = bounds.Y + font.Ascender;
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
 			
 			GlyphInfo gi;
 			
@@ -323,8 +327,8 @@ namespace SummerGUI
 					if (gi.Size.X > 0 && gi.Size.Y > 0)
 					{
 						RectangleF destRect = new RectangleF(
-							currentX + gi.Bearing.X + si.XOffset,
-							baselineY - gi.Bearing.Y + si.YOffset,
+							MathF.Round(currentX + gi.Bearing.X + si.XOffset),
+							MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
 							gi.Size.X,
 							gi.Size.Y
 						);
@@ -356,7 +360,7 @@ namespace SummerGUI
 			int i;
 			int len = shapes.Length;
 			
-			float baselineY = bounds.Y + font.Ascender;			
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
 			float width = bounds.Width;
 
 			GlyphInfo elipsis = font.EllipsisGlyphInfo;
@@ -393,10 +397,10 @@ namespace SummerGUI
 				gi = glyphs[k];
 				si = shapes[k];
 				if (gi.Size.X > 0 && gi.Size.Y > 0)
-				{
+				{					
 					RectangleF destRect = new RectangleF(
-						currentX + gi.Bearing.X + si.XOffset,
-						baselineY - gi.Bearing.Y + si.YOffset,
+						MathF.Round(currentX + gi.Bearing.X + si.XOffset),
+						MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
 						gi.Size.X,
 						gi.Size.Y
 					);
@@ -493,8 +497,8 @@ namespace SummerGUI
 				if (font.GetGlyphInfo(text[i], out glyphInfo))
 				{
 					RectangleF dest = new RectangleF(
-						currentX + glyphInfo.Bearing.X,
-						currentY + (font.Ascender - glyphInfo.Bearing.Y),						
+						MathF.Round(currentX + glyphInfo.Bearing.X),
+						MathF.Round(currentY + (font.Ascender - glyphInfo.Bearing.Y)),
 						glyphInfo.Size.X,
 						glyphInfo.Size.Y
 					);

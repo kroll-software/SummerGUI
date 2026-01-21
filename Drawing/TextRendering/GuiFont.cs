@@ -399,10 +399,12 @@ namespace SummerGUI
 
 		public unsafe GlyphInfo CompileCharacter(FT_FaceRec_* face, uint glyphindex)
 		{			
-			//const int FT_LOAD_TARGET_LIGHT = 0x00010000;
+			const int FT_LOAD_TARGET_LIGHT = 0x00010000;
+			const int FT_LOAD_FORCE_AUTOHINT = 0x00000020;
+			FT_Error error = FT_Load_Glyph(face, glyphindex, (FT_LOAD)(FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT));
 
 			//FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);			
-			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_DEFAULT);
+			//FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_DEFAULT);			
 			
 			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 
