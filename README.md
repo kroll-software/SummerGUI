@@ -42,7 +42,7 @@ The move to the **Core Profile** and **VBOs** isn't just a technical detail—it
 ## 🔗 Learn More
 Check out the **SummerGUI Demo Application** and see it in action:
 
-[👉 SummerGUI.Demo](https://github.com/kroll-software/SummerGUI.Demo)
+[👉 SummerGUI.Demo](https://github.com/kroll-software/SummerGUI.Demo)  
 
 ## 🤝 Join the Journey
 This is an exciting stage of development! SummerGUI is evolving rapidly, and we are looking for early adopters and contributors. If you are familiar with:
