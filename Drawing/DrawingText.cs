@@ -162,7 +162,7 @@ namespace SummerGUI
 				char c = si.Cluster < text.Length ? text[si.Cluster] : (char)0;
 
 				// 1. Manueller Zeilenumbruch
-				if (c == '\n')				
+				if (c == '\n')
 				{
 					RenderLine(ctx, font, brush, text, shapes, startIdx, i, ref lineBounds);
 					maxLineWidth = MathF.Max(maxLineWidth, currentLineWidth);
@@ -228,7 +228,7 @@ namespace SummerGUI
 		{
 			if (start >= end) return;
 
-			float currentX = lineBounds.X;
+			float currentX = MathF.Round(lineBounds.X);
 			float baselineY = MathF.Round(lineBounds.Y + font.Ascender);
 
 			for (int j = start; j < end; j++)
@@ -259,7 +259,7 @@ namespace SummerGUI
 		private static SizeF PrintMnemonicString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, bool showMnemonics)
 		{                       
 			float adv = 0;          
-			float currentX = bounds.Left;
+			float currentX = MathF.Round(bounds.Left);
 			float baselineY = MathF.Round(bounds.Y + font.Ascender);
 			
 			float mstart = -1, mend = 0;
@@ -315,7 +315,7 @@ namespace SummerGUI
 		private static SizeF PrintInternal (IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds)
 		{							
 			float adv = 0;			
-			float currentX = bounds.Left;
+			float currentX = MathF.Round(bounds.Left);
 			float baselineY = MathF.Round(bounds.Y + font.Ascender);
 			
 			GlyphInfo gi;
@@ -391,7 +391,7 @@ namespace SummerGUI
 			}
 
 			// Print Glyps
-			float currentX = bounds.X;			
+			float currentX = MathF.Round(bounds.X);
 			for (int k = 0; k < i; k++)
 			{				
 				gi = glyphs[k];
@@ -483,9 +483,8 @@ namespace SummerGUI
 				ctx.Batcher.AddRectangle(new RectangleF(startX + selLeft, bounds.Y, selWidth, bounds.Height), selectionBackColor);
 			}
 
-			float currentX = bounds.Left + offsetX;
-			float currentY = bounds.Top + (bounds.Height - font.LineHeight) / 2f;
-			currentY += font.YOffset;
+			float currentX = MathF.Round(bounds.Left + offsetX);
+			float currentY = MathF.Round(bounds.Top + font.YOffset + (bounds.Height - font.LineHeight) / 2f);			
 
 			// 3. Glyphen zeichnen
 			for (int i = 0; i < text.Length; i++)
