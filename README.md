@@ -39,6 +39,11 @@ The move to the **Core Profile** and **VBOs** isn't just a technical detail—it
 - **Thread Safe:** Designed to be robust and reliable under heavy load.
 - **Blazing Fast:** "Fu*** fast" isn't just a claim; it's our architecture.
 
+## 🔗 Learn More
+Check out the **SummerGUI Demo Application** and see it in action:
+
+[👉 SummerGUI.Demo](https://github.com/kroll-software/SummerGUI.Demo)
+
 ## 🤝 Join the Journey
 This is an exciting stage of development! SummerGUI is evolving rapidly, and we are looking for early adopters and contributors. If you are familiar with:
 
