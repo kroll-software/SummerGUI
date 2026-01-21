@@ -498,9 +498,8 @@ namespace SummerGUI
 
 		protected virtual void OnLoadWindowIcon()
 		{			
-			string path = "Assets/Icons/SummerGUI64.ico".FixedExpandedPath();
-			// ToDo
-			//ResourceManager.LoadWindowIcon (this, path);
+			string path = "Assets/Icons/SummerGUI64.png".FixedExpandedPath();			
+			WindowResourceManager.Manager.LoadWindowIcon(this, path);
 		}
 
 		// Preload your cursors here

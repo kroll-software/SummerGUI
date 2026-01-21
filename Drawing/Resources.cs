@@ -49,24 +49,43 @@ namespace SummerGUI
 
 		public void LoadWindowIcon(NativeWindow wnd, string pngPath)
 		{
-			if (String.IsNullOrEmpty (pngPath)) {
-				this.LogWarning ("LoadWindowIcon: empty path specified.");
+			if (string.IsNullOrEmpty(pngPath)) {
+				this.LogWarning("LoadWindowIcon: empty path specified.");
 				return;
 			}
-			pngPath = pngPath.FixedExpandedPath ();
+			
+			pngPath = pngPath.FixedExpandedPath();
 
-			try {				
+			try {               
 				if (System.IO.File.Exists(pngPath))
 				{
-					// ToDo: Remove System.Drawing reference
-					// wnd.Icon = new System.Drawing.Icon(pngPath);
-				} else {
-					this.LogWarning ("LoadWindowIcon: path not found.");
+					using (Stream stream = File.OpenRead(pngPath))
+					{
+						// StbImageSharp lädt das Bild direkt in ein Byte-Array (RGBA)
+						ImageResult image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+						
+						// OpenTK erwartet ein 'WindowIcon'-Objekt, das ein Array von 'Image' enthält.
+						// Das erlaubt es, Icons in verschiedenen Auflösungen zu hinterlegen (z.B. 16x16, 32x32).
+						// Für den Standardfall reicht ein einzelnes Bild.
+						var icon = new WindowIcon(new OpenTK.Windowing.Common.Input.Image(
+							image.Width, 
+							image.Height, 
+							image.Data
+						));
+
+						wnd.Icon = icon;
+					}
+				} 
+				else 
+				{
+					this.LogWarning($"LoadWindowIcon: path not found: {pngPath}");
 				}
-			} catch (Exception ex) {
-				ex.LogError ();
+			} 
+			catch (Exception ex) 
+			{
+				ex.LogError();
 			}
-		}		
+		}
 
 		public void SetCursor(IGUIContext ctx, Cursors cursor)
 		{
@@ -101,9 +120,7 @@ namespace SummerGUI
 		// ToDo: Let user specify the cursor size.
 		// ToDo: scale to 32x32 rather than 24x24
 		// ToDo: how to scale cursors for HiRes?
-		// ToDo: add more standard cursors to enum above (and to assets)		
-
-		// Fügen Sie das 'unsafe' Schlüsselwort zur Methodensignatur hinzu
+		// ToDo: add more standard cursors to enum above (and to assets)
 		public unsafe void LoadCursorFromFile(string pngPath, string name)
 		{
 			try {
