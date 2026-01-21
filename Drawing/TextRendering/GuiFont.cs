@@ -399,10 +399,14 @@ namespace SummerGUI
 
 		public unsafe GlyphInfo CompileCharacter(FT_FaceRec_* face, uint glyphindex)
 		{			
-			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_NO_HINTING);
+			//const int FT_LOAD_TARGET_LIGHT = 0x00010000;
+
+			//FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);			
+			FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_DEFAULT);
+			
 			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 
-			error = FT_Render_Glyph(face->glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);
+			error = FT_Render_Glyph(face->glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);			
 			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 
 			FT_Bitmap_ bmp = face->glyph->bitmap;
@@ -442,27 +446,36 @@ namespace SummerGUI
 						pDest += width;    // Springe zur nächsten Ziel-Zeile (kompakt)
 					}
 				}
-			}
-			
-			// --- FALL 1: ATLAS GRUPPEN NUTZUNG ---
-			if (m_AtlasGroup != null) {
-				if (m_AtlasGroup.TryPack(width, rows, out int texId, out int x, out int y, out int aWidth, out int aHeight)) {
-					m_AtlasGroup.CurrentActiveAtlas.UploadGlyph(x, y, width, rows, pixels);
+			}					
+
+			// --- FALL 1: ATLAS GRUPPEN NUTZUNG MIT GUTTER ---			
+			if (m_AtlasGroup != null) 
+			{
+				// Wir fordern 2 Pixel mehr Platz an (1px Gutter an jeder Seite)
+				int padding = 2;
+				int halfpadding = 1;
+				if (m_AtlasGroup.TryPack(width + padding, rows + padding, out int texId, out int x, out int y, out int aWidth, out int aHeight)) 
+				{
+					// Wir laden den Buchstaben versetzt um 1 Pixel hoch
+					// Damit bleibt rundherum ein leerer Rand
+					m_AtlasGroup.CurrentActiveAtlas.UploadGlyph(x + halfpadding, y + halfpadding, width, rows, pixels);
 					Count++;
 
 					return new GlyphInfo {
-						TextureId = texId, // Die ID des jeweiligen Atlas
+						TextureId = texId,
 						Size = new Vector2(width, rows),
 						Bearing = new Vector2(face->glyph->bitmap_left, face->glyph->bitmap_top),
 						Advance = face->glyph->advance.x / 64.0f,
+						
+						// UV-Koordinaten müssen exakt auf den inneren Bereich (x+1, y+1) zeigen
 						UV = new RectangleF(
-							x / (float)aWidth,
-							y / (float)aHeight,
+							(x + halfpadding) / (float)aWidth,
+							(y + halfpadding) / (float)aHeight,
 							width / (float)aWidth,
 							rows / (float)aHeight)
 					};
 				}
-			}
+			}			
 
 			// --- FALL 2: EINZELTEXTUREN (OnDemand / FontAwesome) ---
 			int expandedW = (width + 1).NextPowerOf2();

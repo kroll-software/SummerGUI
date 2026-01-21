@@ -20,9 +20,15 @@ public class FontAtlas : DisposableObject
         // Wir erstellen eine leere Alpha-Textur (R8 reicht für Fonts oft aus)
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.R8, 
                      width, height, 0, PixelFormat.Red, PixelType.UnsignedByte, IntPtr.Zero);
+        
+        // Wichtig: Entfernt Dreck
+        GL.ClearTexImage(TextureId, 0, PixelFormat.Red, PixelType.UnsignedByte, IntPtr.Zero);
 
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
     }
 
     public void UploadGlyph(int x, int y, int width, int height, byte[] pixels)

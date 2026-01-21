@@ -198,7 +198,8 @@ namespace SummerGUI
 					Tag = CommonFontTags.Mono.ToString(),
 					FallbackTag = CommonFontTags.Default.ToString(),
 					Path = "Fonts/DejaVuSansMono.ttf",
-					Size = 11.25f,
+					//Size = 11.25f,
+					Size = 12f,
 				});
 
 			AddFontConfig (new GUIFontConfiguration
