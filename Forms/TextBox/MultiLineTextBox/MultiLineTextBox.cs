@@ -122,6 +122,8 @@ namespace SummerGUI
 			set {
 				IsLoading = true;
 				OnEnabledChanged ();
+				SelStart = 0;
+				SelLength = 0;
 				RowManager.LoadTextAsync (value, BreakWidth);
 			}
 		}
@@ -282,7 +284,7 @@ namespace SummerGUI
 			} catch (Exception ex) {
 				ex.LogError ();
 			}
-		}
+		}		
 			
 		public void EnsureCurrentRowVisible ()
 		{
@@ -420,8 +422,10 @@ namespace SummerGUI
 			switch (e.Key) {
 			case Keys.LeftShift:
 			case Keys.RightShift:
-				//if (SelLength == 0)
-				//	SelStart = RowManager.AbsCursorPosition;
+			case Keys.LeftControl:
+			case Keys.RightControl:
+			case Keys.LeftAlt:
+			case Keys.RightAlt:
 				return true;
 
 			case Keys.Left:
@@ -1104,6 +1108,10 @@ namespace SummerGUI
 				SelLength = 0;
 				RowManager.InsertRange (content);
 				EnsureCurrentRowVisible ();
+				float height = RowManager.LineCount * RowManager.LineHeight;
+				if (height < VScrollBar.Height)
+					VScrollBar.Value = 0;
+
 				ResetSelection ();
 				Modified = true;
 				Invalidate ();

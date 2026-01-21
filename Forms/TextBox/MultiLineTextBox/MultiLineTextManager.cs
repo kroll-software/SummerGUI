@@ -36,8 +36,8 @@ namespace SummerGUI.Editor
 		public void OnKeyUp()
 		{
 			if (RequiresFullRefresh) {
-				//OnUpdateAsync (refreshLastIndex, BreakWidth);
-				OnUpdate (refreshLastIndex, BreakWidth);
+				OnUpdateAsync (refreshLastIndex, BreakWidth);
+				//OnUpdate (refreshLastIndex, BreakWidth);
 			}
 		}
 
@@ -118,7 +118,7 @@ namespace SummerGUI.Editor
 
 			try {				
 				TokenScalingWordWrapSource = new CancellationTokenSource ();
-				AsyncScalingWordWrapResult = Task.Factory.StartNew (() => OnUpdate(0, RepeatAsyncUpdateWidth), 
+				AsyncScalingWordWrapResult = Task.Run(() => OnUpdate(0, RepeatAsyncUpdateWidth), 
 					TokenScalingWordWrapSource.Token)
 					.ContinueWith((t) => {																
 						if (!t.IsCanceled)
@@ -144,7 +144,7 @@ namespace SummerGUI.Editor
 
 			try {				
 				TokenScalingWordWrapSource = new CancellationTokenSource ();
-				AsyncScalingWordWrapResult = Task.Factory.StartNew (() => this.ForEach(p => p.RefreshGlyphs(font, flags)), 
+				AsyncScalingWordWrapResult = Task.Run (() => this.ForEach(p => p.RefreshGlyphs(font, flags)), 
 					TokenScalingWordWrapSource.Token)
 					.ContinueWith((t) => {						
 						if (!t.IsCanceled)
@@ -1354,7 +1354,7 @@ namespace SummerGUI.Editor
             if (value == null)
                 value = String.Empty;
 
-            Task.Factory.StartNew (() => {
+            Task.Run (() => {
 				Stopwatch sw = Stopwatch.StartNew();
 
 				int index = 0;
@@ -1385,7 +1385,7 @@ namespace SummerGUI.Editor
 					}				
 				}
 			}).ContinueWith((t) => {
-				Owner.UndoRedoManager.Clear();
+				Owner.UndoRedoManager.Clear();				
                 LoadingCompleted?.Invoke(this, EventArgs.Empty);
             });
 		}

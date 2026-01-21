@@ -447,7 +447,10 @@ namespace SummerGUI
 			switch (e.Key) {
 			case Keys.LeftShift:
 			case Keys.RightShift:
-				//ResetSelection ();
+			case Keys.LeftControl:
+			case Keys.RightControl:
+			case Keys.LeftAlt:
+			case Keys.RightAlt:
 				return true;
 				
 			case Keys.Left:
