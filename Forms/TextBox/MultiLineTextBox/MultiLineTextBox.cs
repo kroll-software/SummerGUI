@@ -903,7 +903,8 @@ namespace SummerGUI
 				float yStart = bounds.Top + Padding.Top + (absline * rowHeight) + ScrollOffsetY;
 				float xEnd = 0;
 
-				float lineOffsetY = -Font.Descender / 2f;
+				//float lineOffsetY = -Font.Descender / 2f;
+				float lineOffsetY = 0;
 
 				if (absline == absEndLine) {
 					xEnd = ppEnd.ColumnStart + bounds.Left + Padding.Left;					
@@ -959,28 +960,14 @@ namespace SummerGUI
 						bounds.Top + para.Top + offsetY,
 						bounds.Width, 
 						lineHeight);
-
-					/***
-					var glyphLines = para.ToGlyphs();
-					foreach (var line in glyphLines) {
-						if (rowBounds.Bottom > bounds.Top) {
-							ctx.DrawTextLine(line.Select(g => g.Char).ToArray(), this.Font, rowBounds, Style.ForeColorBrush.Color);
-							//font.Begin();
-							//font.PrintTextLine (line.Select(g => g.Glyph).ToArray(), rowBounds, Style.ForeColorBrush.Color);
-							//font.End();
-						}
-						rowBounds.Offset(0, lineHeight);
-						if (rowBounds.Top > bounds.Bottom)
-							break;
-					}
-					***/
 					
 					foreach (var line in para.ToLines()) 
 					{
 						if (rowBounds.Bottom > bounds.Top) 
 						{
 							// Zeichne die Zeile Zeichen für Zeichen
-							float currentX = rowBounds.X;
+							float currentX = MathF.Round(rowBounds.X);
+							float baselineY = MathF.Round(rowBounds.Y + font.Ascender);
 							var node = line.StartNode;
 							Color color;
 
@@ -1009,8 +996,8 @@ namespace SummerGUI
 								{
 									// Berechne Ziel-Rechteck (Bearing beachten!)
 									RectangleF dest = new RectangleF(
-										currentX + glyphInfo.Bearing.X,
-										rowBounds.Y + (font.Ascender - glyphInfo.Bearing.Y),
+										font.Snap(currentX + glyphInfo.Bearing.X),
+										font.Snap(baselineY - glyphInfo.Bearing.Y),
 										glyphInfo.Size.X,
 										glyphInfo.Size.Y
 									);
@@ -1036,8 +1023,8 @@ namespace SummerGUI
 				if (CursorOn && CursorVisible) {					
 					RectangleF CursorRectangle = RowManager.CalcCursorRectangle();
 					int x = Math.Max((int)bounds.Left + 1, (int)(CursorRectangle.X + bounds.Left + ScrollOffsetX + 0.5f));
-					float y1 = CursorRectangle.Top + bounds.Top + ScrollOffsetY + 1;
-					float y2 = y1 + CursorRectangle.Height - 2;
+					float y1 = CursorRectangle.Top + bounds.Top + ScrollOffsetY;
+					float y2 = y1 + CursorRectangle.Height;
 					ctx.DrawLine (CursorPen, x, y1, x, y2);
 				}	
 			} catch (Exception ex) {

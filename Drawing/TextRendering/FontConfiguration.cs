@@ -38,6 +38,11 @@ namespace SummerGUI
 		Symbol = 128
 	}
 
+	public enum FontRenderingHints
+	{
+		Smooth,
+		Crisp,
+	}
 
 	public class GUIFontConfiguration
 	{		
@@ -48,13 +53,14 @@ namespace SummerGUI
 			ScaleFactor = 1f;
 		}
 
-		public GUIFontConfiguration(string tag, string path, float size, GlyphFilterFlags filter = GlyphFilterFlags.All)
+		public GUIFontConfiguration(string tag, string path, float size, GlyphFilterFlags filter = GlyphFilterFlags.All, FontRenderingHints renderingHint = FontRenderingHints.Smooth)
 			:this()
 		{
 			Tag = tag;
 			Path = path;
 			Size = size;
 			Filter = filter;
+			RenderingHint = renderingHint;
 		}
 
 		public float ScaleFactor { get; set; }
@@ -65,6 +71,8 @@ namespace SummerGUI
 		public float Size { get; set; }
 		public float YOffset { get; set; }
 		public float LineSpacing { get; set; }
+
+		public FontRenderingHints RenderingHint { get; set; }
 
 		public bool OnDemand
 		{

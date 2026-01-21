@@ -463,16 +463,15 @@ namespace SummerGUI.Editor
 			finally {
 				Paragraphs.RWLock.ExitReadLock ();
 			}				
-		}
-			
+		}		
+
 		public RectangleF CalcCursorRectangle()
 		{						
 			Paragraph para = CurrentParagraph;
 			int x = CursorPosition;
 			ParagraphPosition pos = para.PositionAtIndex (x);
 			float top = para.LineOffset * LineHeight;
-			float y = top + (pos.LineIndex * LineHeight);
-			y  += -Font.Descender / 2f;
+			float y = top + (pos.LineIndex * LineHeight);			
 			return new RectangleF (pos.ColumnStart, y, pos.ColumnWidth, LineHeight);
 		}
 			

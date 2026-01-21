@@ -14,38 +14,43 @@ using System.Runtime.CompilerServices;
 namespace SummerGUI
 {	
     public static class GUIDrawingText
-	{				
-        public static SizeF DrawStringVBO(this IGUIContext ctx, string text, IGUIFont font, Brush brush, PointF point, FontFormat format)
+	{        
+		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, RectangleF bounds, FontFormat format)		
 		{
-			float currentX = point.X;
-			float baselineY = MathF.Round(point.Y + font.Ascender);
+			return Print(ctx, font, brush, text, bounds, format, brush.Color);			
+		}
 
-			foreach (char c in text)
-			{				
-				if (font.GetGlyphInfo(c, out GlyphInfo gi))
-				{
-					if (gi.Size.X > 0 && gi.Size.Y > 0)
-					{
-						RectangleF destRect = new RectangleF(
-							currentX + gi.Bearing.X,
-							baselineY - gi.Bearing.Y,
-							gi.Size.X,
-							gi.Size.Y
-						);
+		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, float x, float y, FontFormat format)
+		{
+			SizeF contentSize = font.Measure(text);
 
-						ctx.Batcher.AddGlyph(
-							gi.TextureId,
-							destRect,
-							gi.UV,
-							brush.Color
-						);
-					}
+			switch (format.HAlign) {
+			case Alignment.Near:
+				break;
+			case Alignment.Center:
+				x -= contentSize.Width / 2f;
+				break;
+			case Alignment.Far:
+				x -= contentSize.Width;
+				break;
+			}
+			
+			switch (format.VAlign) {
+			case Alignment.Near:
+				y -= contentSize.Height / 2f;
+				break;
+			case Alignment.Center:			
+				y += contentSize.Height / 2f;
+				break;
+			case Alignment.Far:	
+			case Alignment.Baseline:		
+				y += contentSize.Height / 2;
+				break;
+			}
 
-					currentX += gi.Advance;
-				}				
-			}			
-
-			return new SizeF(currentX - point.X, font.Height);
+			y += font.YOffset;
+										
+			return Print(ctx, font, brush, text, new RectangleF (x, y, contentSize.Width, contentSize.Height), format, brush.Color);
 		}
 
 		private static SizeF Print(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, FontFormat format, Color color = default) 
@@ -97,8 +102,7 @@ namespace SummerGUI
 						case Alignment.Center:						
 							if (bounds.Height > 0)
 							{
-								y = (bounds.Height - font.Height) / 2f;
-								//y = bounds.Height * 0.5f + (font.Ascender + font.Descender) * 0.5f;								
+								y = (bounds.Height - font.Height) / 2f;								
 							}
 							break;
 						
@@ -136,6 +140,178 @@ namespace SummerGUI
 				ex.LogError ();
 				return SizeF.Empty;
 			}
+		}
+
+		private static SizeF PrintInternal (IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds)
+		{							
+			float adv = 0;			
+			float currentX = MathF.Round(bounds.Left);
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
+			
+			GlyphInfo gi;
+			
+			foreach (ShapedGlyph si in font.ShapeText(text))	
+			{		
+				if (font.GetGlyphInfo (si.GlyphIndex, out gi)) 
+				{										
+					if (gi.Size.X > 0 && gi.Size.Y > 0)
+					{
+						RectangleF destRect = new RectangleF(
+							font.Snap(currentX + gi.Bearing.X + si.XOffset),
+							font.Snap(baselineY - gi.Bearing.Y + si.YOffset),
+							gi.Size.X,
+							gi.Size.Y
+						);
+
+						ctx.Batcher.AddGlyph(
+							gi.TextureId,
+							destRect,
+							gi.UV,
+							brush.Color
+						);						
+					}
+
+					adv += si.XAdvance;
+					currentX += si.XAdvance;
+				}
+			}
+
+			return new SizeF (adv, font.Height);			
+		}
+
+		private static SizeF PrintElipsisString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, FontFormat format)
+		{					
+			if (String.IsNullOrEmpty(text) || font == null || ctx == null)
+				return SizeF.Empty;			
+
+			ShapedGlyph[] shapes = font.ShapeText(text).ToArray();			
+
+			float adv = 0;
+			int i;
+			int len = shapes.Length;
+			
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
+			float width = bounds.Width;
+
+			GlyphInfo elipsis = font.EllipsisGlyphInfo;
+			//bool nextIsMnemonic = false;			
+			GlyphInfo [] glyphs = new GlyphInfo[len];			
+
+			GlyphInfo gi;
+			ShapedGlyph si;
+			for (i = 0; i < len; i++) {
+				si = shapes[i];				
+				if (font.GetGlyphInfo (si.GlyphIndex, out gi)) {					
+					if (adv + si.XAdvance > width && i > 0) {						
+						i--;
+						while (i > 1 && adv + elipsis.Advance > width) 
+						{							
+							adv -= shapes[i].XAdvance;								
+							i--;
+						}
+						glyphs[i] = elipsis;
+						adv += elipsis.Advance;
+						i++;
+						break;
+					}
+
+					glyphs[i] = gi;					
+					adv += si.XAdvance;
+				}
+			}
+
+			// Print Glyps
+			float currentX = MathF.Round(bounds.X);
+			for (int k = 0; k < i; k++)
+			{				
+				gi = glyphs[k];
+				si = shapes[k];
+				if (gi.Size.X > 0 && gi.Size.Y > 0)
+				{					
+					RectangleF destRect = new RectangleF(
+						font.Snap(currentX + gi.Bearing.X + si.XOffset),
+						font.Snap(baselineY - gi.Bearing.Y + si.YOffset),						
+						gi.Size.X,
+						gi.Size.Y
+					);
+
+					ctx.Batcher.AddGlyph(
+						gi.TextureId,
+						destRect,
+						gi.UV,
+						brush.Color
+					);					
+				}
+				currentX += si.XAdvance;				
+			}
+
+			if (format.HasFlag(FontFormatFlags.Underline))
+			{
+				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
+				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline				
+				ctx.Batcher.AddRectangle(new RectangleF(bounds.Left, yPos, adv, thickness), brush.Color);	
+			}
+
+			if (i < len)
+				return new SizeF (width + 1f, font.Height);	// +1 signals callers it was elipsis
+			else
+				return new SizeF (adv, font.Height);
+		}
+
+		private static SizeF PrintMnemonicString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, bool showMnemonics)
+		{                       
+			float adv = 0;          
+			float currentX = MathF.Round(bounds.Left);
+			float baselineY = MathF.Round(bounds.Y + font.Ascender);
+			
+			float mstart = -1, mend = 0;
+			bool flag = false;
+						
+			foreach (ShapedGlyph si in font.ShapeText(text))
+			{
+				if (font.GetGlyphInfo(si.GlyphIndex, out var gi)) 
+				{
+					char c = si.Cluster < text.Length ? text[si.Cluster] : (char)0;
+					if (c == '&') 
+					{
+						flag = true;
+						mstart = currentX;
+						continue; 
+					}
+
+					if (flag)
+					{
+						flag = false;
+						mend = currentX + si.XAdvance;
+					}
+
+					// Normales Zeichnen
+					if (gi.Size.X > 0 && gi.Size.Y > 0)
+					{
+						RectangleF destRect = new RectangleF(
+							font.Snap(currentX + gi.Bearing.X + si.XOffset),
+							font.Snap(baselineY - gi.Bearing.Y + si.YOffset),
+							gi.Size.X,
+							gi.Size.Y
+						);
+
+						ctx.Batcher.AddGlyph(gi.TextureId, destRect, gi.UV, brush.Color);                      
+					}
+
+					currentX += si.XAdvance;
+					adv += si.XAdvance;
+				}
+			}
+			
+			// Unterstrich zeichnen (DPI skaliert)
+			if (showMnemonics && mstart >= 0) 
+			{                
+				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
+				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline				
+				ctx.Batcher.AddRectangle(new RectangleF(mstart, yPos, mend - mstart, thickness), brush.Color);
+			}
+
+			return new SizeF(adv, font.Height);            
 		}
 
 		private static SizeF PrintMultiline(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds)
@@ -241,8 +417,8 @@ namespace SummerGUI
 						ctx.Batcher.AddGlyph(
 							gi.TextureId,
 							new RectangleF(
-								MathF.Round(currentX + gi.Bearing.X + si.XOffset), 
-								MathF.Round(baselineY - gi.Bearing.Y + si.YOffset), 
+								font.Snap(currentX + gi.Bearing.X + si.XOffset), 
+								font.Snap(baselineY - gi.Bearing.Y + si.YOffset), 
 								gi.Size.X, 
 								gi.Size.Y),
 							gi.UV,
@@ -254,217 +430,7 @@ namespace SummerGUI
 			}
 			// Nach dem Rendern der Zeile die Bounds für die nächste Zeile nach unten schieben
 			lineBounds.Y += font.LineHeight;
-		}
-
-		private static SizeF PrintMnemonicString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, bool showMnemonics)
-		{                       
-			float adv = 0;          
-			float currentX = MathF.Round(bounds.Left);
-			float baselineY = MathF.Round(bounds.Y + font.Ascender);
-			
-			float mstart = -1, mend = 0;
-			bool flag = false;
-						
-			foreach (ShapedGlyph si in font.ShapeText(text))
-			{
-				if (font.GetGlyphInfo(si.GlyphIndex, out var gi)) 
-				{
-					char c = si.Cluster < text.Length ? text[si.Cluster] : (char)0;
-					if (c == '&') 
-					{
-						flag = true;
-						mstart = currentX;
-						continue; 
-					}
-
-					if (flag)
-					{
-						flag = false;
-						mend = currentX + si.XAdvance;
-					}
-
-					// Normales Zeichnen
-					if (gi.Size.X > 0 && gi.Size.Y > 0)
-					{
-						RectangleF destRect = new RectangleF(
-							MathF.Round(currentX + gi.Bearing.X + si.XOffset),
-							MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
-							gi.Size.X,
-							gi.Size.Y
-						);
-
-						ctx.Batcher.AddGlyph(gi.TextureId, destRect, gi.UV, brush.Color);                      
-					}
-
-					currentX += si.XAdvance;
-					adv += si.XAdvance;
-				}
-			}
-			
-			// Unterstrich zeichnen (DPI skaliert)
-			if (showMnemonics && mstart >= 0) 
-			{                
-				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
-				float yPos = MathF.Round(baselineY + thickness * 2f); // Knapp unter der Baseline				
-				ctx.Batcher.AddRectangle(new RectangleF(mstart, yPos, mend - mstart, thickness), brush.Color);
-			}
-
-			return new SizeF(adv, font.Height);            
-		}
-
-		private static SizeF PrintInternal (IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds)
-		{							
-			float adv = 0;			
-			float currentX = MathF.Round(bounds.Left);
-			float baselineY = MathF.Round(bounds.Y + font.Ascender);
-			
-			GlyphInfo gi;
-			
-			foreach (ShapedGlyph si in font.ShapeText(text))	
-			{		
-				if (font.GetGlyphInfo (si.GlyphIndex, out gi)) 
-				{										
-					if (gi.Size.X > 0 && gi.Size.Y > 0)
-					{
-						RectangleF destRect = new RectangleF(
-							MathF.Round(currentX + gi.Bearing.X + si.XOffset),
-							MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
-							gi.Size.X,
-							gi.Size.Y
-						);
-
-						ctx.Batcher.AddGlyph(
-							gi.TextureId,
-							destRect,
-							gi.UV,
-							brush.Color
-						);						
-					}
-
-					adv += si.XAdvance;
-					currentX += si.XAdvance;
-				}
-			}
-
-			return new SizeF (adv, font.Height);			
-		}
-
-		private static SizeF PrintElipsisString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, FontFormat format)
-		{					
-			if (String.IsNullOrEmpty(text) || font == null || ctx == null)
-				return SizeF.Empty;			
-
-			ShapedGlyph[] shapes = font.ShapeText(text).ToArray();			
-
-			float adv = 0;
-			int i;
-			int len = shapes.Length;
-			
-			float baselineY = MathF.Round(bounds.Y + font.Ascender);
-			float width = bounds.Width;
-
-			GlyphInfo elipsis = font.EllipsisGlyphInfo;
-			//bool nextIsMnemonic = false;			
-			GlyphInfo [] glyphs = new GlyphInfo[len];			
-
-			GlyphInfo gi;
-			ShapedGlyph si;
-			for (i = 0; i < len; i++) {
-				si = shapes[i];				
-				if (font.GetGlyphInfo (si.GlyphIndex, out gi)) {					
-					if (adv + si.XAdvance > width && i > 0) {						
-						i--;
-						while (i > 1 && adv + elipsis.Advance > width) 
-						{							
-							adv -= shapes[i].XAdvance;								
-							i--;
-						}
-						glyphs[i] = elipsis;
-						adv += elipsis.Advance;
-						i++;
-						break;
-					}
-
-					glyphs[i] = gi;					
-					adv += si.XAdvance;
-				}
-			}
-
-			// Print Glyps
-			float currentX = MathF.Round(bounds.X);
-			for (int k = 0; k < i; k++)
-			{				
-				gi = glyphs[k];
-				si = shapes[k];
-				if (gi.Size.X > 0 && gi.Size.Y > 0)
-				{					
-					RectangleF destRect = new RectangleF(
-						MathF.Round(currentX + gi.Bearing.X + si.XOffset),
-						MathF.Round(baselineY - gi.Bearing.Y + si.YOffset),
-						gi.Size.X,
-						gi.Size.Y
-					);
-
-					ctx.Batcher.AddGlyph(
-						gi.TextureId,
-						destRect,
-						gi.UV,
-						brush.Color
-					);					
-				}
-				currentX += si.XAdvance;				
-			}
-
-			if (format.HasFlag(FontFormatFlags.Underline))
-			{
-				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
-				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline				
-				ctx.Batcher.AddRectangle(new RectangleF(bounds.Left, yPos, adv, thickness), brush.Color);	
-			}
-
-			if (i < len)
-				return new SizeF (width + 1f, font.Height);	// +1 signals callers it was elipsis
-			else
-				return new SizeF (adv, font.Height);
-		}
-		
-		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, RectangleF bounds, FontFormat format)		
-		{
-			return Print(ctx, font, brush, text, bounds, format, brush.Color);			
-		}
-
-		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, float x, float y, FontFormat format)
-		{
-			SizeF contentSize = font.Measure(text);
-
-			switch (format.HAlign) {
-			case Alignment.Near:
-				break;
-			case Alignment.Center:
-				x -= contentSize.Width / 2f;
-				break;
-			case Alignment.Far:
-				x -= contentSize.Width;
-				break;
-			}
-			
-			switch (format.VAlign) {
-			case Alignment.Near:
-				y -= contentSize.Height / 2f;
-				break;
-			case Alignment.Center:			
-				y += contentSize.Height / 2f;
-				break;
-			case Alignment.Far:	
-			case Alignment.Baseline:		
-				y += contentSize.Height / 2;
-				break;
-			}
-
-			y += font.YOffset;
-										
-			return Print(ctx, font, brush, text, new RectangleF (x, y, contentSize.Width, contentSize.Height), format, brush.Color);
-		}
+		}		
 
 		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, IGUIFont font, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
 		{
@@ -496,8 +462,8 @@ namespace SummerGUI
 				if (font.GetGlyphInfo(text[i], out glyphInfo))
 				{
 					RectangleF dest = new RectangleF(
-						MathF.Round(currentX + glyphInfo.Bearing.X),
-						MathF.Round(currentY + (font.Ascender - glyphInfo.Bearing.Y)),
+						font.Snap(currentX + glyphInfo.Bearing.X),
+						font.Snap(currentY + (font.Ascender - glyphInfo.Bearing.Y)),
 						glyphInfo.Size.X,
 						glyphInfo.Size.Y
 					);

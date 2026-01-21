@@ -88,6 +88,10 @@ namespace SummerGUI
 
 		GlyphInfo EllipsisGlyphInfo { get; }
 
+		public FontRenderingHints RenderingHint { get; }
+
+		public Func<float, float> Snap { get; }
+
 		bool IsDisposed { get; }
 
 		float Ascender { get; }
@@ -171,10 +175,14 @@ namespace SummerGUI
 
 		private const int ATLAS_SIZE = 1024; // Standardgröße für den Font-Atlas				
 
-		public GuiFont (GUIFontConfiguration conf)
-			: this (conf.Path, conf.Size, conf.ScaleFactor, conf.Filter, conf.YOffset, conf.LineSpacing) {}
+		public FontRenderingHints RenderingHint { get; private set; }
 
-		public GuiFont (string filePath, float size, float scaleFactor, GlyphFilterFlags filter, float yoffset, float linespacing)
+		public Func<float, float> Snap {get; private set; }
+
+		public GuiFont (GUIFontConfiguration conf)
+			: this (conf.Path, conf.Size, conf.ScaleFactor, conf.Filter, conf.YOffset, conf.LineSpacing, conf.RenderingHint) {}
+
+		public GuiFont (string filePath, float size, float scaleFactor, GlyphFilterFlags filter, float yoffset, float linespacing, FontRenderingHints renderingHint)
 		{			
 			try {			
 				Name = Path.GetFileName(filePath);
@@ -182,6 +190,21 @@ namespace SummerGUI
 				Size = size;
 				Filter = filter;
 				OnDemand = Filter.HasFlag(GlyphFilterFlags.OnDemand);
+				RenderingHint = renderingHint;
+				switch (renderingHint)
+				{
+					case FontRenderingHints.Smooth:
+						Snap = (val) => val;
+						break;
+
+					case FontRenderingHints.Crisp:
+						Snap = (val) => MathF.Round(val);
+						break;
+
+					default:
+					Snap = (val) => val;
+						break;
+				}
 
 				m_YOffsetUnscaled = yoffset;
 				LineSpacing = linespacing;
@@ -282,7 +305,7 @@ namespace SummerGUI
 					int side = (int)Math.Sqrt(totalArea);
 					int atlasSize = side.NextPowerOf2().Clamp(512, MAX_SAFE_ATLAS_SIZE);
 
-					m_AtlasGroup = new FontAtlasGroup(atlasSize);
+					m_AtlasGroup = new FontAtlasGroup(atlasSize, RenderingHint);
 				}
 				
 				GlyphCount = (int)m_Face->num_glyphs;
@@ -398,13 +421,22 @@ namespace SummerGUI
 		}
 
 		public unsafe GlyphInfo CompileCharacter(FT_FaceRec_* face, uint glyphindex)
-		{			
+		{						
 			const int FT_LOAD_TARGET_LIGHT = 0x00010000;
 			const int FT_LOAD_FORCE_AUTOHINT = 0x00000020;
-			FT_Error error = FT_Load_Glyph(face, glyphindex, (FT_LOAD)(FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT));
 
-			//FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);			
-			//FT_Error error = FT_Load_Glyph(face, glyphindex, FT_LOAD.FT_LOAD_DEFAULT);			
+			FT_LOAD options;
+			switch (RenderingHint)
+			{
+				case FontRenderingHints.Crisp:
+					options = (FT_LOAD)(FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT);
+					break;
+				default:
+					options = FT_LOAD.FT_LOAD_NO_AUTOHINT;
+					break;
+			}
+
+			FT_Error error = FT_Load_Glyph(face, glyphindex, options);			
 			
 			if (error != FT_Error.FT_Err_Ok) return GlyphInfo.Empty;
 

@@ -10,7 +10,7 @@ public class FontAtlas : DisposableObject
     public int Width { get; private set; }
     public int Height { get; private set; }
 
-    public FontAtlas(int width = 1024, int height = 1024)
+    public FontAtlas(int width = 1024, int height = 1024, FontRenderingHints renderingHint = FontRenderingHints.Smooth)
     {
         Width = width;
         Height = height;
@@ -24,11 +24,17 @@ public class FontAtlas : DisposableObject
         // Wichtig: Entfernt Dreck
         GL.ClearTexImage(TextureId, 0, PixelFormat.Red, PixelType.UnsignedByte, IntPtr.Zero);
 
-        //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+        switch (renderingHint)
+        {
+            case FontRenderingHints.Crisp:
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                break;
+            default:
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);        
+                break;
+        }        
     }
 
     public void UploadGlyph(int x, int y, int width, int height, byte[] pixels)
@@ -61,15 +67,18 @@ public class FontAtlasGroup : DisposableObject
     private readonly List<AtlasPacker> _packers = new List<AtlasPacker>();
     private readonly int _atlasSize;
 
-    public FontAtlasGroup(int atlasSize = 1024)
+    private readonly FontRenderingHints _renderingHint;
+
+    public FontAtlasGroup(int atlasSize = 1024, FontRenderingHints renderingHint = FontRenderingHints.Smooth)
     {
         _atlasSize = atlasSize;
+        _renderingHint = renderingHint;
         CreateNewAtlas();
     }
 
     private void CreateNewAtlas()
     {
-        _atlases.Add(new FontAtlas(_atlasSize, _atlasSize));
+        _atlases.Add(new FontAtlas(_atlasSize, _atlasSize, _renderingHint));
         _packers.Add(new AtlasPacker(_atlasSize));
     }
 
