@@ -358,7 +358,11 @@ namespace SummerGUI
 		public event EventHandler<EventArgs> Load;
 		protected virtual void OnLoad(EventArgs e)
 		{			
-			this.Batcher.Init(this.Size.X, this.Size.Y);			
+			if (_instanceCount == 1)
+			{
+				this.Batcher.Init(this.Size.X, this.Size.Y);
+				this.Batcher.SetGamma(1.2f);
+			}
 
 			IsCreated = true;
 			IsVisible = true;

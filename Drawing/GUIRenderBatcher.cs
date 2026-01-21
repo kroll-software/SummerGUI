@@ -121,7 +121,7 @@ namespace SummerGUI
 
         public void Init(int width, int height)
         {
-            // Vertex Shader: Reicht die Daten einfach weiter
+            // Vertex Shader: Unverändert
             string vSource = "#version 330 core\n" +
                 "layout (location = 0) in vec2 aPos;\n" +
                 "layout (location = 1) in vec4 aColor;\n" +
@@ -138,13 +138,14 @@ namespace SummerGUI
                 "    gl_Position = projection * vec4(aPos, 0.0, 1.0);\n" +
                 "}\n";
 
-            // Fragment Shader: Jetzt mit Gamma-Korrektur für Text
+            // Fragment Shader: Jetzt mit uGamma Uniform
             string fSource = "#version 330 core\n" +
                 "in vec4 fColor;\n" +
                 "in vec2 fTexCoord;\n" + 
                 "in float fType;\n" +
                 "out vec4 FragColor;\n" +
                 "uniform sampler2D uTexture;\n" +
+                "uniform float uGamma;\n" + // Die neue Variable von C#
                 "void main() {\n" +
                 "    if (fType >= 2.0) {\n" + 
                 "        // --- LINIE-MODUS (Stippling) ---\n" +
@@ -171,9 +172,9 @@ namespace SummerGUI
                 "        // --- TEXT-MODUS ---\n" +
                 "        vec4 texCol = texture(uTexture, fTexCoord);\n" +
                 "        \n" +
-                "        // Gamma-Korrektur: 1.0 / 1.8 bis 1.0 / 2.2 ist ideal für Text.\n" +
-                "        // Das verhindert, dass helle Schrift auf dunklem Grund 'wegfrisst'.\n" +
-                "        float alpha = pow(max(texCol.r, 0.00001), 1.0 / 1.8);\n" +
+                "        // Nutze uGamma für die Korrektur. 1.0 / uGamma.\n" +
+                "        // max(...) verhindert Fehler bei exakt 0.0.\n" +
+                "        float alpha = pow(max(texCol.r, 0.00001), 1.0 / uGamma);\n" +
                 "        \n" +
                 "        FragColor = vec4(fColor.rgb, fColor.a * alpha);\n" +
                 "    } else {\n" + 
@@ -184,7 +185,24 @@ namespace SummerGUI
                 "}\n";
 
             _uiShader = new GUIShader(vSource, fSource);
+            
+            // Standardwert nach dem Initialisieren setzen (wichtig!)
+            _uiShader.Use();
+            int location = GL.GetUniformLocation(_uiShader.Handle, "uGamma");
+            if (location != -1) GL.Uniform1(location, 1.8f);
+            
             UpdateSize(width, height);
+        }
+
+        public void SetGamma(float gammaValue)
+        {
+            _uiShader.Use();
+            int location = GL.GetUniformLocation(_uiShader.Handle, "uGamma");
+            if (location != -1)
+            {
+                // 1.0 = keine Korrektur, 1.8 = Standard, 1.4 = fettere Schrift
+                GL.Uniform1(location, gammaValue);
+            }
         }
 
         private IntPtr _lastActiveContext = IntPtr.Zero;

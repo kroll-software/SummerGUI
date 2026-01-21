@@ -147,6 +147,11 @@ namespace SummerGUI
 			return (int)MathF.Ceiling(val);
 		}
 
+		public static int Round(this float val)
+		{			
+			return (int)MathF.Round(val);
+		}
+
 		public static int Floor(this float val)
 		{			
 			return (int)MathF.Floor(val);
@@ -178,6 +183,11 @@ namespace SummerGUI
 		{			
 			//return Rectangle.Ceiling(val);
 			return new RectangleF(val.X.Ceil(), val.Y.Ceil(), val.Width.Ceil(), val.Height.Ceil());
+		}
+
+		public static RectangleF Round(this RectangleF val)
+		{						
+			return new RectangleF(val.X.Round(), val.Y.Round(), val.Width.Round(), val.Height.Round());
 		}
 
 		public static RectangleF Floor(this RectangleF val)
