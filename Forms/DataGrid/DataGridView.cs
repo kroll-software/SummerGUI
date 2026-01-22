@@ -1946,7 +1946,7 @@ namespace SummerGUI
 					DataGridColumn col = itm.Tag as DataGridColumn;
 
 					// Sort for this column                    
-					if (col != null && col.AllowSort)
+					if (col != null && col.AllowSort && this.AllowSort)
 					{
 						// TODO:
 						bool bControlPressed = ModifierKeys.ControlPressed;

@@ -26,7 +26,6 @@ namespace SummerGUI
 		{
 			Tools = AddChild (new DataGridToolBar (name + "Toolbar", null));
 			DataGrid = AddChild (new DataGridView (name));
-			DataGrid.AllowSort = true;
 
 			DataGrid.DataLoaded += (sender, e) => EnableControls ();
 			Tools.ActiveDataGrid = DataGrid;
