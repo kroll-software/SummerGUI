@@ -330,6 +330,7 @@ namespace SummerGUI
 		{
 			if (HasData) {
 				SetupScrollBars ();
+				//SelectionManager.SelectRow(RowManager.CurrentRowIndex);	// Neu
 				Invalidate ();
 			}
 		}
@@ -1896,17 +1897,7 @@ namespace SummerGUI
 
 			case MouseControlItemTypes.ColumnHeader:
 				HideTooltip(CellInfo.Empty, position);
-				if (AllowSort) {
-					//DataGridColumn col = ColumnFromPoint (e.X);
-					/***
-					if (col != null && col.AllowSort)
-						this.Cursor = Cursors.Hand;
-					else
-						this.Cursor = Cursors.Default;
-					***/
-				} else {
-					this.Cursor = Cursors.Default;					
-				}
+				this.Cursor = Cursors.Default;
 				break;
 
 			case MouseControlItemTypes.ColumnHeaderBorder:
