@@ -1005,9 +1005,9 @@ namespace SummerGUI
 				
 			if (Dock == Docking.Fill) {				
 				SetBounds (rBounds);	
-			} else {
+			} else {				
 				RectangleF pref = new RectangleF (rBounds.Location, PreferredSize (ctx, rBounds.Size));
-				pref.Intersect (rBounds);
+				pref.Intersect (rBounds);				
 							
 				// ToDo:
 				// Layout this box
