@@ -19,6 +19,7 @@ using KS.Foundation;
 using OpenTK.Graphics.GL;
 using System.ComponentModel.DataAnnotations;
 using System.Collections;
+using System.Net;
 
 //
 // On Linux to use GLFW compiled for Wayland set the environment variable OPENTK_4_USE_WAYLAND=1
@@ -629,8 +630,15 @@ namespace SummerGUI
 			}
 						
 			LowerSleepTime ();
-			Controls.OnKeyDown (e);
+			if (!Controls.OnKeyDown (e))
+			{
+				OnUnhandledKeyDown(e);
+			}
 			//this.LogDebug ("AltPressed: {0}", ModifierKeys.AltPressed);
+		}
+
+		protected virtual void OnUnhandledKeyDown(KeyboardKeyEventArgs e)
+		{			
 		}
 
 		protected override void OnKeyUp (KeyboardKeyEventArgs e)

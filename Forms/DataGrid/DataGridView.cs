@@ -1307,11 +1307,12 @@ namespace SummerGUI
 				ctx.FillRectangle(new SolidBrush(HScrollBar.BackColor), rb);
 			}
 
-			if (RowManager == null || RowManager.RowCount <= 0)
-				return;
+			//if (RowManager == null || RowManager.RowCount <= 0)
+			//	return;
 
 			int startRowIndex = FirstRowOnScreen;
-			int endRowIndex = LastRowOnScreen;
+			//int endRowIndex = LastRowOnScreen;
+			int endRowIndex = startRowIndex + (int)(ScrollBounds.Height / RowManager.RowHeight);
 
 			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
 			using (var clip = new ClipBoundClip (ctx, ClipRect)) {				
@@ -1319,26 +1320,24 @@ namespace SummerGUI
 				{						
 					RowInfo info = RowManager.RowInfoByRowIndex (rowIndex);
 					float top = info.RowTop + VerticalScrollOffset;
-					RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);					
-					if (HighlightSelection && !m_PrintingFlag && !m_IsEditing && SelectionManager.IsRowSelected (rowIndex)) 
+					RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
+					bool isSelected = SelectionManager.IsRowSelected (rowIndex);
+					if (HighlightSelection && !m_PrintingFlag && !m_IsEditing && isSelected) 
 					{
 						if (IsFocused) 
-						{
+						{							
 							ctx.FillRectangle (SelectedRowBrush, R);
 						} 
-						else if (!HideSelection) 
-						{							
+						else if (!HideSelection)
+						{															
 							ctx.FillRectangle (SelectedRowInactiveBrush, R);
-						}
+						}						
 					} 
-					else if (!AlternatingRowColor.IsEmpty && rowIndex % 2 > 0) 
+					
+					if (!AlternatingRowColor.IsEmpty && rowIndex % 2 > 0 && (!isSelected || HideSelection))
 					{
 						ctx.FillRectangle (m_AlternatingRowColorBrush, R);
-					}
-					else 
-					{
-						//ctx.FillRectangle (RowColorBrush, R);
-					}
+					}					
 
 					if (m_RowBorderPen.Width > 0)
 						ctx.DrawLine (m_RowBorderPen, R.Left, R.Bottom, R.Right, R.Bottom);					
@@ -1348,6 +1347,7 @@ namespace SummerGUI
 					Pen invertedPen = new Pen(BackColor);
 
 					RectangleF clientRectangle = ScrollBounds;
+					//float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
 					float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
 					// Vertical Lines
 					float iColStartX = ColumnStartX ();
@@ -1356,17 +1356,20 @@ namespace SummerGUI
 							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
 							float columnDeviderX = iColStartX + colWidth;
 							if (m_RowBorderPen.Width > 0 && columnDeviderX > Left) {
-								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, LastBottomline);
+								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, Bottom);
 							}
 
-							// Selected row							
-							foreach (var rowindex in SelectedRowIndices)
+							// Selected rows
+							if (IsFocused || !HideSelection)
 							{
-								RowInfo info = RowManager.RowInfoByRowIndex (rowindex);
-								float top = info.RowTop + VerticalScrollOffset;
-								RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
-								ctx.DrawLine (invertedPen, columnDeviderX, R.Top, columnDeviderX, R.Bottom);
-							}							
+								foreach (var rowindex in SelectedRowIndices)
+								{
+									RowInfo info = RowManager.RowInfoByRowIndex (rowindex);
+									float top = info.RowTop + VerticalScrollOffset;
+									RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
+									ctx.DrawLine (invertedPen, columnDeviderX, R.Top, columnDeviderX, R.Bottom);
+								}
+							}
 
 							iColStartX += colWidth;
 							if (iColStartX > bounds.Right)
