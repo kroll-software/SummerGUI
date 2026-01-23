@@ -21,7 +21,7 @@ namespace SummerGUI.DataGrid
 
 		string GetValue (int row, int col);
 		int GroupLevel (int row);
-		void ApplySort ();
+		Task ApplySort ();
 		void Clear();
 		void Remove (int index);
 	}
@@ -73,7 +73,7 @@ namespace SummerGUI.DataGrid
 			return 0;
 		}
 
-		public virtual void ApplySort()
+		public virtual async Task ApplySort()
 		{
 		}
 

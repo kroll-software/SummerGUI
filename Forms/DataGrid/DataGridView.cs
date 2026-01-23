@@ -1946,7 +1946,7 @@ namespace SummerGUI
 					DataGridColumn col = itm.Tag as DataGridColumn;
 
 					// Sort for this column                    
-					if (col != null && col.AllowSort && this.AllowSort)
+					if (col != null && col.AllowSort && this.AllowSort)					
 					{
 						// TODO:
 						bool bControlPressed = ModifierKeys.ControlPressed;
@@ -2016,9 +2016,9 @@ namespace SummerGUI
 			**/
 		}
 
-		public virtual void ApplySort()
-		{
-			DataProvider.ApplySort ();
+		public virtual async Task ApplySort()
+		{			
+			await DataProvider.ApplySort ();		
 		}
 
 		protected override void CleanupManagedResources ()
