@@ -1301,19 +1301,18 @@ namespace SummerGUI
 		{
 			base.OnPaintBackground (ctx, bounds);
 
+			if (RowManager == null)
+				return;
+
 			// Linke untere Ecke
 			if (RowHeaders && HScrollBar.Visible)
 			{
 				RectangleF rb = new RectangleF(bounds.Left, bounds.Bottom - HScrollBar.Height, RowHeaderWidth, HScrollBar.Height);
 				ctx.FillRectangle(new SolidBrush(HScrollBar.BackColor), rb);
 			}
-
-			//if (RowManager == null || RowManager.RowCount <= 0)
-			//	return;
-
+			
 			int startRowIndex = FirstRowOnScreen;
-			//int endRowIndex = LastRowOnScreen;
-			int endRowIndex = startRowIndex + (int)(ScrollBounds.Height / RowManager.RowHeight);
+			int endRowIndex = LastRowOnScreen;			
 
 			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
 			using (var clip = new ClipBoundClip (ctx, ClipRect)) {				
@@ -1348,8 +1347,7 @@ namespace SummerGUI
 					Pen invertedPen = new Pen(BackColor);
 
 					RectangleF clientRectangle = ScrollBounds;
-					//float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
-					float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;
+					float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;					
 					// Vertical Lines
 					float iColStartX = ColumnStartX ();
 					foreach (DataGridColumn col in Columns) {
@@ -1357,7 +1355,7 @@ namespace SummerGUI
 							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
 							float columnDeviderX = iColStartX + colWidth;
 							if (m_RowBorderPen.Width > 0 && columnDeviderX > Left) {
-								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, Bottom);
+								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, LastBottomline);
 							}
 
 							// Selected rows

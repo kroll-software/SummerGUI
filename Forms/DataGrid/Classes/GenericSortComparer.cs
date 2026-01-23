@@ -213,4 +213,41 @@ namespace SummerGUI.DataGrid
             return col.Key;
         }
     }
+
+    public class WrappedComparer<T> : IComparer<T>
+	{
+		readonly IComparer<T> m_UserComparer;
+
+		public WrappedComparer(IComparer<T> userComparer)
+		{
+			m_UserComparer = userComparer;
+		}
+
+		public virtual int Compare(T x, T y)
+		{               
+			if (m_UserComparer == null || x.IsDefault() || y.IsDefault())
+				return 0;
+
+			return m_UserComparer.Compare(x, y);
+		}
+	}
+
+	public class ComparisonComparer<TComparison> : IComparer<TComparison>
+	{
+		private readonly Comparison<TComparison> comparison;
+
+		public ComparisonComparer(Func<TComparison, TComparison, int> compare)
+		{
+			if (compare == null)
+			{
+				throw new ArgumentNullException("compare");
+			}
+			comparison = new Comparison<TComparison>(compare);
+		}
+
+		public int Compare(TComparison x, TComparison y)
+		{
+			return comparison(x, y);
+		}
+	}
 }
