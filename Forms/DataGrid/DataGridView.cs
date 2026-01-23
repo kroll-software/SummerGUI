@@ -398,8 +398,11 @@ namespace SummerGUI
 
 			if (!HasData)
 				return;
+
+			float documentWidth = ColumnManager.Columns.Where(c => c.Visible).Sum(c => c.Width);
+
 			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, RowManager.LastRowBottom, RowHeight);
-			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, m_MaxColumnWidth, ScrollBar.ScrollBarWidth);
+			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, documentWidth, ScrollBar.ScrollBarWidth);
 		}
 
 		public override void OnResize ()
@@ -492,6 +495,84 @@ namespace SummerGUI
 		{
 		}
 
+		public void SelectCurrentRow()
+		{		
+			if (!HasData) return;	
+			SelectionManager.SelectNone();
+			int row = RowManager.CurrentRowIndex;
+			if (row < 0)
+				return;
+			SelectionManager.SelectRow(row);
+		}
+
+		public void MoveFirst()
+		{	
+			if (!HasData) return;
+			RowManager.MoveFirst();	
+			SelectCurrentRow();
+			Invalidate ();
+		}
+
+		public void MovePrevious()
+		{
+			if (!HasData) return;
+			RowManager.MovePrevious();	
+			SelectCurrentRow();
+			Invalidate ();
+		}
+
+		public void MoveNext()
+		{
+			if (!HasData) return;
+			RowManager.MoveNext();	
+			SelectCurrentRow();
+			Invalidate ();
+		}		
+
+		public void MoveLast()
+		{
+			if (!HasData) return;
+			RowManager.MoveLast();	
+			SelectCurrentRow();
+			Invalidate ();
+		}
+
+		public bool CanMoveFirst
+		{
+			get
+			{
+				if (!HasData) return false;
+				return RowManager.CanMoveBack;
+			}
+		}
+
+		public bool CanMovePrevious
+		{
+			get
+			{
+				if (!HasData) return false;
+				return RowManager.CanMoveBack;
+			}
+		}
+
+		public bool CanMoveNext
+		{
+			get
+			{
+				if (!HasData) return false;
+				return RowManager.CanMoveForward;
+			}
+		}		
+
+		public bool CanMoveLast
+		{
+			get
+			{
+				if (!HasData) return false;
+				return RowManager.CanMoveForward;
+			}
+		}
+		
 
 		public event EventHandler CurrentRowChanged;
 		private int lastCurrentRow = -1;
@@ -1103,13 +1184,13 @@ namespace SummerGUI
 
 							ctx.DrawLine (HeaderBorder, ColumnDeviderX, RH.Top + 4, ColumnDeviderX, RH.Top + RH.Height - 6);
 
+							// Column-Header: Sort and reorder
+							RectangleF rColumnInside = new RectangleF (col.ColumnHeaderBounds.X + 2, col.ColumnHeaderBounds.Top, col.ColumnHeaderBounds.Width - 4, col.ColumnHeaderBounds.Height);
+							ControlItems.Add (new MouseControlItem (rColumnInside, MouseControlItemTypes.ColumnHeader, col));
+
 							if (col.AllowResize) {
 								// resizing / border
-								ControlItems.Add (new MouseControlItem (new RectangleF (ColumnDeviderX - 2, RT.Top + 4, 4, RT.Height - 8), MouseControlItemTypes.ColumnHeaderBorder, col));
-
-								// reordering
-								RectangleF rColumnInside = new RectangleF (col.ColumnHeaderBounds.X + 2, col.ColumnHeaderBounds.Top, col.ColumnHeaderBounds.Width - 4, col.ColumnHeaderBounds.Height);
-								ControlItems.Add (new MouseControlItem (rColumnInside, MouseControlItemTypes.ColumnHeader, col));
+								ControlItems.Add (new MouseControlItem (new RectangleF (ColumnDeviderX - 2, RT.Top + 4, 4, RT.Height - 8), MouseControlItemTypes.ColumnHeaderBorder, col));								
 							}
 
 							if (col.AllowSort && col.SortDirection != SortDirections.None) {
@@ -1217,7 +1298,7 @@ namespace SummerGUI
 			Brush brush = bHighLight ? Theme.Brushes.White : Theme.Brushes.Base02;
 			float stringWidth = ctx.DrawString(text, Font, brush, RText, sf).Width;			
 			
-			if (CellToolTips && stringWidth > RText.Width)
+			if (CellToolTips && stringWidth > RText.Width && RText.Top > Top + HeadHeight - 2)
 				ControlItems.Add(new MouseControlItem(RText, MouseControlItemTypes.Tooltip, text));
 
 			if (col.AutoMinWidth)

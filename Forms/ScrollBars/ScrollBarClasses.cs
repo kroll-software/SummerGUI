@@ -308,7 +308,9 @@ namespace SummerGUI.Scrolling
 		public static float MinGripSize
 		{
 			get{
-				return ScrollBarWidth * 2f / 3f + 1f;
+				//return ScrollBarWidth * 2f / 3f + 1f;				
+				//return ScrollBarWidth - 2f;
+				return ScrollBarWidth;
 			}
 		}
 

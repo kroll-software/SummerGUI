@@ -19,22 +19,22 @@ namespace SummerGUI
 	public class DataGridEnsemble : Container
 	{
 		public DataGridView DataGrid { get; private set; }
-		public DataGridToolBar Tools { get; private set; }
+		public DataGridToolBar ToolBar { get; private set; }
 
 		public DataGridEnsemble (string name)
 			: base(name)
 		{
-			Tools = AddChild (new DataGridToolBar (name + "Toolbar", null));
+			ToolBar = AddChild (new DataGridToolBar (name + "Toolbar", null));
 			DataGrid = AddChild (new DataGridView (name));
 
 			DataGrid.DataLoaded += (sender, e) => EnableControls ();
-			Tools.ActiveDataGrid = DataGrid;
+			ToolBar.ActiveDataGrid = DataGrid;
 		}
 						
 		public void EnableControls()
 		{
 			CanFocus = DataGrid.HasData;
-			Tools.OnDataLoaded ();
+			ToolBar.OnDataLoaded ();
 		}			
 
 		public override void Focus ()

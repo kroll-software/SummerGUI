@@ -75,15 +75,7 @@ namespace SummerGUI.DataGrid
 
 		public virtual async Task ApplySort()
 		{
-		}
-
-		protected override void CleanupManagedResources ()
-		{
-			SelectionManager.Dispose ();
-			ColumnManager.Dispose ();;
-			RowManager.Dispose ();
-			base.CleanupManagedResources ();
-		}
+		}		
 	}
 }
 

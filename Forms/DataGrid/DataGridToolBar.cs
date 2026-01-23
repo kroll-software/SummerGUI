@@ -77,27 +77,25 @@ namespace SummerGUI.DataGrid
 			
 		void CmdFirst_Click (object sender, EventArgs e)
 		{
-			RowManager.MoveFirst ();
-			ActiveDataGrid.Focus ();
+			ActiveDataGrid.MoveFirst ();			
+			ActiveDataGrid.Focus ();			
 		}			
 
 		void CmdPrev_Fire (object sender, EventArgs e)
 		{
-			RowManager.MovePrevious();
-			ActiveDataGrid.Focus ();
-			Invalidate ();
+			ActiveDataGrid.MovePrevious();
+			ActiveDataGrid.Focus ();			
 		}
 
 		void CmdNext_Fire (object sender, EventArgs e)
 		{
-			RowManager.MoveNext();
-			ActiveDataGrid.Focus ();
-			Invalidate ();
+			ActiveDataGrid.MoveNext();
+			ActiveDataGrid.Focus ();			
 		}
 
 		void CmdLast_Click (object sender, EventArgs e)
 		{
-			RowManager.MoveLast();
+			ActiveDataGrid.MoveLast();
 			ActiveDataGrid.Focus ();
 		}
 
