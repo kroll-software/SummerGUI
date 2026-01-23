@@ -45,6 +45,9 @@ namespace SummerGUI.DataGrid
         protected ConcurrentDictionary<string, string> m_FieldMap;
         protected ConcurrentDictionary<string, PropertyInfo> m_PropertiesTypeCache;
 
+        readonly string m_DefaultSortKey;
+        readonly SortDirections m_DefaultSortDirection;
+
         public void AddFieldMapping(string key, string value)
         {
             // überschreiben statt Exception bei doppeltem Key
@@ -56,6 +59,23 @@ namespace SummerGUI.DataGrid
             m_SortColumns = sortColumns ?? Array.Empty<DataGridColumn>();
             m_FieldMap = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
             m_PropertiesTypeCache = new ConcurrentDictionary<string, PropertyInfo>();
+        }
+
+        public GenericSortComparer(DataGridColumn[] sortColumns, string defaultSortColumnKey, SortDirections defaultSortDirection = SortDirections.Ascending)
+        {
+            m_SortColumns = sortColumns ?? Array.Empty<DataGridColumn>();
+            m_FieldMap = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
+            m_PropertiesTypeCache = new ConcurrentDictionary<string, PropertyInfo>();
+
+            m_DefaultSortKey = string.IsNullOrWhiteSpace(defaultSortColumnKey) ? null : defaultSortColumnKey;
+            m_DefaultSortDirection = defaultSortDirection;
+        }
+
+        protected string MapFieldByKey(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return key;
+            if (m_FieldMap.TryGetValue(key, out var mapped)) return mapped;
+            return key;
         }
 
         object GetPropertyFromObject(T obj, string prop)
@@ -84,96 +104,98 @@ namespace SummerGUI.DataGrid
 
         public override int Compare(T x, T y)
         {
-            // Dein bestehendes IsDefault-Verhalten beibehalten (z.B. behandelt null als Default)
             if (x.IsDefault() || y.IsDefault())
                 return 0;
 
+            // determine active criteria: either columns with a direction, or fallback to default key
+            var activeCols = (m_SortColumns ?? Array.Empty<DataGridColumn>())
+                            .Where(c => c != null && c.AllowSort && c.SortDirection != SortDirections.None)
+                            .ToArray();
+
+            // If no active columns, but we have a default key, build a single pseudo-criterion
+            IEnumerable<(string propertyName, SortDirections direction, DataGridColumn column)> criteria;
+            if (activeCols.Length > 0)
+            {
+                criteria = activeCols.Select(c => (MapField(c), c.SortDirection, c));
+            }
+            else if (!string.IsNullOrEmpty(m_DefaultSortKey))
+            {
+                var propName = MapFieldByKey(m_DefaultSortKey);
+                criteria = new[] { (propName, m_DefaultSortDirection, (DataGridColumn)null) };
+            }
+            else
+            {
+                // no sorting at all
+                return 0;
+            }
+
             int result = 0;
 
-            foreach (var col in m_SortColumns)
+            foreach (var crit in criteria)
             {
-                if (col == null) continue;
-                if (!col.AllowSort || col.SortDirection == SortDirections.None) continue;
-
-                string propertyName = MapField(col);
+                var propertyName = crit.propertyName;
                 object val1 = GetPropertyFromObject(x, propertyName);
                 object val2 = GetPropertyFromObject(y, propertyName);
 
-                // Versuche, deklarierte PropertyType aus dem Cache zu verwenden (robuster als Laufzeit-Type)
-                if (col.ValueType == null)
+                // resolve valueType: first prefer column.ValueType (if available), else PropertyInfo cache, else runtime types
+                Type valueType = null;
+                if (crit.column != null && crit.column.ValueType != null)
+                    valueType = crit.column.ValueType;
+                else if (m_PropertiesTypeCache.TryGetValue(propertyName, out var pinfo) && pinfo != null)
+                    valueType = pinfo.PropertyType;
+                else if (val1 != null)
+                    valueType = val1.GetType();
+                else if (val2 != null)
+                    valueType = val2.GetType();
+
+                if (valueType == null)
                 {
-                    if (m_PropertiesTypeCache.TryGetValue(propertyName, out var info) && info != null)
-                    {
-                        col.ValueType = info.PropertyType;
-                    }
-                    else if (val1 != null)
-                    {
-                        col.ValueType = val1.GetType();
-                    }
-                    else if (val2 != null)
-                    {
-                        col.ValueType = val2.GetType();
-                    }
-                    else
-                    {
-                        // Beide Werte null: dieses Sortierungs-Kriterium überspringen,
-                        // statt sofort 0 zurückzugeben — andere Sortier-Spalten könnten relevant sein.
-                        continue;
-                    }
+                    // both null -> skip this criterion
+                    continue;
                 }
 
-                int iDirection = col.SortDirection == SortDirections.Descending ? -1 : 1;
+                int iDirection = crit.direction == SortDirections.Descending ? -1 : 1;
 
                 try
                 {
-                    // Null-Behandlung: falls beide null -> weiter zur nächsten Spalte.
                     if (val1 == null && val2 == null)
                     {
                         result = 0;
-                        // continue to next column
                     }
                     else if (val1 == null)
                     {
-                        result = -1 * iDirection; // null < not-null
+                        result = -1 * iDirection;
                     }
                     else if (val2 == null)
                     {
-                        result = 1 * iDirection; // not-null > null
+                        result = 1 * iDirection;
                     }
                     else
                     {
-                        // Versuche, einen passenden IComparer zu benutzen
-                        IComparer comp = ComparerTypeCache.GetComparerFromType(col.ValueType);
+                        IComparer comp = ComparerTypeCache.GetComparerFromType(valueType);
                         if (comp != null)
                         {
-                            // IComparer.Compare erwartet object/object - gut hier
                             result = iDirection * comp.Compare(val1, val2);
+                        }
+                        else if (val1 is IComparable ic1)
+                        {
+                            result = iDirection * ic1.CompareTo(val2);
+                        }
+                        else if (val2 is IComparable ic2)
+                        {
+                            result = -iDirection * ic2.CompareTo(val1);
                         }
                         else
                         {
-                            // Fallback: wenn val1 IComparable implementiert, nutze CompareTo
-                            if (val1 is IComparable ic1)
-                            {
-                                result = iDirection * ic1.CompareTo(val2);
-                            }
-                            else if (val2 is IComparable ic2)
-                            {
-                                // inverser Vergleich (nicht ideal, aber besser als 0)
-                                result = -iDirection * ic2.CompareTo(val1);
-                            }
-                            else
-                            {
-                                // Letzter Rückfall: String-Vergleich der ToString-Repr.
-                                result = iDirection * StringComparer.Ordinal.Compare(val1.ToString(), val2.ToString());
-                            }
+                            result = iDirection * StringComparer.Ordinal.Compare(val1.ToString(), val2.ToString());
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Bei Fehlern das Kriterium ignorieren (aber loggen)
-                    result = 0;
+                    // ignore this criterion, log and continue to next
                     ex.LogWarning();
+                    result = 0;
                 }
 
                 if (result != 0)
@@ -188,45 +210,7 @@ namespace SummerGUI.DataGrid
             if (col == null) return null;
             if (m_FieldMap.TryGetValue(col.Key, out var mapped))
                 return mapped;
-            else
-                return col.Key;
-        }
-    }
-
-    public class WrappedComparer<T> : IComparer<T>
-    {
-        readonly IComparer<T> m_UserComparer;
-
-        public WrappedComparer(IComparer<T> userComparer)
-        {
-            m_UserComparer = userComparer;
-        }
-
-        public virtual int Compare(T x, T y)
-        {
-            if (m_UserComparer == null || x.IsDefault() || y.IsDefault())
-                return 0;
-
-            return m_UserComparer.Compare(x, y);
-        }
-    }
-
-    public class ComparisonComparer<TComparison> : IComparer<TComparison>
-    {
-        private readonly Comparison<TComparison> comparison;
-
-        public ComparisonComparer(Func<TComparison, TComparison, int> compare)
-        {
-            if (compare == null)
-            {
-                throw new ArgumentNullException(nameof(compare));
-            }
-            comparison = new Comparison<TComparison>(compare);
-        }
-
-        public int Compare(TComparison x, TComparison y)
-        {
-            return comparison(x, y);
+            return col.Key;
         }
     }
 }
