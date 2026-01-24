@@ -16,6 +16,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 using SummerGUI.Scrolling;
 using SummerGUI.DataGrid;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace SummerGUI
 {
@@ -45,6 +46,8 @@ namespace SummerGUI
 		public IColumnManager ColumnManager { get; private set; }
 		public ISelectionManager SelectionManager { get; private set; } 
 		public IDataProvider DataProvider { get; private set; }
+
+		public bool AutoColumnWidth  { get; set; }
 
 		public DataGridView (string name)
 			: base(name, Docking.Fill, new DataGridViewWidgetStyle())
@@ -368,11 +371,11 @@ namespace SummerGUI
 			//ResetCachedLayoutCalled++;
 			//Console.WriteLine ("ResetCachedLayout() # {0} on {1}", ResetCachedLayoutCalled.ToString("n0"), this.Name);
 			
-			if (m_Font != null)
-				RowHeight = m_Font.TextBoxHeight;
+			if (m_Font != null)				
+				RowHeight = m_Font.Height + CellPadding.Height;
 
-			if (ColumnHeaders)
-				m_HeaderHeight = RowHeight;
+			if (ColumnHeaders && m_HeaderFont != null)
+				m_HeaderHeight = m_HeaderFont.Height + CellPadding.Height;
 			else
 				m_HeaderHeight = 0;			
 
@@ -1150,7 +1153,7 @@ namespace SummerGUI
 			if (font == null)
 				font = Font;
 
-			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Bounds.Y, Bounds.Width - RowHeaderWidth, HeadHeight);
+			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Bounds.Y, Bounds.Width - RowHeaderWidth, m_HeaderHeight);
 
 			using (var clip = new ClipBoundClip (ctx, ClipRect)) 
 			using (SolidBrush ColumnTextBrush = new SolidBrush(HeaderForeground.Color))
@@ -1172,6 +1175,7 @@ namespace SummerGUI
 						col.ColumnHeaderBounds = new RectangleF (iColStart, RH.Top, colWidth, RH.Height);
 
 						RectangleF RT = new RectangleF (iColStart + CellPadding.Left, RH.Top, colWidth - CellPadding.Right - rightIndent - 1, RH.Height);
+						RT.Offset(0, 1f);
 						if (RT.Right > Left && RT.Left < Right) {
 							float stringWidth = ctx.DrawString (col.Caption, font, ColumnTextBrush, RT, FontFormat.DefaultSingleLine).Width;
 						}
@@ -1202,7 +1206,7 @@ namespace SummerGUI
 								float triHeight = 6f * ScaleFactor;
 								float triWidth = 10f * ScaleFactor;
 
-								float iTop = col.ColumnHeaderBounds.Top + (col.ColumnHeaderBounds.Height / 2) - (triHeight / 2) - 1;
+								float iTop = col.ColumnHeaderBounds.Top + (col.ColumnHeaderBounds.Height / 2) - (triHeight / 2);
 								float iBottom = iTop + triHeight;
 								float iLeft = col.ColumnHeaderBounds.Right - triWidth - triHeight;
 								float iRight = iLeft + triWidth;
@@ -1296,13 +1300,13 @@ namespace SummerGUI
 			}
 						
 			Brush brush = bHighLight ? Theme.Brushes.White : Theme.Brushes.Base02;
-			float stringWidth = ctx.DrawString(text, Font, brush, RText, sf).Width;			
+			float stringWidth = ctx.DrawString(text, Font, brush, RText, sf).Width;					
 			
 			if (CellToolTips && stringWidth > RText.Width && RText.Top > Top + HeadHeight - 2)
 				ControlItems.Add(new MouseControlItem(RText, MouseControlItemTypes.Tooltip, text));
 
 			if (col.AutoMinWidth)
-				col.DesiredWidth = Math.Max(col.DesiredWidth, TextIndent + 8 + stringWidth);
+				col.m_DesiredWidth = Math.Max(col.m_DesiredWidth, TextIndent + 8 + stringWidth);
 		}
 
 		private bool m_PrintingFlag = false;
@@ -1482,7 +1486,7 @@ namespace SummerGUI
 
 				// HeaderLine
 				ctx.DrawLine (HeaderBorder, Bounds.Left, Top + HeadHeight, Bounds.Right, Top + HeadHeight);
-			}			
+			}
 
 			// overridable action
 			if (ColumnHeaders) {
@@ -1491,6 +1495,9 @@ namespace SummerGUI
 
 			if (RowManager == null || RowManager.RowCount <= 0 || Columns == null && Columns.Count <= 0)
 				return;
+
+			if (AutoColumnWidth)
+				ColumnManager.Columns.ForEach(c => c.m_DesiredWidth = 0);
 
 			int startRowIndex = FirstRowOnScreen;
 			int endRowIndex = LastRowOnScreen;
@@ -1519,24 +1526,70 @@ namespace SummerGUI
 						{
 							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
 							float columnDeviderX = iColStartX + colWidth;
+							string text = null;
 							if (columnDeviderX > Left) {
 								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
-								//RText.Offset(0, -1);
-								string text = DataProvider.GetValue (rowIndex, iCol);								
+								text = DataProvider.GetValue (rowIndex, iCol);
 								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
-							}	
+							}
+
+							if (AutoColumnWidth && col.SizeMode == DataGridColumn.SizeModes.Fixed)
+							{
+								if (text == null)
+									text = DataProvider.GetValue (rowIndex, iCol);
+
+								float stringWidth = Font.Measure(text).Width;
+								if (stringWidth > col.m_DesiredWidth)
+									col.m_DesiredWidth = stringWidth;
+							}
 
 							iColStartX += colWidth;
-							if (iColStartX > bounds.Right)
+							if (iColStartX > bounds.Right && !AutoColumnWidth)
 								break;
 						}
 						iCol++;
 					}
 				}
-			}
+			}			
 
 			if (m_MaxColumnWidth != oldMaxColumnWidth) {
 				SetupScrollBars ();
+			}
+		}
+
+        public override void OnAfterLayout(IGUIContext ctx, RectangleF bounds)
+        {
+			if (!IsLayoutSuspended && AutoColumnWidth) {
+				OnAutoColumnResize();
+			}
+
+            base.OnAfterLayout(ctx, bounds);
+        }
+
+		protected virtual void OnAutoColumnResize()
+		{
+			float fixedWidth = 0;
+			int fillColumnIndex = -1;
+
+			int idx = 0;
+			foreach (var c in ColumnManager.Columns)
+			{
+				if (c.Visible && c.SizeMode == DataGridColumn.SizeModes.Fixed && c.DesiredWidth > 0)
+				{
+					c.Width = c.DesiredWidth + CellPadding.Width;
+					fixedWidth += c.Width;
+				} 
+				else if (c.Visible && c.SizeMode == DataGridColumn.SizeModes.Fill)
+				{
+					fillColumnIndex = idx;
+				}
+				idx++;
+			}			
+						
+			float restWidth = this.ScrollBounds.Width - fixedWidth;
+			if (fillColumnIndex >= 0)
+			{
+				ColumnManager.Columns[fillColumnIndex].Width = restWidth;
 			}
 		}
 
@@ -1666,7 +1719,7 @@ namespace SummerGUI
 					RowManager.MoveFirst ();
 				} else {
 					HScrollBar.Value = 0;
-					bSeekColumn = true;
+					bSeekColumn = true;					
 				}
 				bSeekRow = true;
 				bEnsureVisible = true;
@@ -1678,7 +1731,7 @@ namespace SummerGUI
 					RowManager.MoveLast ();
 				} else {
 					HScrollBar.Value = HScrollBar.Maximum;
-					bSeekColumn = true;
+					bSeekColumn = true;					
 				}
 				bSeekRow = true;
 				bEnsureVisible = true;
@@ -1756,7 +1809,7 @@ namespace SummerGUI
 		{			
 			base.OnMouseDown (e);
 
-			if (!HasData || RowManager.RowCount == 0)
+			if (!HasData)
 				return;
 
 			MouseX = e.X;
@@ -1871,8 +1924,8 @@ namespace SummerGUI
 				float NewWidth = m_ColumnResizingWidthStart + e.X - m_ColumnResizingXStart - ScrollOffsetX;
 				if (NewWidth > m_ColumnResizingColumn.MinWidth)
 				{
-					if (m_ColumnResizingColumn.AutoMinWidth && NewWidth <= m_ColumnResizingColumn.DesiredWidth)
-						NewWidth = m_ColumnResizingColumn.DesiredWidth;
+					if (m_ColumnResizingColumn.AutoMinWidth && NewWidth <= m_ColumnResizingColumn.m_DesiredWidth)
+						NewWidth = m_ColumnResizingColumn.m_DesiredWidth;
 
 					//m_ColumnResizingColumn.Width = NewWidth;
 					m_ColumnResizingColumn.SetWidth(NewWidth, ScrollBounds.Width, Columns);

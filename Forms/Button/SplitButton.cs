@@ -30,7 +30,7 @@ namespace SummerGUI
 		public SplitButton (string name, string text, char icon, IWidgetStyle style)
 			: base(name, text, icon, style)
 		{
-			Padding = new Padding (10, 4, 28, 4);
+			Padding = new Padding (4, 4, 18, 4);
 		}
 
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)

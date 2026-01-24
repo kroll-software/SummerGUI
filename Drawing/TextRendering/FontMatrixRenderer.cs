@@ -72,13 +72,14 @@ namespace SummerGUI
             var positions = buffer.GlyphPositions;
 
             float accumWidth = 0;
-            for (int i = 0; i < positions.Length; i++) accumWidth += positions[i].XAdvance / 64.0f;
-            totalWidth = (int)MathF.Ceiling(accumWidth);
+            for (int i = 0; i < positions.Length; i++) accumWidth += positions[i].XAdvance / 64.0f;            
+            totalWidth = (int)MathF.Ceiling(accumWidth) + 6;
+            
+            float curX = 0;            
 
             byte[] matrix = new byte[totalWidth * totalHeight];
             fixed (byte* pMat = matrix)
-            {
-                float curX = 0;
+            {                
                 for (int i = 0; i < infos.Length; i++)
                 {
                     FT_Load_Glyph(m_Face, infos[i].Codepoint, FT_LOAD.FT_LOAD_FORCE_AUTOHINT);  // Vorsicht, hier besser
@@ -89,8 +90,9 @@ namespace SummerGUI
                     int rows = (int)slot->bitmap.rows;
                     int cols = (int)slot->bitmap.width;
                     
+                    //int topOff = (int)(this.Ascender - slot->bitmap_top + positions[i].YOffset);
                     int topOff = (int)(this.Ascender - slot->bitmap_top);
-                    int startX = (int)Math.Round(curX + slot->bitmap_left);
+                    int startX = (int)Math.Ceiling(curX + slot->bitmap_left);
 
                     for (int y = 0; y < rows; y++)
                     {
@@ -103,9 +105,10 @@ namespace SummerGUI
                             if (val > *pTarget) *pTarget = val;
                         }
                     }
-                    curX += positions[i].XAdvance / 64.0f;
+                    curX += positions[i].XAdvance / 64.0f;                    
+                    //curX += (int)slot->advance.x / 64.0f;
                 }
-            }
+            }            
             return matrix;
         }
 

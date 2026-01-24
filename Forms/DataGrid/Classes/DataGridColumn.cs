@@ -165,6 +165,12 @@ namespace SummerGUI.DataGrid
 		
 	public class DataGridColumn : FoundationItemText, IComparable<DataGridColumn>
 	{
+		public enum SizeModes
+		{
+			Fixed,
+			Fill,
+		}
+
 		public DataGridColumn()
 			: base()
 		{
@@ -300,6 +306,9 @@ namespace SummerGUI.DataGrid
 			info.AddValue("AllowNull", m_AllowNull);
 
 			info.AddValue("ValueType", ValueType, typeof(Type));
+			
+			info.AddValue("SizeMode", SizeMode, typeof(SizeModes));
+			
 
 			//if (context.State == StreamingContextStates.Other)
 			//{
@@ -380,6 +389,10 @@ namespace SummerGUI.DataGrid
 
 				case "SortDirection":
 					m_SortDirection = (SortDirections)entry.Value;
+					break;
+
+				case "SizeMode":
+					m_SizeMode = (SizeModes)entry.Value;
 					break;
 
 				case "AutoMinWidth":
@@ -749,8 +762,31 @@ namespace SummerGUI.DataGrid
 				IncreaseVersion ();
 			}
 		}        
+
+		public SizeModes m_SizeMode = SizeModes.Fixed;
+		public SizeModes SizeMode
+		{
+			get
+			{
+				return m_SizeMode;
+			}
+			set
+			{
+				m_SizeMode = value;
+				IncreaseVersion ();
+			}
+
+		}
 			
-		internal float DesiredWidth = 0;
+		internal float m_DesiredWidth = 0;
+		public float DesiredWidth
+		{
+			get
+			{
+				return m_DesiredWidth;
+			}
+		}
+
 		protected int GetValueListHashCode()
 		{
 			return (17).CombineHash(m_ValueList);
@@ -843,6 +879,7 @@ namespace SummerGUI.DataGrid
 			col.m_AllowNull = m_AllowNull;
 			col.ValueType = ValueType;
 			col.m_DefaultValue = m_DefaultValue;
+			col.m_SizeMode = m_SizeMode;
 
 			return col;
 		}        
