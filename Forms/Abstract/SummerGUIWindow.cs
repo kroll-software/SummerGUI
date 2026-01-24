@@ -201,7 +201,7 @@ namespace SummerGUI
 			
 			Controls = new RootContainer (this);
 			DpiScaling = new DpiScalingAutomat (this);			
-			InvalidateMeter = new FramePerformanceMeter(5);			
+			InvalidateMeter = new FramePerformanceMeter(5);
 
 			this.ParentWindow = parent;
 			if (ParentWindow != null)

@@ -207,14 +207,33 @@ namespace SummerGUI
 			base.SetBounds (x, y, Math.Max(width, dst.Width + Padding.Width + borderX2), Math.Max(height, dst.Height + Padding.Height + borderX2));
 		}
 
-		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
+		public override void OnPaint(IGUIContext ctx, RectangleF bounds)
 		{
-			base.OnPaint (ctx, bounds);		
+			base.OnPaint(ctx, bounds);     
 
 			if (Image != null) {
-				RectangleF dst = DestRect (bounds);
+				RectangleF dst = DestRect(bounds);
 				Image.BlendColor = Style.ForeColorPen.Color;
-				Image.Paint (ctx, dst);
+
+				// Bestimme, ob wir Kacheln wollen
+				bool isTiled = SizeMode == ImageSizeModes.TileAll || 
+							SizeMode == ImageSizeModes.TileHorizontal || 
+							SizeMode == ImageSizeModes.TileVertical;
+
+				RectangleF uv = new RectangleF(0, 0, 1, 1);
+
+				if (isTiled) {
+					// Berechne UVs basierend auf dem Verhältnis von Fläche zu Bildgröße
+					float uvW = (SizeMode == ImageSizeModes.TileAll || SizeMode == ImageSizeModes.TileHorizontal) 
+								? dst.Width / (float)Image.Width : 1.0f;
+					float uvH = (SizeMode == ImageSizeModes.TileAll || SizeMode == ImageSizeModes.TileVertical) 
+								? dst.Height / (float)Image.Height : 1.0f;
+					
+					uv = new RectangleF(0, 0, uvW, uvH);
+				}
+
+				// Jetzt die Paint-Methode mit den berechneten Werten aufrufen
+				Image.Paint(ctx, dst, uv, isTiled);
 			}
 		}
 

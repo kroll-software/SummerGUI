@@ -63,7 +63,7 @@ namespace SummerGUI
 		// System.Drawing.Imaging.PixelFormat PixFormat wird nicht mehr benötigt
 
 		// FromFile lädt das Bild und ruft dann die interne Ladefunktion auf
-		public static TextureImage FromFile(string filePath, IGUIContext ctx, string key = null, Size size = default(Size))
+		public static TextureImage FromFile(string filePath, IGUIContext ctx = null, string key = null, Size size = default(Size))
 		{
 			if (String.IsNullOrEmpty (filePath))
 				throw new ArgumentException ("filePath must not be null.");
@@ -154,20 +154,22 @@ namespace SummerGUI
 			return id;
 		}
 
-		public void Paint(IGUIContext ctx, RectangleF dest)
+		public void Paint(IGUIContext ctx, RectangleF dest, RectangleF uv = default, bool tile = false)
 		{
 			if (IsDisposed || TextureID <= 0) return;
 
-			// Farbe berechnen (Opacity & BlendColor)
 			Color finalColor = (BlendColor != Color.Empty) ? BlendColor : Color.White;
 			if (Opacity < 1.0f)
 			{
-				finalColor = Color.FromArgb((int)(finalColor.A * Opacity), finalColor.R, finalColor.G, finalColor.B);				
+				finalColor = Color.FromArgb((int)(finalColor.A * Opacity), finalColor.R, finalColor.G, finalColor.B);               
 			}
 
-			// WICHTIG: Dein Batcher muss prüfen, ob die TextureID sich ändert.
-			// Wenn ja -> Flush().
-			ctx.Batcher.AddImage(TextureID, dest, finalColor);
+
+			if (tile)
+				ctx.Batcher.AddTiledImage(TextureID, dest, finalColor, uv);
+			else
+				// Wir reichen die UVs an den Batcher weiter
+				ctx.Batcher.AddImage(TextureID, dest, finalColor, uv);			
 		}
 
 		public void Unload()

@@ -14,8 +14,26 @@ using KS.Foundation;
 
 namespace SummerGUI
 {		
+	public class BackgroundImageSettings
+	{
+		public TextureImage Image { get; set; }
+		public ImageSizeModes SizeMode { get; set; } = ImageSizeModes.None;
+		public Alignment HAlign { get; set; } = Alignment.Center;
+		public Alignment VAlign { get; set; } = Alignment.Center;
+		public Padding Padding { get; set; } = Padding.Empty;
+		public float ScaleFactor { get; set; } = 1.0f;
+
+		// Optional: Ein Konstruktor für schnelles Zuweisen
+		public BackgroundImageSettings(TextureImage image)
+		{
+			Image = image;
+		}
+	}
+
 	public abstract class Container : Widget
 	{		
+		public BackgroundImageSettings BackgroundImage { get; set; }
+
 		protected Container (string name) : this(name, Docking.None, null) {}
 		protected Container (string name, Docking dock, IWidgetStyle style)
 			: base(name, dock, style)
@@ -396,7 +414,135 @@ namespace SummerGUI
 			base.OnUpdateTheme (ctx);
 			foreach (Widget c in Children)
 				c.OnUpdateTheme (ctx);
-		}			
+		}
+
+		protected RectangleF GetBackgroundDestRect(RectangleF bounds)
+		{           
+			if (BackgroundImage == null || BackgroundImage.Image == null || BackgroundImage.Image.Width <= 0 || BackgroundImage.Image.Height <= 0)
+				return RectangleF.Empty;           
+
+			// 1. Canvas berechnen: Bounds minus Padding und Border
+			// Ich nehme an, Style.Border und Padding sind in der Basisklasse/Context verfügbar
+			float border = Style.Border;
+			float borderX2 = border * 2f;
+
+			RectangleF canvas = new RectangleF (
+				bounds.Left + Padding.Left + BackgroundImage.Padding.Left + border, 
+				bounds.Top + Padding.Top + BackgroundImage.Padding.Top + border, 
+				bounds.Width - Padding.Width - BackgroundImage.Padding.Width - borderX2, 
+				bounds.Height - Padding.Height - BackgroundImage.Padding.Height - borderX2
+			);
+
+			if (canvas.Width <= 0 || canvas.Height <= 0)
+				return RectangleF.Empty;
+
+			float imgW = (float)BackgroundImage.Image.Width;
+			float imgH = (float)BackgroundImage.Image.Height;
+			
+			float destW = imgW;
+			float destH = imgH;			
+			float zoom = (BackgroundImage.ScaleFactor <= 0) ? 1.0f : BackgroundImage.ScaleFactor;
+
+			// 2. Größe basierend auf BackgroundImageSizeMode
+			switch (BackgroundImage.SizeMode) 
+			{
+				case ImageSizeModes.ShrinkToFitHorizontal:
+					if (imgW > canvas.Width) {
+						zoom = canvas.Width / imgW;
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					} 
+					break;
+				case ImageSizeModes.ShrinkToFitVertical:
+					if (imgH > canvas.Height) {
+						zoom = canvas.Height / imgH;
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					}
+					break;
+				case ImageSizeModes.ShrinkToFit:
+					if (imgW > canvas.Width || imgH > canvas.Height) {
+						zoom = Math.Min(canvas.Width / imgW, canvas.Height / imgH);
+						destW = imgW * zoom;
+						destH = imgH * zoom;
+					}
+					break;
+				case ImageSizeModes.AlwaysFit:
+					zoom = Math.Min(canvas.Width / imgW, canvas.Height / imgH);
+					destW = imgW * zoom;
+					destH = imgH * zoom;            
+					break;
+				case ImageSizeModes.Stretch:
+					destW = canvas.Width;
+					destH = canvas.Height;
+					break;
+				case ImageSizeModes.TileHorizontal: destW = canvas.Width; break;
+				case ImageSizeModes.TileVertical:   destH = canvas.Height; break;
+				case ImageSizeModes.TileAll:
+					destW = canvas.Width;
+					destH = canvas.Height;
+					break;
+				case ImageSizeModes.None:
+				case ImageSizeModes.AutoSize:
+				default:
+					// Bleibt Originalgröße
+					break;
+			}
+
+			// 3. Alignment berechnen
+			float destX = canvas.X; 
+			float destY = canvas.Y;
+
+			if (BackgroundImage.HAlign == Alignment.Center)
+				destX += Math.Max(0, (canvas.Width - destW) / 2f);
+			else if (BackgroundImage.HAlign == Alignment.Far)
+				destX += canvas.Width - destW;
+
+			if (BackgroundImage.VAlign == Alignment.Center)
+				destY += Math.Max(0, (canvas.Height - destH) / 2f);
+			else if (BackgroundImage.VAlign == Alignment.Far)
+				destY += canvas.Height - destH;
+
+			return new RectangleF(destX, destY, destW, destH);
+		}
+
+        public override void OnPaintBackground(IGUIContext ctx, RectangleF bounds)
+		{
+			// Erst den Standard-Hintergrund (Farbe) zeichnen
+			base.OnPaintBackground(ctx, bounds);
+
+			if (BackgroundImage?.Image != null)
+			{
+				//RectangleF uvRect = new RectangleF(0, 0, 1, 1);
+
+				RectangleF destRect = GetBackgroundDestRect(bounds);
+				if (destRect.Width > 0 && destRect.Height > 0)
+				{
+					// Prüfen, ob wir kacheln müssen
+					if (BackgroundImage.SizeMode == ImageSizeModes.TileAll || 
+						BackgroundImage.SizeMode == ImageSizeModes.TileHorizontal || 
+						BackgroundImage.SizeMode == ImageSizeModes.TileVertical)
+					{
+						// Falls dein IGUIContext eine Tile-Funktion hat, nutze diese.
+						// Ansonsten hier ein generischer Ansatz über UV-Mapping:
+						float uvW = (BackgroundImage.SizeMode == ImageSizeModes.TileHorizontal || BackgroundImage.SizeMode == ImageSizeModes.TileAll) 
+									? destRect.Width / BackgroundImage.Image.Width : 1.0f;
+						float uvH = (BackgroundImage.SizeMode == ImageSizeModes.TileVertical || BackgroundImage.SizeMode == ImageSizeModes.TileAll) 
+									? destRect.Height / BackgroundImage.Image.Height : 1.0f;
+						
+						RectangleF uvRect = new RectangleF(0, 0, uvW, uvH);
+						
+						//BackgroundImage.Image.Paint (ctx, destRect);
+						BackgroundImage.Image.Paint(ctx, destRect, uvRect, tile: true);
+					}
+					else
+					{
+						// Normales Zeichnen (Stretch oder Aligned)
+						BackgroundImage.Image.Paint (ctx, destRect);
+					}
+				}
+			}
+		}
 
 		protected override void CleanupManagedResources ()
 		{
@@ -410,7 +556,18 @@ namespace SummerGUI
 				Children.Parent = null;
 			}
 			base.CleanupManagedResources();
-		}			
+		}
+
+        protected override void CleanupUnmanagedResources()
+        {
+			if (BackgroundImage != null && BackgroundImage.Image != null)
+			{
+				BackgroundImage.Image.Dispose();
+				BackgroundImage.Image = null;
+				BackgroundImage = null;
+			}
+            base.CleanupUnmanagedResources();
+        }
 	}		
 }
 

@@ -104,7 +104,7 @@ namespace SummerGUI
             byte[] white = new byte[] { 255, 255, 255, 255 };
             whiteTextureId = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, whiteTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, white);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, white);            
         }
 
 
@@ -273,7 +273,7 @@ namespace SummerGUI
             if (_uiShader != null) 
             {
                 _uiShader.Use(); 
-            }
+            }            
             
             // 6. Textur-Reset            
             GL.ActiveTexture(TextureUnit.Texture0);
@@ -687,6 +687,36 @@ namespace SummerGUI
             AddVertex(p4, uv4, color);
         }
 
+        public void AddTiledImage(int textureId, RectangleF bounds, Color4 color, RectangleF uv = default)
+        {
+            // 1. Alles bisherige rendern, bevor wir am State drehen
+            Flush();
+
+            // 2. Aktuelle Parameter sichern (optional, aber sauber)
+            int originalWrapS;
+            GL.GetTexParameter(TextureTarget.Texture2D, GetTextureParameter.TextureWrapS, out originalWrapS);
+            
+            // 3. Neue Parameter setzen
+            int newWrapMode = (int)TextureWrapMode.Repeat;
+            GL.BindTexture(TextureTarget.Texture2D, textureId);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, newWrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, newWrapMode);
+
+            //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);            
+
+            // 4. Zeichnen (Hier dein VBO-Call oder Buffer-Fill)
+            // Beispiel: Zeichne ein Rechteck mit UV-Koordinaten > 1.0 für Tiling
+            AddImage(textureId, bounds, color, uv);
+
+            // 5. Wieder flushen, damit das Gezeichnete die Tiling-Parameter nutzt
+            Flush();
+
+            // 6. Alten Zustand wiederherstellen
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, originalWrapS);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, originalWrapS);
+        }
+
         private GLStateBackup CaptureState()
         {
             GLStateBackup s = new GLStateBackup();
@@ -765,7 +795,8 @@ namespace SummerGUI
             if (currentTexture != -1)            
             {
                 GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2D, currentTexture);
+                GL.BindTexture(TextureTarget.Texture2D, currentTexture);                
+
                 _uiShader.SetInt("uTexture", 0);
                 _uiShader.SetBool("uUseTexture", true);
             }

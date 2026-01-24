@@ -6,7 +6,7 @@ using KS.Foundation;
 namespace SummerGUI
 {
 	public class Panel : Container
-	{
+	{		
 		public Panel (string name) : this(name, Docking.None, null) {}
 		public Panel (string name, Docking dock) : this(name, dock, null) {}
 		public Panel (string name, Docking dock, IWidgetStyle style)
@@ -81,8 +81,7 @@ namespace SummerGUI
 			}
 
 			return CachedPreferredSize;
-		}
-
+		}        
 	}
 }
 
