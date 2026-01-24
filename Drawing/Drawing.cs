@@ -96,6 +96,9 @@ namespace SummerGUI
 
 		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
+			if (r.Width < 0 || r.Height < 0)
+				return;
+
 			switch (brush.Direction) 
 			{
 			case GradientDirections.Horizontal:
@@ -186,7 +189,108 @@ namespace SummerGUI
 			FillRectangle(ctx, brush, new RectangleF(x, y, width, height));
 		}
 
-		// *** DrawRectangle		
+		// *** Rounded Rectangles ***
+
+		public static void FillRoundedRectangle(this IGUIContext ctx, Brush brush, RectangleF r, float radius)
+		{						
+			if (brush as SolidBrush != null)
+				FillRoundedRectangle (ctx, brush as SolidBrush, r, radius);
+			else if (brush as LinearGradientBrush != null)
+				FillRoundedRectangle (ctx, brush as LinearGradientBrush, r, radius);
+			//else if (brush as HatchBrush != null)
+			//	FillRoundedRectangle (ctx, brush as HatchBrush, r);			
+		}
+
+		public static void FillRoundedRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r, float radius)
+		{						
+			if (r.Width < 0 || r.Height < 0)
+				return;
+
+			ctx.Batcher.AddRoundedRectangle(r, brush.Color, radius);
+		}
+
+		public static void FillRoundedRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{
+			if (r.Width < 0 || r.Height < 0)
+				return;
+
+			switch (brush.Direction) 
+			{
+			case GradientDirections.Horizontal:
+				FillRoundedRectangleHorizontal (ctx, brush, r, radius);
+				break;
+
+			case GradientDirections.Vertical:
+				FillRoundedRectangleVertical (ctx, brush, r, radius);
+				break;
+
+			case GradientDirections.TopLeft:
+				FillRoundedRectangleTopLeft (ctx, brush, r, radius);
+				break;
+
+			case GradientDirections.ForwardDiagonal:
+				FillRoundedRectangleForwardDiagonal (ctx, brush, r, radius);
+				break;
+
+			case GradientDirections.BackwardDiagonal:
+				FillRoundedRectangleBackwardDiagonal (ctx, brush, r, radius);
+				break;							
+			}
+		}
+		
+		private static void FillRoundedRectangleHorizontal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{
+			// Wir definieren die Farben für den horizontalen Verlauf:
+			// Links (Top & Bottom) = brush.Color
+			// Rechts (Top & Bottom) = brush.GradientColor
+			
+			ctx.Batcher.AddRoundedRectangleGradient(
+				r, 
+				brush.Color,          // Top-Left
+				brush.GradientColor,  // Top-Right
+				brush.GradientColor,  // Bottom-Right
+				brush.Color,           // Bottom-Left
+				radius
+			);
+		}
+			
+		private static void FillRoundedRectangleVertical(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{
+			ctx.Batcher.AddRoundedRectangleGradient(r, 
+				brush.Color,          // TL
+				brush.Color,          // TR
+				brush.GradientColor,  // BR
+				brush.GradientColor, radius); // BL
+		}
+
+		private static void FillRoundedRectangleTopLeft(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{   
+			ctx.Batcher.AddRoundedRectangleGradient(r, 
+				brush.GradientColor,  // TL (Anders)
+				brush.Color,          // TR
+				brush.Color,          // BR
+				brush.Color, radius);         // BL
+		}
+
+		private static void FillRoundedRectangleForwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{
+			ctx.Batcher.AddRoundedRectangleGradient(r, 
+				brush.GradientColor,  // TL
+				brush.GradientColor,  // TR
+				brush.GradientColor,  // BR
+				brush.Color, radius);         // BL (Anders)
+		}
+
+		private static void FillRoundedRectangleBackwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
+		{	
+			ctx.Batcher.AddRoundedRectangleGradient(r, 
+				brush.Color,          // TL (Anders)
+				brush.GradientColor,  // TR
+				brush.GradientColor,  // BR
+				brush.GradientColor, radius); // BL
+		}
+
+		// *** DrawRectangle
 
 		public static void DrawRectangle(this IGUIContext ctx, Pen pen, float x, float y, float width, float height)
 		{			
@@ -208,6 +312,11 @@ namespace SummerGUI
 			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Y, w, r.Height), pen.Color);
 			// Rechts
 			ctx.Batcher.AddRectangle(new RectangleF(r.Right - w, r.Y, w, r.Height), pen.Color);		
+		}
+
+		public static void DrawRoundedRectangle(this IGUIContext ctx, Pen pen, RectangleF r, float radius)
+		{
+			ctx.Batcher.AddRoundedRectangleOutline(r, pen.Color, pen.Width, radius);
 		}
 
 

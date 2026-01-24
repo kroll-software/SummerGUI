@@ -420,26 +420,7 @@ namespace SummerGUI
 
         public void AddRectangle(RectangleF rect, Color4 color)
         {
-            DrawCount++;
-
-            if (vertexCount + 4 >= MAX_VERTICES) 
-                Flush();
-
-            SetWhiteTexture();
-
-            uint startIdx = (uint)vertexCount;
-
-            vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Left, rect.Top), Color = color, TexCoord = Vector2.Zero };
-            vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Right, rect.Top), Color = color, TexCoord = Vector2.Zero };
-            vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Right, rect.Bottom), Color = color, TexCoord = Vector2.Zero };
-            vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Left, rect.Bottom), Color = color, TexCoord = Vector2.Zero };
-
-            indexArray[indexCount++] = startIdx + 0;
-            indexArray[indexCount++] = startIdx + 1;
-            indexArray[indexCount++] = startIdx + 2;
-            indexArray[indexCount++] = startIdx + 2;
-            indexArray[indexCount++] = startIdx + 3;
-            indexArray[indexCount++] = startIdx + 0;
+            AddRectangle(rect, color, color, color, color);
         }
 
         public void AddRectangle(RectangleF rect, Color4 colorTL, Color4 colorTR, Color4 colorBR, Color4 colorBL)
@@ -461,6 +442,213 @@ namespace SummerGUI
             indexArray[indexCount++] = startIdx + 2;
             indexArray[indexCount++] = startIdx + 3;
             indexArray[indexCount++] = startIdx + 0;
+        }
+
+        public void AddRoundedRectangle(RectangleF rect, Color4 color, float radius, int segments = 8)
+        {            
+            // Sicherheitscheck: Radius darf nicht größer als die halbe Seite sein
+            radius = Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f);
+            
+            if (radius <= 0) {
+                AddRectangle(rect, color, color, color, color);
+                return;
+            }            
+
+            // Wir brauchen (segments + 1) * 4 Vertices
+            int requiredVertices = (segments + 1) * 4;
+            if (vertexCount + requiredVertices >= MAX_VERTICES) Flush();
+            
+            SetWhiteTexture();
+            uint startIdx = (uint)vertexCount;
+
+            // Hilfsfunktion zum Hinzufügen der Ecken-Punkte
+            // corners: 0=TopRight, 1=BottomRight, 2=BottomLeft, 3=TopLeft
+            AddCorner(new Vector2(rect.Right - radius, rect.Top + radius), radius, 270, 360, segments, color); // TR
+            AddCorner(new Vector2(rect.Right - radius, rect.Bottom - radius), radius, 0, 90, segments, color);   // BR
+            AddCorner(new Vector2(rect.Left + radius, rect.Bottom - radius), radius, 90, 180, segments, color);  // BL
+            AddCorner(new Vector2(rect.Left + radius, rect.Top + radius), radius, 180, 270, segments, color); // TL
+
+            // Indexing: Triangle Fan vom ersten Punkt aus oder Center-Punkt
+            // Einfachheitshalber als Triangle List (Center-Punkt Methode für sauberes Mesh)
+            // Hier nutzen wir einen "Center-Vertex" für den Fan-Stil oder bauen Streifen:
+            for (int i = 1; i < requiredVertices - 1; i++)
+            {
+                indexArray[indexCount++] = startIdx;
+                indexArray[indexCount++] = startIdx + (uint)i;
+                indexArray[indexCount++] = startIdx + (uint)i + 1;
+            }            
+
+            DrawCount++;
+        }
+
+        private void AddCorner(Vector2 center, float radius, float startAngle, float endAngle, int segments, Color4 color)
+        {
+            for (int i = 0; i <= segments; i++)
+            {
+                float theta = MathHelper.DegreesToRadians(startAngle + (endAngle - startAngle) * i / segments);
+                float x = center.X + (float)Math.Cos(theta) * radius;
+                float y = center.Y + (float)Math.Sin(theta) * radius;
+
+                vertexArray[vertexCount++] = new GUIVertex {
+                    Position = new Vector2(x, y),
+                    Color = color,
+                    TexCoord = Vector2.Zero
+                };
+            }
+        }
+
+        public void AddRoundedRectangleGradient(RectangleF rect, Color4 colorTL, Color4 colorTR, Color4 colorBR, Color4 colorBL, float radius, int segments = 8)
+        {
+            radius = Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f);
+            
+            int requiredVertices = (segments + 1) * 4 + 1; // +1 für den Center-Punkt
+            if (vertexCount + requiredVertices >= MAX_VERTICES) Flush();
+            
+            SetWhiteTexture();
+            uint startIdx = (uint)vertexCount;
+
+            // 1. Center-Vertex für den Triangle Fan (Durchschnittsfarbe)
+            Color4 centerColor = AverageColor(colorTL, colorTR, colorBR, colorBL);
+            vertexArray[vertexCount++] = new GUIVertex { 
+                Position = new Vector2(rect.X + rect.Width / 2f, rect.Y + rect.Height / 2f), 
+                Color = centerColor, 
+                TexCoord = Vector2.Zero 
+            };
+
+            // 2. Ecken mit interpolierten Farben hinzufügen
+            // Die Reihenfolge der Aufrufe bestimmt den Linienzug außen
+            AddCornerGradient(new Vector2(rect.Right - radius, rect.Top + radius), radius, 270, 360, segments, rect, colorTL, colorTR, colorBR, colorBL); // TR
+            AddCornerGradient(new Vector2(rect.Right - radius, rect.Bottom - radius), radius, 0, 90, segments, rect, colorTL, colorTR, colorBR, colorBL);   // BR
+            AddCornerGradient(new Vector2(rect.Left + radius, rect.Bottom - radius), radius, 90, 180, segments, rect, colorTL, colorTR, colorBR, colorBL);  // BL
+            AddCornerGradient(new Vector2(rect.Left + radius, rect.Top + radius), radius, 180, 270, segments, rect, colorTL, colorTR, colorBR, colorBL); // TL
+
+            // 3. Indizes für den Fan
+            uint totalCornerVertices = (uint)((segments + 1) * 4);
+            for (uint i = 1; i <= totalCornerVertices; i++)
+            {
+                indexArray[indexCount++] = startIdx; // Center
+                indexArray[indexCount++] = startIdx + i;
+                // Beim letzten Vertex zurück zum ersten äußeren Vertex (startIdx + 1)
+                indexArray[indexCount++] = (i == totalCornerVertices) ? startIdx + 1 : startIdx + i + 1;
+            }
+            DrawCount++;
+        }
+
+        private void AddCornerGradient(Vector2 center, float radius, float startAngle, float endAngle, int segments, RectangleF bounds, Color4 cTL, Color4 cTR, Color4 cBR, Color4 cBL)
+        {
+            for (int i = 0; i <= segments; i++)
+            {
+                float theta = MathHelper.DegreesToRadians(startAngle + (endAngle - startAngle) * i / segments);
+                Vector2 pos = new Vector2(center.X + (float)Math.Cos(theta) * radius, center.Y + (float)Math.Sin(theta) * radius);
+
+                // Relative Position im Rechteck (0.0 bis 1.0)
+                float u = (pos.X - bounds.Left) / bounds.Width;
+                float v = (pos.Y - bounds.Top) / bounds.Height;
+
+                vertexArray[vertexCount++] = new GUIVertex {
+                    Position = pos,
+                    Color = GetBilinearColor(u, v, cTL, cTR, cBR, cBL),
+                    TexCoord = Vector2.Zero
+                };
+            }
+        }
+
+        private Color4 GetBilinearColor(float u, float v, Color4 cTL, Color4 cTR, Color4 cBR, Color4 cBL)
+        {
+            // Horizontal oben und unten
+            var top = Interpolate(cTL, cTR, u);
+            var bottom = Interpolate(cBL, cBR, u);
+            // Vertikal dazwischen
+            return Interpolate(top, bottom, v);
+        }
+
+        private Color4 Interpolate(Color4 a, Color4 b, float t)
+        {
+            return new Color4(
+                a.R + (b.R - a.R) * t,
+                a.G + (b.G - a.G) * t,
+                a.B + (b.B - a.B) * t,
+                a.A + (b.A - a.A) * t);
+        }
+
+        private Color4 AverageColor(params Color4[] colors)
+        {
+            float r = 0, g = 0, b = 0, a = 0;
+            foreach (var c in colors) { r += c.R; g += c.G; b += c.B; a += c.A; }
+            return new Color4(r / colors.Length, g / colors.Length, b / colors.Length, a / colors.Length);
+        }
+
+        public void AddRoundedRectangleOutline(RectangleF rect, Color4 color, float thick, float radius, int segments = 8)
+        {                        
+            // Radius begrenzen und sicherstellen, dass er nicht kleiner als die halbe Dicke ist
+            radius = Math.Max(thick / 2f, Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f));
+            
+            if (vertexCount + ((segments + 1) * 4 * 2) >= MAX_VERTICES) Flush();
+            SetWhiteTexture();
+
+            // Wir definieren den äußeren und inneren Radius
+            float outerRadius = radius;
+            float innerRadius = radius - thick;
+
+            // Hilfsfunktion für einen Bogen-Abschnitt
+            void AddArc(Vector2 center, float startAngle, float endAngle)
+            {
+                for (int i = 0; i <= segments; i++)
+                {
+                    float theta = MathHelper.DegreesToRadians(startAngle + (endAngle - startAngle) * i / segments);
+                    float cos = (float)Math.Cos(theta);
+                    float sin = (float)Math.Sin(theta);
+
+                    // Äußerer Punkt
+                    Vector2 pOuter = new Vector2(center.X + cos * outerRadius, center.Y + sin * outerRadius);
+                    // Innerer Punkt
+                    Vector2 pInner = new Vector2(center.X + cos * innerRadius, center.Y + sin * innerRadius);
+
+                    uint startIdx = (uint)vertexCount;
+                    vertexArray[vertexCount++] = new GUIVertex { Position = pOuter, Color = color, TexCoord = Vector2.Zero };
+                    vertexArray[vertexCount++] = new GUIVertex { Position = pInner, Color = color, TexCoord = Vector2.Zero };
+
+                    // Indizes für das Quad (außer beim letzten Punkt des Bogens)
+                    if (i < segments)
+                    {
+                        indexArray[indexCount++] = startIdx;
+                        indexArray[indexCount++] = startIdx + 1;
+                        indexArray[indexCount++] = startIdx + 3;
+                        indexArray[indexCount++] = startIdx + 3;
+                        indexArray[indexCount++] = startIdx + 2;
+                        indexArray[indexCount++] = startIdx;
+                    }
+                }
+            }
+
+            // Die vier Ecken zeichnen. 
+            // Zwischen den Bögen entstehen automatisch die geraden Linien, 
+            // wenn wir die Indizes korrekt verbinden oder die Bögen nacheinander in den Buffer schreiben.
+            
+            // Wir müssen hier die Bögen manuell verbinden oder die Methode leicht anpassen:
+            // Um Lücken zu vermeiden, zeichnen wir einen durchgehenden Loop.
+            
+            // 1. Top-Right
+            AddArc(new Vector2(rect.Right - radius, rect.Top + radius), 270, 360);
+            // 2. Verbindung zu Bottom-Right (wird durch AddArc implizit vorbereitet)
+            AddArc(new Vector2(rect.Right - radius, rect.Bottom - radius), 0, 90);
+            // 3. Bottom-Left
+            AddArc(new Vector2(rect.Left + radius, rect.Bottom - radius), 90, 180);
+            // 4. Top-Left
+            AddArc(new Vector2(rect.Left + radius, rect.Top + radius), 180, 270);
+
+            // Letzte Lücke schließen: Verbinde den allerletzten Vertex mit dem allerersten
+            uint firstIdx = (uint)(vertexCount - ((segments + 1) * 4 * 2));
+            uint lastIdx = (uint)(vertexCount - 2);
+            
+            indexArray[indexCount++] = lastIdx;
+            indexArray[indexCount++] = lastIdx + 1;
+            indexArray[indexCount++] = firstIdx + 1;
+            indexArray[indexCount++] = firstIdx + 1;
+            indexArray[indexCount++] = firstIdx;
+            indexArray[indexCount++] = lastIdx;            
+
+            DrawCount++;
         }
 
         public void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Color4 color)

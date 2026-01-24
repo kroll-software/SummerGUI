@@ -1529,14 +1529,14 @@ namespace SummerGUI
 							string text = null;
 							if (columnDeviderX > Left) {
 								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
-								text = DataProvider.GetValue (rowIndex, iCol);
+								text = DataProvider.GetFormattedValue (rowIndex, iCol);
 								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
 							}
 
 							if (AutoColumnWidth && col.SizeMode == DataGridColumn.SizeModes.Fixed)
 							{
 								if (text == null)
-									text = DataProvider.GetValue (rowIndex, iCol);
+									text = DataProvider.GetFormattedValue (rowIndex, iCol);
 
 								float stringWidth = Font.Measure(text).Width;
 								if (stringWidth > col.m_DesiredWidth)
@@ -2148,9 +2148,9 @@ namespace SummerGUI
 			**/
 		}
 
-		public virtual async Task ApplySort()
+		public virtual void ApplySort()
 		{			
-			await DataProvider.ApplySort ();		
+			DataProvider.ApplySort ();		
 		}
 
 		protected override void CleanupManagedResources ()
