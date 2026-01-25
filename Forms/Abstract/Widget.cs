@@ -680,7 +680,7 @@ namespace SummerGUI
 				);
 			}
 		}
-
+		
 		public virtual RectangleF MarginBounds
 		{
 			get{				
@@ -691,7 +691,7 @@ namespace SummerGUI
 					Bounds.Height + Margin.Height
 				);
 			}
-		}
+		}				
 
 		// ********** set size and location ***
 

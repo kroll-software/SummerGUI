@@ -190,7 +190,7 @@ namespace SummerGUI
 					Tag = CommonFontTags.ExtraSmall.ToString(),
 					FallbackTag = CommonFontTags.Small.ToString(),
 					Path = "Fonts/Roboto-Regular.ttf",
-					Size = 8.25f,
+					Size = 6f,
 				});
 
 			AddFontConfig (new GUIFontConfiguration

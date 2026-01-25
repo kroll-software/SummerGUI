@@ -320,7 +320,7 @@ namespace SummerGUI
 		/// Layouts the children. Gives derived classes a chance to have their own logic
 		/// </summary>
 		/// <param name="ctx">Context.</param>
-		/// <param name="bounds">Bounds.</param>
+		/// <param name="bounds">Bounds.</param>		
 		protected virtual void LayoutChildren(IGUIContext ctx, RectangleF bounds)
 		{
 			if (this.Children.Count > 0) {				
@@ -347,23 +347,19 @@ namespace SummerGUI
 							r.X += cmb.Width;
 							break;
 						case Docking.Right:
-							r.Width -= cmb.Width;
-							// Definitiv jedenfalls nicht immer
-							// sonst wird r.X schnell negativ
-							//r.X -= child.Margin.Width;	
+							r.Width -= cmb.Width;							
 							break;
 						case Docking.Bottom:
-							r.Height -= cmb.Height;
-							//r.Y -= child.Margin.Height;	// s.o. Definitiv jedenfalls nicht immer
+							r.Height -= cmb.Height;							
 							break;
-						case Docking.Fill:
-							// ok, we'll take that one
+						case Docking.Fill:							
 							break;
 						}							
 					}
 				}
 			}
 		}
+
 
 		/// <summary>
 		/// Layouts the child. Gives derived classes a chance to have their own logic

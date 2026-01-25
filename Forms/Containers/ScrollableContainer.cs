@@ -33,21 +33,7 @@ namespace SummerGUI
 		public ScrollableContainer (string name, Docking dock, IWidgetStyle style)
 			: base(name, dock, style)
 		{		
-		}
-
-		/***
-		public override void ResetCachedLayout ()
-		{
-			base.ResetCachedLayout ();
-
-			if (Children != null) {
-				foreach (Widget child in Children) {
-					if (child != null)
-						child.ResetCachedLayout ();
-				}				
-			}
-		}
-		***/
+		}		
 
 		public ScrollBars ScrollBars
 		{
@@ -105,7 +91,7 @@ namespace SummerGUI
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
 		{
 			if (IsLayoutSuspended || !Visible)
-				return;
+				return;			
 			
 			base.OnLayout (ctx, bounds);
 			SetUpScrollbars (ctx);
@@ -119,8 +105,7 @@ namespace SummerGUI
 				RectangleF r = bounds;
 				SizeF docSize = new SizeF();
 
-				for (int i = 0; i < Children.Count; i++)
-				//for (int i = Children.Count - 1; i >= 0; i--)
+				for (int i = 0; i < Children.Count; i++)				
 				{
 					Widget child = Children [i];
 					if (child != null && child.Visible) {
@@ -155,11 +140,11 @@ namespace SummerGUI
 						}
 							
 						switch (child.Dock) {
-						case Docking.Right:
-							r.Width -= child.Width;
+						case Docking.Right:				
+							r.Width -= child.MarginBounds.Width;
 							break;
-						case Docking.Bottom:
-							r.Height -= child.Height;
+						case Docking.Bottom:							
+							r.Height -= child.MarginBounds.Height;
 							break;						
 						}							
 					}
