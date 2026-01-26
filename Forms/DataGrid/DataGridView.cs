@@ -1620,7 +1620,9 @@ namespace SummerGUI
 
 			if (RowManager != null && RowManager.CurrentRowIndex >= 0)
 				OnItemSelected ();
-		}			
+		}
+
+		int m_LastShiftDownPosition = -1;		
 
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{
@@ -1636,10 +1638,25 @@ namespace SummerGUI
 			bool bProcess = false;
 			bool bEnsureVisible = true;
 			bool bSeekRow = false;
-			bool bSeekColumn = false;            
-			int oldRowIndex = RowIndex;
+			bool bSeekColumn = false;			
 
 			switch (e.Key) {
+			case Keys.LeftShift:
+			case Keys.RightShift:
+				m_LastShiftDownPosition = RowIndex;
+				bHandled = true;
+				break;
+			case Keys.Escape:				
+				if (m_LastShiftDownPosition >= 0 && SelectionManager.SelectedRowsCount > 1)
+				{
+					RowIndex = m_LastShiftDownPosition;
+					m_LastShiftDownPosition = -1;
+					SelectionManager.SelectNone();
+					EnsureRowindexVisible(RowIndex);
+					bSeekRow = true;
+					bProcess = true;					
+				}				
+				break;
 			case Keys.Down:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
@@ -1648,7 +1665,7 @@ namespace SummerGUI
 						ColumnIndex = 0;
 					bSeekRow = true;
 					bProcess = true;
-				}
+				}				
 				break;							
 
 			case Keys.Up:
@@ -1757,17 +1774,26 @@ namespace SummerGUI
 				}
 
 				if (bSeekRow)
-				{					
+				{
 					if (e.Shift)
 					{
-						SelectionManager.SelectRow(oldRowIndex);
+						SelectionManager.SelectNone();
+
+						int selStart = Math.Min(m_LastShiftDownPosition, RowIndex);
+						int selLen = Math.Abs(m_LastShiftDownPosition - RowIndex);												
+						for (int i = selStart; i < selStart + selLen; i++)
+							SelectionManager.SelectRow(i);	
+						
 						SelectionManager.SelectRow(RowIndex);
+						if (m_LastShiftDownPosition != RowIndex)
+							SelectionManager.SelectRow(m_LastShiftDownPosition);
 					}
 					else
-					{   
+					{   												
 						SelectionManager.SelectNone();
 						SelectionManager.SelectRow(RowIndex);
-					}
+						m_LastShiftDownPosition = -1;
+					}					
 
 					this.Invalidate();
 					this.StartSelectionTimer();
@@ -1786,8 +1812,16 @@ namespace SummerGUI
 		}
 
 		public override void OnKeyUp (KeyboardKeyEventArgs e)
-		{
+		{			
+			switch (e.Key) {
+			case Keys.LeftShift:
+			case Keys.RightShift:			
+				//m_LastShiftDownPosition = -1;
+				break;
+			}
+
 			base.OnKeyUp (e);
+
 			Invalidate (1);
 			OnSelectionChanged ();
 		}
