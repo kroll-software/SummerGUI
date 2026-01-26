@@ -499,7 +499,7 @@ namespace SummerGUI
 
 		protected virtual void OnLoadWindowIcon()
 		{			
-			string path = "Assets/Icons/SummerGUI64.png".FixedExpandedPath();			
+			string path = "Assets/images/SummerGUI64.png".FixedExpandedPath();			
 			WindowResourceManager.Manager.LoadWindowIcon(this, path);
 		}
 

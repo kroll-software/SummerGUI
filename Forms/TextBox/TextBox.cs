@@ -37,8 +37,10 @@ namespace SummerGUI
 				return m_Text;
 			}
 			set {
+				if (value == null)
+					value = String.Empty;
 				if (m_Text != value) {
-					m_Text = value;
+					m_Text = value;					
 					OnTextChanged ();
 				}
 			}
@@ -118,8 +120,7 @@ namespace SummerGUI
 			HideSelection = true;
 
 			Text = text;
-			if (Text != null)
-				CursorPosition = Text.Length;
+			CursorPosition = Text.Length;
 
 			AllowTabKey = true;
 			CanFocus = true;
@@ -662,7 +663,7 @@ namespace SummerGUI
 		long lastDoubleClickTicks;
 		public override void OnDoubleClick (MouseButtonEventArgs e)
 		{
-			base.OnDoubleClick (e);
+			base.OnDoubleClick (e);		
 			if (Environment.TickCount - lastDoubleClickTicks < 500) {
 				SelectAll ();
 			} else {

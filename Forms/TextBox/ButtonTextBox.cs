@@ -52,8 +52,8 @@ namespace SummerGUI
 			AddChild (Button);
 
 			TB.TextChanged += TB_TextChanged;
-			AutoEnableButton = true;
-			Button.Enabled = false;
+			AutoEnableButton = false;
+			Button.Enabled = true;
 
 			Button.CanFocus = true;
 			CanFocus = true;

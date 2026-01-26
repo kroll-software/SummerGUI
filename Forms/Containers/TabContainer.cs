@@ -425,7 +425,7 @@ namespace SummerGUI
 			}
 		}
 
-		public void AdTabPage(string name, string caption, Color backColr = default(Color) , char icon = (char)0, int index = -1)
+		public TabPage AdTabPage(string name, string caption, Color backColr = default(Color) , char icon = (char)0, int index = -1)
 		{			
 			TabPage tp = new TabPage (name, caption, icon);
 			tp.Parent = this;
@@ -445,6 +445,7 @@ namespace SummerGUI
 			TabBar.AddChild (tp.TabButton);
 			tp.Selected |= TabPages.Count == 1;
 			ResetCachedLayout ();
+			return tp;
 		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)

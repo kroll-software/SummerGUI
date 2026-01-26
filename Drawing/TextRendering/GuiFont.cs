@@ -350,10 +350,8 @@ namespace SummerGUI
 					// Strategy (1), loading the entire font
 				}
 
-				//m_Textures = new int[Math.Max(32, GlyphCount)];
-				if (OnDemand) {
-					m_Textures = new int[32]; // Buffer für On-Demand Texturen
-				}
+				m_Textures = new int[Math.Max(32, GlyphCount)];
+				
 				CharMap = new ThreadSafeDictionary<char, GlyphInfo>(Math.Max(31, GlyphCount));
 				GlyphMap = new ThreadSafeDictionary<uint, GlyphInfo>(Math.Max(31, GlyphCount));
 

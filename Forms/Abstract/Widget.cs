@@ -782,8 +782,7 @@ namespace SummerGUI
 
 		public virtual SizeF PreferredSize(IGUIContext ctx, SizeF proposedSize)
 		{
-			return proposedSize;
-			//return new SizeF(20, 20);
+			return proposedSize;			
 		}
 
 		public virtual void OnMouseEnter (IGUIContext ctx)
@@ -981,7 +980,7 @@ namespace SummerGUI
 		public void PerformLayout()
 		{
 			Invalidate ();
-		}									
+		}		
 
 		/// <summary>
 		/// When overriding, call base.OnLayout() finally
@@ -1004,9 +1003,14 @@ namespace SummerGUI
 			);				
 				
 			if (Dock == Docking.Fill) {				
-				SetBounds (rBounds);	
+				SetBounds (rBounds);
 			} else {				
 				RectangleF pref = new RectangleF (rBounds.Location, PreferredSize (ctx, rBounds.Size));
+				
+				// NEU: Sanitize MinSize / MaxSize
+				pref.Width = Math.Max(MinSize.Width, MathF.Min(pref.Width, MaxSize.Width));
+				pref.Height = Math.Max(MinSize.Height, MathF.Min(pref.Height, MaxSize.Height));
+
 				pref.Intersect (rBounds);				
 							
 				// ToDo:

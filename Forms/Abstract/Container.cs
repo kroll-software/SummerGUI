@@ -11,6 +11,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
+using System.Diagnostics;
 
 namespace SummerGUI
 {		
@@ -322,7 +323,7 @@ namespace SummerGUI
 		/// <param name="ctx">Context.</param>
 		/// <param name="bounds">Bounds.</param>		
 		protected virtual void LayoutChildren(IGUIContext ctx, RectangleF bounds)
-		{
+		{			
 			if (this.Children.Count > 0) {				
 				RectangleF r = bounds;
 				// iterate forward by ZIndex

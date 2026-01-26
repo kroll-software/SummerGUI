@@ -16,7 +16,7 @@ namespace SummerGUI
 			// ToDo: BUG?
 			//CanFocus = false;
 			TabIndex = -1;	
-		}		
+		}
 		
 		public override SizeF PreferredSize(IGUIContext ctx, SizeF proposedSize)
 		{
@@ -41,25 +41,25 @@ namespace SummerGUI
 					switch (child.Dock) {
 						case Docking.Left:
 						case Docking.Right:
-							leftRightTotalWidth += sz.Width;
+							leftRightTotalWidth += sz.Width + child.Margin.Width;
 							maxHeightFromLeftRight = MathF.Max(maxHeightFromLeftRight, sz.Height);
 							break;
 
 						case Docking.Top:
 						case Docking.Bottom:
-							topBottomTotalHeight += sz.Height;
+							topBottomTotalHeight += sz.Height + child.Margin.Height;
 							maxWidthFromTopBottom = MathF.Max(maxWidthFromTopBottom, sz.Width);
 							break;
 
 						case Docking.Fill:
-							maxFillWidth = MathF.Max(maxFillWidth, sz.Width);
-							maxFillHeight = MathF.Max(maxFillHeight, sz.Height);
+							maxFillWidth = MathF.Max(maxFillWidth, sz.Width + child.Margin.Width);
+							maxFillHeight = MathF.Max(maxFillHeight, sz.Height + child.Margin.Height);
 							break;
 
 						default:
 							// Falls es andere Docking-Optionen gibt: sicherheitshalber als Max behandeln
-							maxFillWidth = MathF.Max(maxFillWidth, sz.Width);
-							maxFillHeight = MathF.Max(maxFillHeight, sz.Height);
+							maxFillWidth = MathF.Max(maxFillWidth, sz.Width + child.Margin.Width);
+							maxFillHeight = MathF.Max(maxFillHeight, sz.Height + child.Margin.Height);
 							break;
 					}
 				}

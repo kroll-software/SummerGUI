@@ -31,6 +31,7 @@ namespace SummerGUI
 
 	public enum DialogResults
 	{				
+		None,
 		Cancel,
 		OK,
 		Yes,

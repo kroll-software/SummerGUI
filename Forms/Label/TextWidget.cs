@@ -33,7 +33,7 @@ namespace SummerGUI
 			if (font == null)
 				m_Font = FontManager.Manager.DefaultFont;
 			else
-				m_Font = font;
+				m_Font = font;			
 
 			m_IconFont = FontManager.Manager.SmallIcons;
 			Format = FontFormat.DefaultSingleLineCentered;
