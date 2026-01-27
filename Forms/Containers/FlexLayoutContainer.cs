@@ -106,7 +106,7 @@ namespace SummerGUI
 		{			
 			if (Children.Count > 0) {
 				RectangleF r = bounds;
-				r.X = bounds.Left;
+				r.X = bounds.Left + Padding.Left;
 				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
@@ -126,7 +126,7 @@ namespace SummerGUI
 		{			
 			if (Children.Count > 0) {
 				RectangleF r = bounds;
-				r.X = bounds.Right;
+				r.X = bounds.Right - Padding.Right;
 				for (int i = Children.Count - 1; i >= 0; i--)				
 				{
 					Widget child = Children [i];
@@ -170,7 +170,7 @@ namespace SummerGUI
 		{
 			if (Children.Count > 0) {
 				RectangleF r = bounds;
-				r.Y = bounds.Top;
+				r.Y = bounds.Top + Padding.Top;
 				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
@@ -190,7 +190,7 @@ namespace SummerGUI
 		{
 			if (Children.Count > 0) {
 				RectangleF r = bounds;
-				r.Y = bounds.Bottom;
+				r.Y = bounds.Bottom - Padding.Bottom;
 				for (int i = Children.Count - 1; i >= 0; i--)				
 				{
 					Widget child = Children [i];

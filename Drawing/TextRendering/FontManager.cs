@@ -363,10 +363,17 @@ namespace SummerGUI
 			}
 		}
 
-		public void ReScaleFonts(float ScaleFactor)
+		public float ScaleFactor { get; set; } = 1f;
+
+		public void ReScaleFonts(float scaleFactor)
 		{
+			if (scaleFactor == this.ScaleFactor)
+				return;
+
+			this.ScaleFactor = scaleFactor;
+
 			try {
-				Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Rescale(ScaleFactor));	
+				Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Rescale(scaleFactor));	
 			} catch (Exception ex) {
 				ex.LogError ("ReScaleFonts");
 			}
@@ -385,7 +392,7 @@ namespace SummerGUI
 				return;
 			}
 
-			//config.ScaleFactor = Owner.ScaleFactor;
+			config.ScaleFactor *= this.ScaleFactor;
 
 			IGUIFont font = null;
 			if (!String.IsNullOrEmpty (config.Path)) {

@@ -111,7 +111,7 @@ namespace SummerGUI
 		}
 
 		public static SizeF Scale(this SizeF val, float scaling)
-		{			
+		{					
 			return new SizeF(
 				val.Width.Scale(scaling),
 				val.Height.Scale(scaling)

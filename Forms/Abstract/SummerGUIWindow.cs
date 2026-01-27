@@ -480,7 +480,7 @@ namespace SummerGUI
 		}
 
 		void InitFonts()
-		{						
+		{									
 			OnInitFonts ();			
 		}
 

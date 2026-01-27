@@ -96,7 +96,9 @@ namespace SummerGUI
 			if (position == WindowPositions.CenterParent)
 			{
 				CenterWindowOnParent(ParentWindow, this);
-			}			
+			}
+
+			DetectDPI ();
 
 			ParentWindow?.AddChildWindow (this);			
 		}

@@ -65,7 +65,10 @@ namespace SummerGUI
 		public Alignment HAlign { get; set; }
 		public Alignment VAlign { get; set; }
 
+		[DpiScalable]
 		public SizeF MinSize { get; set; }
+		
+		[DpiScalable]
 		public SizeF MaxSize { get; set; }
 		public RectangleF Bounds { get; private set; }
 
@@ -129,6 +132,7 @@ namespace SummerGUI
 	{
 		public int Index { get; private set; }
 		public TableSizeModes SizeMode { get; set; }
+				
 		public float Width { get; set; }
 
 		public WidgetTableColumn(int index)
@@ -180,7 +184,7 @@ namespace SummerGUI
 				return Cells.Count;
 			}
 		}
-
+		
 		public float Height { get; set; }
 
 		public void AddCell(Widget widget, int column, int columnSpan)
@@ -281,7 +285,7 @@ namespace SummerGUI
 			Table = new WidgetTable ();
 		}
 			
-		private SizeF m_CellPadding;
+		private SizeF m_CellPadding;		
 		public SizeF CellPadding 
 		{ 
 			get {
@@ -649,7 +653,7 @@ namespace SummerGUI
 				return Layout.Table.Columns;
 			} 
 		}
-
+		
 		[DpiScalable]
 		public SizeF CellPadding
 		{ 

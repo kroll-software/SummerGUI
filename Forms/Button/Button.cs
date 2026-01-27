@@ -345,8 +345,7 @@ namespace SummerGUI
 			Styles.SetStyle (new SilverButtonActiveHoverWidgetStyle (), WidgetStates.Custom2);	
 
 			HAlign = Alignment.Center;
-			VAlign = Alignment.Center;
-			//MinSize = new Size (96, MinSize.Height);
+			VAlign = Alignment.Center;			
 		}
 
 		public DefaultButton (string name, string text, ColorContexts colorContext, char icon = (char)0, bool outLine = false)
