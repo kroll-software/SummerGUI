@@ -1640,37 +1640,25 @@ namespace SummerGUI
 			bool bSeekRow = false;
 			bool bSeekColumn = false;			
 
-			switch (e.Key) {
-			case Keys.LeftShift:
-			case Keys.RightShift:
-				m_LastShiftDownPosition = RowIndex;
-				bHandled = true;
-				break;
-			case Keys.Escape:				
-				if (m_LastShiftDownPosition >= 0 && SelectionManager.SelectedRowsCount > 1)
-				{
-					RowIndex = m_LastShiftDownPosition;
-					m_LastShiftDownPosition = -1;
-					SelectionManager.SelectNone();
-					EnsureRowindexVisible(RowIndex);
-					bSeekRow = true;
-					bProcess = true;					
-				}				
-				break;
+			switch (e.Key) {			
 			case Keys.Down:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MoveNext ();
 					if (ColumnIndex < 0)
 						ColumnIndex = 0;
 					bSeekRow = true;
 					bProcess = true;
-				}				
+				}
 				break;							
 
 			case Keys.Up:
 				bHandled = true;
 				if (RowManager.CanMoveBack) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MovePrevious ();
 					bSeekRow = true;
 					bProcess = true;
@@ -1680,6 +1668,8 @@ namespace SummerGUI
 			case Keys.PageUp:
 				bHandled = true;
 				if (RowManager.CanMoveBack) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MovePageUp ();
 					bSeekRow = true;
 					bProcess = true;
@@ -1688,6 +1678,8 @@ namespace SummerGUI
 			case Keys.PageDown:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MovePageDown ();
 					bSeekRow = true;
 					bProcess = true;
@@ -1733,6 +1725,8 @@ namespace SummerGUI
 			case Keys.Home:
 				bHandled = true;
 				if (e.Control) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MoveFirst ();
 				} else {
 					HScrollBar.Value = 0;
@@ -1745,6 +1739,8 @@ namespace SummerGUI
 			case Keys.End:
 				bHandled = true;
 				if (e.Control) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
 					RowManager.MoveLast ();
 				} else {
 					HScrollBar.Value = HScrollBar.Maximum;
@@ -1754,12 +1750,38 @@ namespace SummerGUI
 				bEnsureVisible = true;
 				bProcess = true;
 				break;
+			case Keys.KeyPad0:	// pad insert
+				bHandled = true;								
+				if (RowManager.CanMoveForward) {
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
+					RowManager.MoveNext ();
+					if (ColumnIndex < 0)
+						ColumnIndex = 0;
+					SelectionManager.SelectRow(RowIndex);					
+					this.Invalidate();
+					this.StartSelectionTimer();
+					bSeekRow = false;
+					bProcess = true;
+				}	
+				break;
 			case Keys.Enter:
 				bHandled = true;
 				if (RowManager != null && RowManager.CurrentRowIndex >= 0 && ItemSelected != null) {
 					OnItemSelected ();
 					bProcess = true;
 				}
+				break;
+			case Keys.Escape:				
+				if (m_LastShiftDownPosition >= 0 && SelectionManager.SelectedRowsCount > 1)
+				{
+					RowIndex = m_LastShiftDownPosition;
+					m_LastShiftDownPosition = -1;
+					SelectionManager.SelectNone();
+					EnsureRowindexVisible(RowIndex);
+					bSeekRow = true;
+					bProcess = true;					
+				}				
 				break;
 			}				
 
@@ -1809,22 +1831,7 @@ namespace SummerGUI
 			{					
 				return bHandled;
 			}
-		}
-
-		public override void OnKeyUp (KeyboardKeyEventArgs e)
-		{			
-			switch (e.Key) {
-			case Keys.LeftShift:
-			case Keys.RightShift:			
-				//m_LastShiftDownPosition = -1;
-				break;
-			}
-
-			base.OnKeyUp (e);
-
-			Invalidate (1);
-			OnSelectionChanged ();
-		}
+		}		
 
 		protected void SetCurrentRowAndCellFromPoint(float x, float y)
 		{
