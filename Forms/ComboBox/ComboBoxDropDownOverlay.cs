@@ -37,7 +37,7 @@ namespace SummerGUI
 	}
 
 	public class ComboBoxDropDownOverlay : OverlayContainer
-	{
+	{		
 		public event EventHandler<EventArgs> ItemSelected;
 		public void OnItemSelected()
 		{
@@ -48,15 +48,19 @@ namespace SummerGUI
 		public ComboBoxDropDownOverlay ()
 			: base ("dropdown", Docking.None, new DropDownWidgetStyle())
 		{
-			Styles.SetStyle (new DropDownSelectedItemWidgetStyle (), WidgetStates.Selected);
-
-		}
+			Styles.SetStyle (new DropDownSelectedItemWidgetStyle (), WidgetStates.Selected);			
+			ScrollBars = ScrollBars.Vertical;			
+			OverlayMode = OverlayModes.Overlay;
+		}        
 			
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
-		{
+		{				
 			ComboBoxBase parent = Parent as ComboBoxBase;
-			if (parent != null)
-				DocumentSize = new SizeF (bounds.Width, parent.Count * parent.ItemHeight);
+			if (parent == null)
+				return;
+			
+			base.LayoutChildren(ctx, bounds);			
+			DocumentSize = new SizeF (bounds.Width, parent.Count * parent.ItemHeight);			
 		}
 
 		public int SelectedIndex { get; set; }
@@ -67,18 +71,39 @@ namespace SummerGUI
 
 			ComboBoxBase pb = Parent as ComboBoxBase;
 			if (pb != null && pb.ItemHeight > 0) {
-				SelectedIndex = (int)((e.Y - Bounds.Top) / pb.ItemHeight);
+				SelectedIndex = (int)((e.Y - Bounds.Top + VScrollBar.Value) / pb.ItemHeight);
 				Invalidate ();
 			}
 		}
 
-		public override void OnMouseUp (MouseButtonEventArgs e)
-		{
-			base.OnMouseUp (e);
+        public override bool OnMouseWheel(MouseWheelEventArgs e)
+        {
+            if (!base.OnMouseWheel(e))
+				return false;
 
 			ComboBoxBase pb = Parent as ComboBoxBase;
 			if (pb != null && pb.ItemHeight > 0) {
-				SelectedIndex = (int)((e.Y - Bounds.Top) / pb.ItemHeight);
+				SelectedIndex = (int)((e.Y - Bounds.Top + VScrollBar.Value) / pb.ItemHeight);
+				Invalidate ();
+			}
+			
+			return true;
+        }        
+
+		public override void OnClick(MouseButtonEventArgs e)
+        {
+            base.OnClick(e);
+
+			RectangleF scrollbounds = this.Bounds;
+			if (VScrollBar.IsVisibleEnabled)
+				scrollbounds.Width -= VScrollBar.Width;
+
+			if (e.X > scrollbounds.Right)
+				return;
+
+			ComboBoxBase pb = Parent as ComboBoxBase;
+			if (pb != null && pb.ItemHeight > 0) {
+				SelectedIndex = (int)((e.Y - Bounds.Top + VScrollBar.Value) / pb.ItemHeight);
 				Invalidate ();
 			}
 
@@ -87,38 +112,61 @@ namespace SummerGUI
 
 			OnItemSelected();
 			OnClose ();
-		}
-
-        public override bool OnMouseWheel(MouseWheelEventArgs e)
-        {
-            return true;	// handle the event
         }
+
+
+        public override void Update(bool updateParent = false, int frames = 0)
+        {
+            base.Update(updateParent, frames);
+        }
+
+        public override void Update(IGUIContext ctx)
+        {
+            base.Update(ctx);
+        }
+		
+
+		public override void OnPaintBackground(IGUIContext ctx, RectangleF bounds)
+        {			
+			base.OnPaintBackground(ctx, bounds);
+        }
+
 			
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
-		{
+		{			
 			ComboBoxBase parent = Parent as ComboBoxBase;
 			if (parent == null)
-				return;
+				return;			
+
+			base.OnPaint(ctx, bounds);
 
 			float scrollOffsetY = 0;
-			if (VScrollBar != null && VScrollBar.IsVisibleEnabled)
+			float scrollWidth = 0;
+			if (VScrollBar != null && VScrollBar.Visible)
+			{				
+				scrollWidth = VScrollBar.Width;
 				scrollOffsetY = VScrollBar.Value;
+			}
 
 			float itemHeight = parent.ItemHeight;
 
-			for (int i = 0; i < parent.Items.Count; i++) {
-				RectangleF itemBounds = new RectangleF (bounds.Left, (i * itemHeight) + bounds.Top - scrollOffsetY, 
-					bounds.Width, itemHeight);
+			RectangleF clipRect = new RectangleF(bounds.Left, bounds.Top, bounds.Width - scrollWidth, bounds.Height);
+			using (var clip = new ClipBoundClip(ctx, clipRect, false))
+			{
+				for (int i = 0; i < parent.Items.Count; i++) {
+					RectangleF itemBounds = new RectangleF (bounds.Left, (i * itemHeight) + bounds.Top - scrollOffsetY, 
+						bounds.Width - scrollWidth, itemHeight);
 
-				if (i == SelectedIndex) {
-					IWidgetStyle style = Styles.GetStyle (WidgetStates.Selected);
-					ctx.FillRectangle (style.BackColorBrush, itemBounds);
-					parent.DrawItem(ctx, itemBounds, parent.Items[i], style);
-				} else {
-					parent.DrawItem(ctx, itemBounds, parent.Items[i], Style);
-				}					
+					if (i == SelectedIndex) {
+						IWidgetStyle style = Styles.GetStyle (WidgetStates.Selected);
+						ctx.FillRectangle (style.BackColorBrush, itemBounds);
+						parent.DrawItem(ctx, itemBounds, parent.Items[i], style);
+					} else {
+						parent.DrawItem(ctx, itemBounds, parent.Items[i], Style);
+					}					
+				}
 			}
-		}			
+		}        
 			
 		public void EnsureIndexVisible(int idx)
 		{
@@ -143,8 +191,8 @@ namespace SummerGUI
 
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{				
-			if (base.OnKeyDown (e))
-				return true;
+			//if (base.OnKeyDown (e))
+			//	return true;
 
 			if (!IsFocused)
 				return false;

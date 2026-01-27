@@ -138,6 +138,8 @@ namespace SummerGUI
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
 		{
+			base.LayoutChildren(ctx, bounds);
+
 			if (Font != null && Menu != null)
 				DocumentSize = new SizeF (bounds.Width, Menu.Count * LineHeight);
 		}

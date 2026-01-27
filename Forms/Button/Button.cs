@@ -124,8 +124,8 @@ namespace SummerGUI
 			OnTextChanged ();
 			Icon = icon;
 
-			//Font = SummerGUIWindow.CurrentContext.GetFont(CommonFontTags.Status);
-			//IconFontTag = CommonFontTags.SmallIcons.ToString ();
+			Font = FontManager.Manager.StatusFont;
+			IconFont = FontManager.Manager.SmallIcons;
 
 			CanFocus = true;
 			HandlesEnterKey = true;
@@ -175,7 +175,7 @@ namespace SummerGUI
 			if (CachedPreferredSize == SizeF.Empty) {
 				float w = 0;
 				float h = 0;
-
+								
 				if (!String.IsNullOrEmpty (Text) && DisplayStyle != ButtonDisplayStyles.Image) {					
 					SizeF sz = Font.MeasureMnemonicString (Text);					
 					h = sz.Height * 1.2f;
@@ -187,16 +187,12 @@ namespace SummerGUI
 
 					if (w > 0)
 						w += sz.Width * 1.42f;					
-				else
+					else
 						w += sz.Width;
 					h = Math.Max (h, sz.Height);
 				}
-
-				if (w == 0 || h == 0)
-					//CachedPreferredSize = base.PreferredSize (ctx, proposedSize);
-					CachedPreferredSize = SizeF.Empty;
-				else
-					CachedPreferredSize = new SizeF ((w + Padding.Width), (h + Padding.Height));
+				
+				CachedPreferredSize = ClampMinMax(new SizeF (w + Padding.Width, h + Padding.Height));				
 			}
 
 			return CachedPreferredSize;

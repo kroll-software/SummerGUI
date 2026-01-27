@@ -52,19 +52,7 @@ namespace SummerGUI
 			if (!HasSize || Parent == null)
 				return;
 
-			// NO CLIPPING IN OVERLAYS. NEVER.
-			//using (var clip = new ClipBoundClip (ctx, Bounds, false)) {
-				if (OverlayMode == OverlayModes.Modal || OverlayMode == OverlayModes.Window) {
-					base.Update (ctx);
-				} else {								
-					try {								
-						OnPaintBackground (ctx, Bounds);
-						this.OnPaint (ctx, Bounds);
-					} catch (Exception ex) {
-						ex.LogError ();
-					}
-				}
-			//}
+			base.Update (ctx);			
 		}
 	}
 }

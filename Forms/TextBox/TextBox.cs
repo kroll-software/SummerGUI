@@ -337,6 +337,18 @@ namespace SummerGUI
 				CursorPosition++;
 		}			
 
+		static char[] StopChars = [' ', '/', '\\'];
+		
+		private bool IsStopChar(char c)
+		{			
+			foreach (char stop in StopChars)
+			{
+				if (stop == c)
+					return true;
+			}
+			return false;
+		}
+
 		protected virtual void MovePrevWord()
 		{
 			if (String.IsNullOrEmpty(Text))
@@ -345,21 +357,21 @@ namespace SummerGUI
 			if (CursorPosition >= Text.Length)
 				CursorPosition = Text.Length - 1;
 
-			if (CursorPosition > 1 && Text[CursorPosition - 1] == ' ')
+			if (CursorPosition > 1 && IsStopChar(Text[CursorPosition - 1]))
 				CursorPosition--;
 
-			while (CursorPosition > 0 && Text[CursorPosition] == ' ')
+			while (CursorPosition > 0 && IsStopChar(Text[CursorPosition]))
 				CursorPosition--;
 
-			while (CursorPosition > 0  && Text[CursorPosition] != ' ')
+			while (CursorPosition > 0  && !IsStopChar(Text[CursorPosition]))
 				CursorPosition--;
 
-			if (CursorPosition > 0 && Text[CursorPosition] == ' ')
+			if (CursorPosition > 0 && IsStopChar(Text[CursorPosition]))
 				CursorPosition++;
 
 			if (CursorPosition <= 0)
 				TextOffsetX = 0;
-		}
+		}		
 
 		protected virtual void MoveNextWord()
 		{			
@@ -369,10 +381,10 @@ namespace SummerGUI
 			if (CursorPosition >= Text.Length)
 				CursorPosition = Text.Length - 1;
 
-			while (CursorPosition < Text.Length && Text[CursorPosition] != ' ')
+			while (CursorPosition < Text.Length && !IsStopChar(Text[CursorPosition]))
 				CursorPosition++;
 
-			while (CursorPosition < Text.Length && Text[CursorPosition] == ' ')
+			while (CursorPosition < Text.Length && IsStopChar(Text[CursorPosition]))
 				CursorPosition++;
 		}
 

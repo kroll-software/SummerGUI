@@ -197,32 +197,13 @@ namespace SummerGUI
 		{			
 			Result = DialogResults.Cancel;
 			this.Close ();
-		}		
-
-        /***
-		protected override void OnKeyDown (KeyboardKeyEventArgs e)
-		{
-			switch (e.Key) {
-			case Key.Escape:
-				OnCancel ();
-				break;
-			case Key.Enter:				
-				OnOK ();
-				break;
-			default:
-				base.OnKeyDown (e);
-				break;
-			}				
 		}
-		****/
 
         protected override void OnRenderFrame(double elapsedSeconds)
         {
 			Batcher.BindContext(this);
             base.OnRenderFrame(elapsedSeconds);
         }
-
-		
 
 		private WindowBorder _oldParentWindowsBorder;		
 

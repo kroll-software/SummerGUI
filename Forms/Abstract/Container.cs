@@ -111,7 +111,6 @@ namespace SummerGUI
 			ResetCachedLayout ();
 		}
 
-		// ToDo: Do it unsafe
 		public virtual Widget ChildByID(int id)
 		{
 			for (int i = 0; i < Children.Count; i++) {
@@ -120,8 +119,7 @@ namespace SummerGUI
 			}
 			return null;
 		}
-
-		// ToDo: Do it unsafe  // never called
+		
 		public virtual Widget ChildByName(string name)
 		{
 			for (int i = 0; i < Children.Count; i++) {
@@ -196,14 +194,16 @@ namespace SummerGUI
 		{
 			return this.TabSupportingChildren().LastOrDefault();
 		}			
-			
-		// ToDo: Do it unsafe
+					
 		public override RectangleF ClientRectangle {
 			get {
 				RectangleF r = base.ClientRectangle;	// = padded bounds
 				for (int i = 0; i < Children.Count; i++) {
 					Widget child = Children [i];
-					if (child != null && child.Visible && !child.IsOverlay) {
+					//if (child != null && child.Visible && !child.IsOverlay) 
+					//if (child != null && child.Visible && child.ZIndex < 10000)  // not overlay
+					if (child != null && child.Visible)  // not overlay
+					{					
 						RectangleF cmb = child.MarginBounds;	// Child-Margin-Bounds
 
 						switch (child.Dock) {
@@ -333,7 +333,9 @@ namespace SummerGUI
 
 					if (child.Visible) {
 						LayoutChild(ctx, child, r);
-						if (child.IsOverlay || child.Bounds.IsEmpty)
+						//if (child.IsOverlay || child.Bounds.IsEmpty)
+						//if (child.Bounds.IsEmpty || child.ZIndex >= 10000)
+						if (child.Bounds.IsEmpty)
 							continue;
 
 						RectangleF cmb = child.MarginBounds;	// Child-Margin-Bounds
@@ -382,7 +384,9 @@ namespace SummerGUI
 					// GEMALT WIRD RÜCKWÄRTS
 					for (int i = Children.Count - 1; i >= 0; i--) {
 						Widget child = Children [i];						
-						if (child != null && child.Visible && !child.IsOverlay) {
+						//if (child != null && child.Visible && !child.IsOverlay) {
+						if (child != null && child.Visible) {
+						//if (child != null && child.Visible && child.ZIndex < 10000) {
 							try {								
 								using (var clipChild = new ClipBoundClip (ctx, child.Bounds, true)) {
 									if (!clipChild.IsEmptyClip) {

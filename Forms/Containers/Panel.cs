@@ -32,7 +32,8 @@ namespace SummerGUI
 				float maxFillHeight = 0f;
 
 				foreach (var child in Children) {
-					if (child == null || !child.Visible || child.IsOverlay)
+					//if (child == null || !child.Visible || child.IsOverlay)
+					if (child == null || !child.Visible)
 						continue;
 
 					// Annahme: Inflate fügt Margin beidseitig hinzu und gibt eine neue SizeF zurück
@@ -41,25 +42,25 @@ namespace SummerGUI
 					switch (child.Dock) {
 						case Docking.Left:
 						case Docking.Right:
-							leftRightTotalWidth += sz.Width + child.Margin.Width;
+							leftRightTotalWidth += sz.Width;
 							maxHeightFromLeftRight = MathF.Max(maxHeightFromLeftRight, sz.Height);
 							break;
 
 						case Docking.Top:
 						case Docking.Bottom:
-							topBottomTotalHeight += sz.Height + child.Margin.Height;
+							topBottomTotalHeight += sz.Height;
 							maxWidthFromTopBottom = MathF.Max(maxWidthFromTopBottom, sz.Width);
 							break;
 
 						case Docking.Fill:
-							maxFillWidth = MathF.Max(maxFillWidth, sz.Width + child.Margin.Width);
-							maxFillHeight = MathF.Max(maxFillHeight, sz.Height + child.Margin.Height);
+							maxFillWidth = MathF.Max(maxFillWidth, sz.Width);
+							maxFillHeight = MathF.Max(maxFillHeight, sz.Height);
 							break;
 
 						default:
 							// Falls es andere Docking-Optionen gibt: sicherheitshalber als Max behandeln
-							maxFillWidth = MathF.Max(maxFillWidth, sz.Width + child.Margin.Width);
-							maxFillHeight = MathF.Max(maxFillHeight, sz.Height + child.Margin.Height);
+							maxFillWidth = MathF.Max(maxFillWidth, sz.Width);
+							maxFillHeight = MathF.Max(maxFillHeight, sz.Height);
 							break;
 					}
 				}

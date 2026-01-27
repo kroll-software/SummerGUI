@@ -323,11 +323,12 @@ namespace SummerGUI
 					}
 				}
 			}
-		}	
+		}
 		public bool IsOverlay
 		{
 			get{
-				return ZIndex >= 10000;
+				return ZIndex >= 10000 || (Parent != null && Parent.IsOverlay);
+				//return ZIndex >= 10000;
 			}
 		}
 
@@ -773,17 +774,31 @@ namespace SummerGUI
 		public virtual bool OnHeartBeat()
 		{
 			return InvalidateOnHeartBeat && invalidateFlag;
-		}			
+		}					
+
+		protected SizeF ClampMinMax(SizeF size)
+		{
+			size.Width = Math.Max(MinSize.Width, MathF.Min(size.Width, MaxSize.Width));
+			size.Height = Math.Max(MinSize.Height, MathF.Min(size.Height, MaxSize.Height));
+			return size;
+		}
+
+		protected RectangleF ClampMinMax(RectangleF rect)
+		{
+			rect.Width = Math.Max(MinSize.Width, MathF.Min(rect.Width, MaxSize.Width));
+			rect.Height = Math.Max(MinSize.Height, MathF.Min(rect.Height, MaxSize.Height));	
+			return rect;
+		}
 
 		public SizeF PreferredSize(IGUIContext ctx)
 		{
 			return PreferredSize (ctx, SizeF.Empty);
-		}
+		}		
 
 		public virtual SizeF PreferredSize(IGUIContext ctx, SizeF proposedSize)
-		{
-			return proposedSize;			
-		}
+		{						
+			return ClampMinMax(proposedSize);
+		}		
 
 		public virtual void OnMouseEnter (IGUIContext ctx)
 		{	
@@ -1008,8 +1023,7 @@ namespace SummerGUI
 				RectangleF pref = new RectangleF (rBounds.Location, PreferredSize (ctx, rBounds.Size));
 				
 				// NEU: Sanitize MinSize / MaxSize
-				pref.Width = Math.Max(MinSize.Width, MathF.Min(pref.Width, MaxSize.Width));
-				pref.Height = Math.Max(MinSize.Height, MathF.Min(pref.Height, MaxSize.Height));
+				pref = ClampMinMax(pref);				
 
 				pref.Intersect (rBounds);				
 							

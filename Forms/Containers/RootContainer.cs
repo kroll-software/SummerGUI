@@ -115,11 +115,11 @@ namespace SummerGUI
 		{
 			try {
 				SetBounds(bounds);
-				base.OnLayout (ctx, Bounds);
+				base.OnLayout (ctx, Bounds);				
 			} catch (Exception ex) {
 				ex.LogError ("RootContainer.OnLayout()");
 			}
-		}
+		}		
 
 		protected override void LayoutChild (IGUIContext ctx, Widget child, RectangleF bounds)
 		{
@@ -139,7 +139,23 @@ namespace SummerGUI
 			// The root container sets the first clip-bounds without combining
 			// all later should combine the clips..
 			using (var clip = new ClipBoundClip (ctx, Bounds, false)) {
-				base.Update (ctx);
+				this.OnPaintBackground(ctx, Bounds);
+				if (!clip.IsEmptyClip) {
+					for (int i = Children.Count - 1; i >= 0; i--) {
+						Widget child = Children [i];												
+						if (child != null && child.Visible && child.ZIndex < 10000) {
+							try {								
+								using (var clipChild = new ClipBoundClip (ctx, child.Bounds, true)) {
+									if (!clipChild.IsEmptyClip) {
+										child.Update (ctx);
+									}
+								}
+							} catch (Exception ex) {
+								ex.LogError ();
+							}
+						}
+					}
+				}			
 			}
 
 			try {
@@ -147,7 +163,12 @@ namespace SummerGUI
 				//for (int i = 0; i < Overlays.Count; i++) {
 				for (int i = Overlays.Count - 1; i >= 0 ; i--) {
 					Widget w = Overlays [i];
-					w.Update (ctx);	
+					if (w != null && w.Visible)
+					{
+						using (new ClipBoundClip(CTX, w.Bounds, false)) {
+							w.Update (ctx);
+						}
+					}
 				}
 			} catch (Exception ex) {
 				ex.LogError ();
@@ -315,7 +336,9 @@ namespace SummerGUI
 			HideTooltip ();
 			
 			Widget c = this.HitTest (e.X, e.Y);
-			if (c == null || !Overlays.Contains (c)) {
+			//if (c == null || !Overlays.Contains (c)) 
+			if (c == null || !c.IsOverlay)
+			{
 				int overlayCount = Overlays.Count;
 				if (!Overlays.OfType<IOverlayWidget> ().Any (ov => ov.OverlayMode == OverlayModes.Modal)) {
 					Overlays.OfType<IOverlayWidget> ().ToList ().ForEach (ov => ov.OnClose ());
@@ -644,7 +667,7 @@ namespace SummerGUI
 			GuiMenu menu = new GuiMenu ("contextmenu");
 			menu.AddRange (items);
 			ShowContextMenu (location, menu);
-		}
+		}		
 
 		object contextMenuLock = new object ();
 		public void ShowContextMenu(PointF location, IGuiMenu menu)

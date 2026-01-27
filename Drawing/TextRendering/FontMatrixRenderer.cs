@@ -122,7 +122,7 @@ namespace SummerGUI
 
             if (m_Face != null)
             {
-                FT_Done_Face(m_Face);
+                //FT_Done_Face(m_Face);
                 m_Face = null;
             }
 

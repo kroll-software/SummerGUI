@@ -251,7 +251,7 @@ namespace SummerGUI
 		}
 
 		public override void Update (IGUIContext ctx)
-		{					
+		{
 			try {		
 				if (AutoScroll && ScrollBars != ScrollBars.None) {
 					float offsetX = 0;

@@ -33,7 +33,7 @@ namespace SummerGUI
 			this.Dock = Docking.Fill;
 			OverlayMode = OverlayModes.Modal;
 			CanFocus = true;
-		}			
+		}
 
 		public void OnOK ()
 		{
@@ -55,7 +55,7 @@ namespace SummerGUI
 			// Do nothing here
 			if (ParentWindow != null) {
 				ParentWindow.Controls.RemoveChild (this);
-				Invalidate ();
+				Invalidate (10);
 				this.Dispose ();
 			}
 		}						
@@ -74,7 +74,7 @@ namespace SummerGUI
 			}
 
 			this.Focus ();
-		}						
+		}
 			
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			

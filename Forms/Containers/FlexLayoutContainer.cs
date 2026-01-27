@@ -61,8 +61,7 @@ namespace SummerGUI
 		{			
 			if (CachedPreferredSize == SizeF.Empty) {
 
-				float w = 0, h = 0;
-				float extra;
+				float w = 0, h = 0;				
 				int visibleChildCount = 0;
 				SizeF sz;
 
@@ -70,8 +69,6 @@ namespace SummerGUI
 				case FlexDirections.Row:
 				case FlexDirections.RowReverse:
 				case FlexDirections.RowCenter:
-				//extra = Padding.Width;
-					extra = ItemDistance;
 					for (int i = 0; i < Children.Count; i++) {	
 						Widget child = Children [i];
 						if (child.Visible) {
@@ -81,62 +78,33 @@ namespace SummerGUI
 							h = Math.Max (h, sz.Height);
 						}
 					}
-					w += extra * (visibleChildCount - 1);
-				//h += Padding.Height;
-					h += Margin.Height;
+					w += ItemDistance * (visibleChildCount - 1);
 					break;
 				case FlexDirections.Column:
 				case FlexDirections.ColumnReverse:
-				case FlexDirections.ColumnCenter:
-				//extra = Padding.Height;
-					extra = ItemDistance;
+				case FlexDirections.ColumnCenter:					
 					for (int i = 0; i < Children.Count; i++) {
 						Widget child = Children [i];
 						if (child.Visible) {
+							visibleChildCount++;
 							sz = child.PreferredSize (ctx);
+							h += sz.Height + child.Margin.Height;
 							w = Math.Max (w, sz.Width);
-							h += sz.Height + extra + child.Margin.Height;
 						}
 					}
-					w += extra;
+					h += ItemDistance * (visibleChildCount - 1);
 					break;
 				}
 				
-				CachedPreferredSize = new SizeF (w + Padding.Width, h + Padding.Height);
+				CachedPreferredSize = new SizeF (w + Padding.Width, h + Padding.Height);				
 			}
 
 			return CachedPreferredSize;
 		}
-			
-		private void LayoutRowReverse(IGUIContext ctx, RectangleF bounds)
-		{
-			float dh = ItemDistance / 2;
-			if (this.Children.Count > 0) {
-				RectangleF r = bounds;
-				r.X = bounds.Right;
-				for (int i = Children.Count - 1; i >= 0; i--)
-				//for (int i = 0; i < Children.Count; i++)
-				{
-					Widget child = Children [i];
-
-					if (child.Visible) {
-						float w = child.Bounds.Width;
-						//r.X -= w + Padding.Right + child.Margin.Right;
-						r.X -= w + dh + child.Margin.Right;
-						r.Width = w;
-						//r = r.Inflate (child.Margin);
-						LayoutChild(ctx, child, r);
-						//r.X -= Padding.Left + child.Margin.Left;
-						r.X -= dh + child.Margin.Left;
-					}
-				}
-			}
-		}
 
 		private void LayoutRowForward(IGUIContext ctx, RectangleF bounds)
-		{
-			float dh = ItemDistance / 2;
-			if (this.Children.Count > 0) {
+		{			
+			if (Children.Count > 0) {
 				RectangleF r = bounds;
 				r.X = bounds.Left;
 				for (int i = 0; i < Children.Count; i++)
@@ -144,38 +112,119 @@ namespace SummerGUI
 					Widget child = Children [i];
 
 					if (child.Visible) {
-						float w = child.Bounds.Width;
-						r.X += dh + child.Margin.Left;
+						float w = child.PreferredSize (ctx).Width;
+						r.X += child.Margin.Left;
 						r.Width = w;
 						LayoutChild(ctx, child, r);
-						r.X += w + dh + child.Margin.Right;
+						r.X += w + child.Margin.Right + ItemDistance;
+					}
+				}
+			}
+		}
+			
+		private void LayoutRowReverse(IGUIContext ctx, RectangleF bounds)
+		{			
+			if (Children.Count > 0) {
+				RectangleF r = bounds;
+				r.X = bounds.Right;
+				for (int i = Children.Count - 1; i >= 0; i--)				
+				{
+					Widget child = Children [i];
+
+					if (child.Visible) {
+						float w = child.PreferredSize (ctx).Width;
+						r.X -= w + child.Margin.Right;
+						r.Width = w;						
+						LayoutChild(ctx, child, r);						
+						r.X -= child.Margin.Left + ItemDistance;
+					}
+				}
+			}
+		}		
+
+		private void LayoutRowCentered(IGUIContext ctx, RectangleF bounds)
+		{
+			if (this.Children.Count > 0) {
+				
+				float contentWidth = Children.Where(c => c.Visible).Sum (c => c.Bounds.Width + c.Margin.Width);
+				contentWidth += (Children.Count(c => c.Visible) - 1) * ItemDistance;
+
+				RectangleF r = bounds;
+				
+				r.X = (r.Width - contentWidth) / 2f + bounds.Left;
+				for (int i = 0; i < Children.Count; i++)
+				{
+					Widget child = Children [i];
+					if (child.Visible) {
+						float w = child.PreferredSize (ctx).Width;
+						r.X += child.Margin.Left;
+						r.Width = w;
+						LayoutChild(ctx, child, r);
+						r.X += w + child.Margin.Right + ItemDistance;
 					}
 				}
 			}
 		}
 
-		private void LayoutRowCentered(IGUIContext ctx, RectangleF bounds)
+		private void LayoutColumnForward(IGUIContext ctx, RectangleF bounds)
+		{
+			if (Children.Count > 0) {
+				RectangleF r = bounds;
+				r.Y = bounds.Top;
+				for (int i = 0; i < Children.Count; i++)
+				{
+					Widget child = Children [i];
+
+					if (child.Visible) {						
+						float h = child.PreferredSize (ctx).Height;
+						r.Y += child.Margin.Top;
+						r.Height = h;
+						LayoutChild(ctx, child, r);
+						r.Y += h + child.Margin.Bottom + ItemDistance;
+					}
+				}
+			}
+		}        
+
+		private void LayoutColumnReverse(IGUIContext ctx, RectangleF bounds)
+		{
+			if (Children.Count > 0) {
+				RectangleF r = bounds;
+				r.Y = bounds.Bottom;
+				for (int i = Children.Count - 1; i >= 0; i--)				
+				{
+					Widget child = Children [i];
+
+					if (child.Visible) {
+						float h = child.PreferredSize (ctx).Height;
+						r.Y -= h + child.Margin.Bottom;
+						r.Height = h;						
+						LayoutChild(ctx, child, r);						
+						r.Y -= child.Margin.Top + ItemDistance;
+					}
+				}
+			}
+		}
+
+		private void LayoutColumnCentered(IGUIContext ctx, RectangleF bounds)
 		{
 			if (this.Children.Count > 0) {
-
-				float contentWidth = Children.Where(c => c.Visible).Sum (c => c.Bounds.Width + c.Margin.Width) 
-					+ ((Children.Count(c => c.Visible)) * Padding.Width);
+				
+				float contentHeight = Children.Where(c => c.Visible).Sum (c => c.Bounds.Height + c.Margin.Height);
+				contentHeight += (Children.Count(c => c.Visible) - 1) * ItemDistance;
 
 				RectangleF r = bounds;
-				float dh = ItemDistance / 2;
-
-				// ALWAYS ADD THE OFFSET FROM THE BOUNDS  !!
-
-				r.X = ((r.Width) / 2f) - (contentWidth / 2f) + bounds.Left;
+				
+				r.Y = (r.Height - contentHeight) / 2f + bounds.Top;
 				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
 					if (child.Visible) {
-						float w = child.Bounds.Width;
-						r.X += dh + child.Margin.Left;
-						r.Width = w;
+						float h = child.PreferredSize (ctx).Height;
+						r.Y += child.Margin.Top;
+						r.Height = h;
 						LayoutChild(ctx, child, r);
-						r.X += w + dh + child.Margin.Right;
+						r.Y += h + child.Margin.Bottom + ItemDistance;
 					}
 				}
 			}
@@ -184,16 +233,24 @@ namespace SummerGUI
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
 		{
 			switch (FlexDirection) {
+			case FlexDirections.Row:
+				LayoutRowForward (ctx, bounds);
+				break;
 			case FlexDirections.RowReverse:
 				LayoutRowReverse (ctx, bounds);
 				break;
 			case FlexDirections.RowCenter:
 				LayoutRowCentered (ctx, bounds);
+				break;			
+			case FlexDirections.Column:
+				LayoutColumnForward (ctx, bounds);
 				break;
-			default:
-				LayoutRowForward (ctx, bounds);
-				//base.LayoutChildren (ctx, bounds);
+			case FlexDirections.ColumnReverse:
+				LayoutColumnReverse (ctx, bounds);
 				break;
+			case FlexDirections.ColumnCenter:
+				LayoutColumnCentered (ctx, bounds);
+				break;			
 			}				
 		}
 

@@ -55,6 +55,8 @@ namespace SummerGUI
 			}
 		}
 
+		//public int MaxVisibleItems {get; set; } = 12;
+
 		protected int m_SelectedIndex = -1;
 		public int SelectedIndex
 		{
@@ -74,6 +76,15 @@ namespace SummerGUI
 					Text = Items [m_SelectedIndex].Text;
 				}
 			}
+		}
+
+		public object SelectedValue
+		{
+			get{
+				if (m_SelectedIndex < 0 || m_SelectedIndex >= Items.Count)
+					return null;
+				return Items[m_SelectedIndex].Value;
+			}			
 		}
 
 		public abstract string Text { get; set; }

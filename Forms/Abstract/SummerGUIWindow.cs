@@ -824,7 +824,7 @@ namespace SummerGUI
 			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 			GL.Clear (ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);			
 
-			GL.Enable(EnableCap.ScissorTest);
+			GL.Enable(EnableCap.ScissorTest);			
 		}
 					
 		private void DoPaint(RectangleF bounds)

@@ -6,15 +6,18 @@ using OpenTK.Input;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
+using SummerGUI.Splitting;
+using System.Reflection.Metadata.Ecma335;
 
 namespace SummerGUI
 {
 	public class MessageBoxOverlay : ChildFormOverlay
 	{		
 		protected TextWidget IconText { get; set; }
-		protected Panel ContentPanel { get; set; }
+		protected Panel ContentPanel { get; set; }		
+
 		protected MultiLineTextWidget TW  { get; set; }
-		protected ButtonContainer ButtonContainer { get; private set; }
+		protected ButtonContainer ButtonContainer { get; private set; }		
 
 		public string Message { get; protected set; }
 
@@ -23,30 +26,29 @@ namespace SummerGUI
 
 		public MessageBoxOverlay (IGUIContext ctx, ColorContexts colorContext)
 			: base("messagebox")
-		{		
+		{
 			CTX = ctx;
 			ColorContext = colorContext;
 			CanFocus = true;
 
 			ContentPanel = AddChild (new Panel ("contents", Docking.Fill, new WidgetStyle (Theme.GetContextColor (colorContext),
 				Theme.GetContextForeColor (colorContext),
-				Color.Empty)));
+				Color.Empty)));			
 
 			// panel
 			ButtonContainer = ContentPanel.AddChild (new ButtonContainer("buttoncontainer", Docking.Bottom, new EmptyWidgetStyle()));
 			ButtonContainer.FlexDirection = FlexDirections.RowCenter;
+			ButtonContainer.Padding =  new Padding(16);			
 		}
 
-		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{	
-			base.OnLayout (ctx, bounds);
+        public override void OnResize()
+        {			
+            base.OnResize();
 
-			float preferredHeight = ContentPanel.PreferredSize (ctx, bounds.Size).Height;
-			preferredHeight = Math.Min (preferredHeight, bounds.Height);
-			float marginHeight = ((bounds.Height - preferredHeight) / 2);
-			ContentPanel.Margin = new Padding (0, marginHeight, 0, marginHeight);
-			ContentPanel.Padding = new Padding (16);
-		}
+			SizeF sz = ContentPanel.PreferredSize(CTX, Bounds.Size);
+			float rest = (Bounds.Height - sz.Height) / 2;
+			ContentPanel.Margin = new Padding(0, rest, 0, rest);			
+        }		
 
 		public override void Focus ()
 		{		
@@ -55,10 +57,9 @@ namespace SummerGUI
 		}
 
 		public override void ShowDialog (SummerGUIWindow parent)
-		{
-			//ParentWindow = parent;
+		{			
 			base.ShowDialog (parent);
-			InitAnimation ();
+			InitAnimation ();			
 			Invalidate ();
 		}
 
@@ -156,7 +157,7 @@ namespace SummerGUI
 			IconText = new TextWidget ("icon", Docking.Top, new EmptyWidgetStyle (), null, null);
 			IconText.IconFont = FontManager.Manager.FontByTag (CommonFontTags.LargeIcons);
 			IconText.Icon = icon;
-			IconText.ForeColor = Color.White;
+			IconText.ForeColor = Color.White;			
 			ContentPanel.AddChild (IconText);
 		}
 
@@ -175,32 +176,21 @@ namespace SummerGUI
 			this.OnLayout (CTX, CTX.Bounds);
 
 			// Layout the text
-			RectangleF bounds = ContentPanel.ClientRectangle;
-			SizeF sz = TW.PreferredSize (CTX, bounds.Size);
+			SizeF preferref = ContentPanel.PreferredSize(CTX, new SizeF(0, 0));
+			SizeF sz = TW.PreferredSize (CTX, new SizeF(CTX.Bounds.Width, float.MaxValue));
 
-			if (sz.Height > bounds.Height) {
+			if (sz.Height > preferref.Height) {
 				ScrollableContainer container = ContentPanel.AddChild (new ScrollableContainer ("scroller"));
 				container.ScrollBars = ScrollBars.Vertical;
 				container.AutoScroll = true;
 				TW.Dock = Docking.Top;
+				container.MaxSize = new SizeF(float.MaxValue, 240);
+				container.Margin = new Padding(0, 0, 0, 16);
 				container.AddChild (TW);
 			} else {
 				ContentPanel.AddChild (TW);
 			}				
-		}
-
-		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
-		{
-			return proposedSize;
-
-			/***
-			if (TW == null)
-				return proposedSize;
-
-			return new Size (proposedSize.Width,
-				Children.Sum (c => c.PreferredSize (proposedSize).Height + Padding.Height));
-			***/
-		}
+		}        
 			
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
 		{			
@@ -260,11 +250,10 @@ namespace SummerGUI
 
 			if (msgType == MessageBoxTypes.Error) {
 				//box.InitCopyButton ();
-			}				
+			}
 				
 			box.Style.BackColorBrush.Color = 
 				Color.FromArgb(30, Color.DarkSlateGray);
-			/*** ***/				
 
 			box.ShowDialog (parent);
 			box.Focus ();			
