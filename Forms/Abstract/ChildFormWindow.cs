@@ -58,7 +58,8 @@ namespace SummerGUI
 			{
 				SharedContext = parent.Context,
 				Title = caption,
-				ClientSize = new Vector2i(width, height),
+				//ClientSize = new Vector2i((width * parent.ScaleFactor).Ceil(), (height * parent.ScaleFactor).Ceil()),
+				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),
 				StartVisible = false,
 				StartFocused = false,
 				//IsEventDriven = false,
@@ -74,7 +75,7 @@ namespace SummerGUI
 				NumberOfSamples = 4,
 				WindowBorder = sizable ? WindowBorder.Resizable : WindowBorder.Fixed,				
 			}, parent, frameRate)
-		{
+		{			
 			if (String.IsNullOrEmpty (name))
 				name = "ChildWindow";			
 			

@@ -191,11 +191,7 @@ namespace SummerGUI
 
 		public static DialogResults Show (string caption, string message, MessageBoxTypes msgType = MessageBoxTypes.Info, MessageBoxButtons buttons = MessageBoxButtons.OkCancel, SummerGUIWindow parent = null)
 		{	
-			float scaling = 1;
-			if (parent != null)
-				scaling = parent.ScaleFactor;
-
-			MessageBoxWindow box = new MessageBoxWindow ("MsgBox", caption, (DefaultWidth * scaling).Ceil(), (DefaultHeight * scaling).Ceil(), parent);
+			MessageBoxWindow box = new MessageBoxWindow ("MsgBox", caption, DefaultWidth, DefaultHeight, parent);
 
 			// *** Icon
 

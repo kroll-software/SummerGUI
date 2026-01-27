@@ -11,7 +11,7 @@ namespace SummerGUI
 	public class AboutScreen : ChildFormWindow
 	{
 		public AboutScreen (string caption, SummerGUIWindow parent)
-			: this ("AboutScreen", caption, (520 * parent.ScaleFactor).Ceil(), (460 * parent.ScaleFactor).Ceil(), parent)
+			: this ("AboutScreen", caption, 520, 460, parent)
 		{
 			
 		}
