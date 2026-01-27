@@ -53,6 +53,9 @@ namespace SummerGUI
 				case "Single":			
 					newValue = value.SafeFloat ();
 					break;
+				case "Byte":					
+					newValue = (byte)value.SafeInt();
+					break;
 				case "Int32":					
 					newValue = value.SafeInt ();
 					break;
