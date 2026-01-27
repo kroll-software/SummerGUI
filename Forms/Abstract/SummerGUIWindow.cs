@@ -224,7 +224,7 @@ namespace SummerGUI
 		{
 			if (!ChildWindows.Contains (wnd)) {
 				ChildWindows.AddLast (wnd);
-				this.Controls.Enabled = false;				
+				//this.Controls.Enabled = false;  // that's too much
 
 				if (this.WindowState == WindowState.Fullscreen)
 					//this.BringToFront();
