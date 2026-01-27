@@ -953,8 +953,8 @@ namespace SummerGUI
                                 
                 Flush(); // Zeichne alles bisherige mit dem alten Scissor                
                                                     
-                int glY = ctx.Height - (rb.Y + rb.Height) - ctx.TitleBarHeight;                    
-                GL.Scissor(rb.X, glY, rb.Width, rb.Height);                
+                int glY = ctx.Height - (rb.Y + rb.Height) - ctx.TitleBarHeight;
+                GL.Scissor(rb.X, glY, rb.Width, rb.Height);
             }
         }
 

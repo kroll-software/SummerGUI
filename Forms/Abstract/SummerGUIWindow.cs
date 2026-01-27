@@ -162,10 +162,7 @@ namespace SummerGUI
         {
 			Interlocked.Increment(ref _instanceCount);
 
-			this.Context.MakeCurrent();
-
-			//NativeWindowSettings test = new NativeWindowSettings();
-			//test.TransparentFramebuffer = false;			
+			this.Context.MakeCurrent();			
 						
 			m_FrameRate = frameRate;
 			this.VSync = VSyncMode.Adaptive;
@@ -216,7 +213,8 @@ namespace SummerGUI
 				Title = caption,
 				ClientSize = new Vector2i(width, height),
 				AutoLoadBindings = true,
-				StartVisible = false,				
+				StartVisible = false,
+				StartFocused = true,
 				Profile = ContextProfile.Core,
 				NumberOfSamples = 4,
 				TransparentFramebuffer = false,
@@ -356,6 +354,12 @@ namespace SummerGUI
 			}
 		}		
 
+		public unsafe void SetOpacity(float value)
+		{
+    		// 0.0f ist unsichtbar, 1.0f ist voll da
+    		GLFW.SetWindowOpacity(this.WindowPtr, MathF.Max(0, MathF.Min(1, value))); 
+		}
+
 		public event EventHandler<EventArgs> Load;
 		protected virtual void OnLoad(EventArgs e)
 		{			
@@ -364,9 +368,10 @@ namespace SummerGUI
 				this.Batcher.Init(this.Size.X, this.Size.Y);
 				this.Batcher.SetGamma(1.2f);
 			}
-
-			IsCreated = true;
+			
+			SetOpacity(0);
 			IsVisible = true;
+			IsCreated = true;			
 
 			PerformanceTimer.Time (() => {
 				InitializeWidgets ();
@@ -938,6 +943,10 @@ namespace SummerGUI
 		public int ThreadSleepOnEmptyUpdateFrame { get; set; }
 		public int ThreadSleepOnEmptyRenderFrame { get; set; }
 
+		private float _opacity = 0.0f;
+		private const float _fadeSpeed = 2.5f; // Steuert die Geschwindigkeit (höher = schneller)
+		private bool _isFadingIn = true;
+
 		/// <summary>
 		/// this is called every frame, put game logic here
 		/// </summary>
@@ -954,8 +963,20 @@ namespace SummerGUI
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 				this.Controls.OnLayout (this, rec);
 				iDirtyLayout--;
-			}			
-		}
+			}
+
+			if (_isFadingIn)
+			{
+				_opacity += (float)elapsedSeconds * _fadeSpeed;				
+				if (_opacity >= 1.0f || ParentWindow != null)
+				{
+					_opacity = 1.0f;
+					_isFadingIn = false;
+				}				
+				iDirtyPaint++;
+				SetOpacity(_opacity);
+			}
+		}		
 			
 		protected virtual void OnRenderFrame(double elapsedSeconds)
 		{							
@@ -965,14 +986,14 @@ namespace SummerGUI
 			if (Animator.IsStarted) {
 				Animator.Animate ();
 				Invalidate (1);
-			}			
+			}
 			else if (iDirtyPaint <= 0) {
 				Thread.Sleep (ThreadSleepOnEmptyRenderFrame);
 				return;
 			}
 						
 			DoPaint ((Rectangle)ClientRectangle);			
-			iDirtyPaint--;
+			iDirtyPaint--;			
 		}
 
 		// *** Overlay Widgets

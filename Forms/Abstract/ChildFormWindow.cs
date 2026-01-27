@@ -61,7 +61,7 @@ namespace SummerGUI
 				//ClientSize = new Vector2i((width * parent.ScaleFactor).Ceil(), (height * parent.ScaleFactor).Ceil()),
 				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),
 				StartVisible = false,
-				StartFocused = false,
+				StartFocused = true,
 				//IsEventDriven = false,
 				//Location = new Vector2i(parent.Location.X, parent.Location.Y),
 				//MinimumClientSize = new Vector2i(100, 100),
@@ -215,7 +215,7 @@ namespace SummerGUI
 			if (ParentWindow != parent)
 				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
 
-			this.IsVisible = true;
+			//this.IsVisible = true;
 
 			PlatformExtensions.MakeWindowModal(this, ParentWindow);
 
