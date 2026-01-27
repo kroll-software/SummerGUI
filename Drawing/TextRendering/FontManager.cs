@@ -392,13 +392,14 @@ namespace SummerGUI
 				return;
 			}
 
-			config.ScaleFactor *= this.ScaleFactor;
+			var clonedConfig = config.Clone();
+			clonedConfig.ScaleFactor *= this.ScaleFactor;
 
 			IGUIFont font = null;
 			if (!String.IsNullOrEmpty (config.Path)) {
-				font = FontManager.CreateFont (config);
+				font = FontManager.CreateFont (clonedConfig);
 				if (font == null)
-					this.LogWarning ("Failed to load font: {0}", config.Tag);
+					this.LogWarning ("Failed to load font: {0}", clonedConfig.Tag);
 			}
 
 			// Add even when font is null, which means: loading failed

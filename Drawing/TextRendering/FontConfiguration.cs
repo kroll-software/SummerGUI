@@ -73,6 +73,7 @@ namespace SummerGUI
 		public float LineSpacing { get; set; }
 
 		public FontRenderingHints RenderingHint { get; set; }
+		public GlyphFilterFlags Filter { get; set; } 
 
 		public bool OnDemand
 		{
@@ -85,9 +86,12 @@ namespace SummerGUI
 				else 
 					Filter &= ~GlyphFilterFlags.OnDemand;
 			}
-		}
+		}		
 
-		public GlyphFilterFlags Filter { get; set; } 
+		public GUIFontConfiguration Clone()
+		{			
+			return (GUIFontConfiguration)this.MemberwiseClone();
+		}
 	}
 }
 
