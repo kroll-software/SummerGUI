@@ -57,9 +57,8 @@ namespace SummerGUI
 			: base(new NativeWindowSettings()
 			{
 				SharedContext = parent.Context,
-				Title = caption,
-				//ClientSize = new Vector2i((width * parent.ScaleFactor).Ceil(), (height * parent.ScaleFactor).Ceil()),
-				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),
+				Title = caption,				
+				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),				
 				StartVisible = false,
 				StartFocused = true,
 				//IsEventDriven = false,
@@ -215,7 +214,7 @@ namespace SummerGUI
 			if (ParentWindow != parent)
 				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
 
-			//this.IsVisible = true;
+			this.IsVisible = true;	// Das war auskommentiert, weil ich dachte, das Fenster sei hier schon sichtbar.
 
 			PlatformExtensions.MakeWindowModal(this, ParentWindow);
 

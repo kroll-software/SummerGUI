@@ -162,7 +162,7 @@ namespace SummerGUI
         {
 			Interlocked.Increment(ref _instanceCount);
 
-			this.Context.MakeCurrent();			
+			this.Context.MakeCurrent();
 						
 			m_FrameRate = frameRate;
 			this.VSync = VSyncMode.Adaptive;
@@ -371,7 +371,8 @@ namespace SummerGUI
 			
 			SetOpacity(0);
 			IsVisible = true;
-			IsCreated = true;			
+			IsCreated = true;
+
 
 			PerformanceTimer.Time (() => {
 				InitializeWidgets ();
