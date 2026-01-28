@@ -214,7 +214,7 @@ namespace SummerGUI
 			if (ParentWindow != parent)
 				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
 
-			this.IsVisible = true;	// Das war auskommentiert, weil ich dachte, das Fenster sei hier schon sichtbar.
+			this.IsVisible = true;	// Important before MakeWindowModal!
 
 			PlatformExtensions.MakeWindowModal(this, ParentWindow);
 
