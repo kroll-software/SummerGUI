@@ -343,7 +343,7 @@ namespace SummerGUI.SystemSpecific.Linux
             X11Interface.XSendEvent(display, rootWindow, false, eventMask, ref ev);
 
             X11Interface.XFlush(display);
-        }
+        }        
 
         public static void ApplyHideFromTaskbarDirect(IntPtr display, IntPtr xid)
         {

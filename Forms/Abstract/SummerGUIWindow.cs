@@ -20,6 +20,7 @@ using OpenTK.Graphics.GL;
 using System.ComponentModel.DataAnnotations;
 using System.Collections;
 using System.Net;
+using System.Collections.Concurrent;
 
 //
 // On Linux to use GLFW compiled for Wayland set the environment variable OPENTK_4_USE_WAYLAND=1
@@ -33,6 +34,14 @@ namespace SummerGUI
 		Mobile,
 		Tablet,
 		Desktop
+	}
+
+	public enum EnergySavingModes
+	{
+		Off = 0,
+		Low = 4,
+		Medium = 2,
+		High = 1
 	}
 
 	public struct LoadingError
@@ -957,13 +966,22 @@ namespace SummerGUI
 			RaiseSleepTime ();			
 			if (iDirtyPaint <= 0) {
 				Thread.Sleep (ThreadSleepOnEmptyUpdateFrame);
-				return;
+				//return;
+				goto Label1;
 			}
 				
 			if (iDirtyLayout > 0) {				
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 				this.Controls.OnLayout (this, rec);
 				iDirtyLayout--;
+			}
+
+		Label1:
+
+			// Verarbeite alle anstehenden Grafik-Aufgaben im UI-Thread
+			while (_mainThreadQueue.TryDequeue(out var action))
+			{
+				action.Invoke();
 			}
 
 			if (_isFadingIn)
@@ -977,7 +995,14 @@ namespace SummerGUI
 				iDirtyPaint++;
 				SetOpacity(_opacity);
 			}
-		}		
+		}	
+
+		private readonly ConcurrentQueue<Action> _mainThreadQueue = new ConcurrentQueue<Action>();	
+
+		public void QueueWorkItem(Action action)
+		{
+			_mainThreadQueue.Enqueue(action);
+		}
 			
 		protected virtual void OnRenderFrame(double elapsedSeconds)
 		{							
@@ -1625,12 +1650,17 @@ namespace SummerGUI
 			}
 		}
 
+		public EnergySavingModes EnergySavingMode { get; set; } = EnergySavingModes.Off;
+
 		public virtual void OnProcessEvents()
 		{			
 			double timeout;
 			
 			if (_isCurrentlyAnimating)
-				timeout = 0.0; // Polling-Modus für maximale Geschwindigkeit
+			{
+
+				timeout = EnergySavingMode == EnergySavingModes.Off ? 0 : 1.0 / (FrameRate * (int)EnergySavingMode);
+			}				
 			else
 				timeout = 0.1;
 			

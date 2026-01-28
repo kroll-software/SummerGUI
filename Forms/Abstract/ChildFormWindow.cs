@@ -99,8 +99,12 @@ namespace SummerGUI
 			}
 
 			DetectDPI ();
-
-			ParentWindow?.AddChildWindow (this);			
+			
+			if (ParentWindow != null)
+			{
+				ParentWindow.AddChildWindow (this);
+				EnergySavingMode = ParentWindow.EnergySavingMode;
+			}
 		}
 
 		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
@@ -210,7 +214,7 @@ namespace SummerGUI
 		private WindowBorder _oldParentWindowsBorder;		
 
 		public void ShowDialog(SummerGUIWindow parent)
-		{						
+		{									
 			if (ParentWindow != parent)
 				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
 
@@ -221,9 +225,9 @@ namespace SummerGUI
 			_oldParentWindowsBorder = ParentWindow.WindowBorder;
 			ParentWindow.WindowBorder = WindowBorder.Fixed;
 
-			this.Focus();			
+			this.Focus();		
 			
-			Batcher.BindContext(this);		
+			Batcher.BindContext(this);			
 
 			this.Run ();	
 
@@ -236,6 +240,10 @@ namespace SummerGUI
 			}			
 		}
 
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+        }
 		
 
 		public override void OnProcessEvents ()

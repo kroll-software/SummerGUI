@@ -50,9 +50,9 @@ namespace SummerGUI
 
 		public ComboListBox (string name) 
 			: base(name)
-		{			
+		{						
 			InsertButton ();
-			Button.Dock = Docking.Fill;
+			Button.Dock = Docking.Fill;			
 
 			Font = FontManager.Manager.DefaultFont;
 			TextMargin = new Size (6, 2);
@@ -97,12 +97,12 @@ namespace SummerGUI
 		{
 			return new SizeF(proposedSize.Width, ItemHeight);
 			//return new SizeF (proposedSize.Width, Font.TextBoxHeight);
-		}
+		}        
 
 		public override void Update (IGUIContext ctx)
 		{
 			if (Bounds.Width <= 0 || Bounds.Height <= 0)
-				return;
+				return;			
 
 			using (var clip = new ClipBoundClip (ctx, Bounds, true)) {
 				if (!clip.IsEmptyClip) {
@@ -135,10 +135,10 @@ namespace SummerGUI
 		}
 			
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
-		{
+		{			
 			base.OnPaint (ctx, bounds);
 			DrawItem (ctx, bounds, SelectedItem, Button.Style);
-		}
+		}        
 
 		protected override void CleanupManagedResources ()
 		{
