@@ -29,8 +29,8 @@ namespace SummerGUI
 		{	
 			currDelay = Due > 0 ? Due : Delay;
 			// das ist der Trick an der Sache
-			if (m_TokenSource != null)
-				return;
+			//if (m_TokenSource != null)
+			//	return;
 			Enabled = true;
 			Loop ();
 		}
@@ -44,6 +44,37 @@ namespace SummerGUI
 				}	
 			} catch {			
 			}
+			finally
+			{
+				m_TokenSource = null;
+			}
+		}
+
+		public void Reset()
+		{
+			// Wir setzen die Zeit zurück auf den Startwert (Due oder Delay)
+			currDelay = Due > 0 ? Due : Delay;
+
+			// Der Trick: Wir lösen einen Abbruch des aktuellen Delays aus.
+			// Die Schleife in Loop() fängt das ab und startet sofort neu, 
+			// solange Enabled auf true steht.
+			if (m_TokenSource != null)
+			{
+				try 
+				{
+					m_TokenSource.Cancel();
+				}
+				catch (ObjectDisposedException) 
+				{
+					// Falls das Token gerade in der Finalisierung war
+				}
+			}
+			
+			if (Enabled)
+			{
+				// Falls der Timer gestoppt war, aber Reset gerufen wird
+				Start();
+			}
 		}
 			
 		async void Loop()
@@ -53,7 +84,7 @@ namespace SummerGUI
 					m_TokenSource.Cancel ();
 				}
 				m_TokenSource = new CancellationTokenSource ();
-				while (Enabled) {								
+				while (Enabled) {
 					await Task.Delay(currDelay, m_TokenSource.Token)	//.ContinueWith(tsk => {})						
 						.ContinueWith((t) => {
 							if (t.Status == TaskStatus.RanToCompletion && Enabled && ACTION != null) {

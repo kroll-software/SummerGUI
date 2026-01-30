@@ -131,7 +131,14 @@ namespace SummerGUI
 			HAlign = Alignment.Center;
 			FilePath = filePath;
 			ShouldDisposeImage = true;
-		}
+		}	
+
+		public void SetImage(TextureImage image)
+		{
+			if (Image != null && ShouldDisposeImage)
+				Image.Dispose ();
+			Image = image;
+		}	
 
 		public void LoadImageAsync(string filePath, IGUIContext ctx)
 		{

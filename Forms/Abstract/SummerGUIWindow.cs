@@ -973,15 +973,18 @@ namespace SummerGUI
 			if (iDirtyLayout > 0) {				
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 				this.Controls.OnLayout (this, rec);
+				OnAfterLayout();
 				iDirtyLayout--;
 			}
 
 		Label1:
 
 			// Verarbeite alle anstehenden Grafik-Aufgaben im UI-Thread
-			while (_mainThreadQueue.TryDequeue(out var action))
+			int processed = 0;
+			while (_mainThreadQueue.TryDequeue(out var action) && processed < 20) 
 			{
-				action.Invoke();
+				action();
+				processed++;
 			}
 
 			if (_isFadingIn)
@@ -995,7 +998,11 @@ namespace SummerGUI
 				iDirtyPaint++;
 				SetOpacity(_opacity);
 			}
-		}	
+		}
+
+		public virtual void OnAfterLayout()
+		{
+		}
 
 		private readonly ConcurrentQueue<Action> _mainThreadQueue = new ConcurrentQueue<Action>();	
 
@@ -1598,8 +1605,7 @@ namespace SummerGUI
 			PaintFrameRate = (float)renderframes_per_second;
 			Animator.FrameRate = renderframes_per_second;
 			//base.Run (updateRate, renderRate);
-			// ToDo:
-			
+			// ToDo:			
 
 			try
 			{

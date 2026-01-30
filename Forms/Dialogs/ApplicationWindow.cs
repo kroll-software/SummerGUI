@@ -180,7 +180,7 @@ namespace SummerGUI
 
 		protected virtual void OnRightSideBarVisibleChanged()
 		{			
-		}			
+		}
 
 		public virtual void AboutScreen()
 		{
@@ -188,8 +188,8 @@ namespace SummerGUI
 			DlgAbout.ProgramTitle = "Summer GUI";
 			DlgAbout.ProgramSubTitle = "by John Summer. A lightweight X-Platform GUI Framework written in C#";			
 			DlgAbout.LicenseInfo = "License: MIT";
-			DlgAbout.Url = "http://www.kroll-software.ch";
-			DlgAbout.UrlText = "www.kroll-software.ch";
+			DlgAbout.Url = "https://github.com/kroll-software/SummerGUI";
+			DlgAbout.UrlText = "github.com/kroll-software/SummerGUI";
 			DlgAbout.Copyright = "Produced 2016-2026 by Kroll-Software, free to copy and use.";
 			// ToDo: DPI Scaling
 			DlgAbout.ImagePath = "Assets/Logo/SummerGUI_96px.png".FixedExpandedPath();	
