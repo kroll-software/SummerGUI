@@ -45,6 +45,18 @@ namespace SummerGUI.SystemSpecific.Windows
 		public const uint SWP_NOZORDER = 0x0004;
 		public const uint SWP_FRAMECHANGED = 0x0020; // WICHTIG: Erzwingt Neuzeichnen des Rahmens
 
+		[DllImport("user32.dll")]
+		private static extern int ShowCursor(bool bShow);
+
+		public static void HideMouseCursor()
+		{		
+			while (ShowCursor(false) >= 0);
+		}
+
+		public static void ShowMouseCursor()
+		{
+			while (ShowCursor(true) < 0);			
+		}
 				
 		// In SummerGUI.SystemSpecific.Windows.PlatformExtensions
 		public static unsafe void MakeWindowModal(NativeWindow child, NativeWindow parent)

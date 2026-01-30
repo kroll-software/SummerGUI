@@ -102,6 +102,42 @@ namespace SummerGUI
 			return path;
 		}
 
+		public static void HideMouseCursor(NativeWindow window)
+		{
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				window.Cursor = OpenTK.Windowing.Common.Input.MouseCursor.Empty;
+				break;			
+
+			case OS.Windows:
+				SystemSpecific.Windows.Common.HideMouseCursor();
+				break;
+
+			case OS.Mac:				
+				window.Cursor = OpenTK.Windowing.Common.Input.MouseCursor.Empty;
+				break;
+			}
+		}
+
+		public static void ShowMouseCursor(NativeWindow window)
+		{
+			switch (CurrentOS) {
+			case OS.Android:
+			case OS.Linux:
+				window.Cursor = OpenTK.Windowing.Common.Input.MouseCursor.Default;
+				break;			
+
+			case OS.Windows:
+				SystemSpecific.Windows.Common.ShowMouseCursor();
+				break;
+
+			case OS.Mac:				
+				window.Cursor = OpenTK.Windowing.Common.Input.MouseCursor.Default;
+				break;
+			}
+		}
+
 		public static void MakeWindowModal(NativeWindow child, NativeWindow parent)
 		{			
 			switch (CurrentOS) {

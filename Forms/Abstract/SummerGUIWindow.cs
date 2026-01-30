@@ -167,9 +167,12 @@ namespace SummerGUI
 		
 		private static int _instanceCount = 0;
 
+		private static int _mainThreadId;
+
 		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
         {
 			Interlocked.Increment(ref _instanceCount);
+			_mainThreadId = Environment.CurrentManagedThreadId;
 
 			this.Context.MakeCurrent();
 						
@@ -524,7 +527,7 @@ namespace SummerGUI
 			WindowResourceManager.Manager.LoadCursorFromFile ("Assets/Cursors/VSplit.png", Cursors.VSplit);
 			WindowResourceManager.Manager.LoadCursorFromFile ("Assets/Cursors/HSplit.png", Cursors.HSplit);
 			WindowResourceManager.Manager.LoadCursorFromFile ("Assets/Cursors/Text.png", Cursors.Text);
-			WindowResourceManager.Manager.LoadCursorFromFile ("Assets/Cursors/Wait.png", Cursors.Wait);
+			WindowResourceManager.Manager.LoadCursorFromFile ("Assets/Cursors/Wait.png", Cursors.Wait);			
 		}
 			
 		private bool m_SettingCursor;
@@ -574,7 +577,17 @@ namespace SummerGUI
                 m_GlobalCursor = null;
 				m_SettingCursor = false;                
                 Invalidate();
-			}            
+			}
+		}
+
+		public void HideCursor()
+		{
+			QueueWorkItem(() => PlatformExtensions.HideMouseCursor(this));
+		}
+
+		public void ShowCursor()
+		{			
+			QueueWorkItem(() => PlatformExtensions.ShowMouseCursor(this));
 		}
 
 		// Slow-down rendering when the user is inactive for a while
@@ -1008,7 +1021,18 @@ namespace SummerGUI
 
 		public void QueueWorkItem(Action action)
 		{
-			_mainThreadQueue.Enqueue(action);
+			if (action == null) return;			
+
+			if (Environment.CurrentManagedThreadId == _mainThreadId)
+			{
+				// Wir sind bereits im Main-Thread -> sofort ausführen
+				action();
+			}
+			else
+			{
+				// Anderer Thread (z.B. TaskTimer oder IO) -> ab in die Queue
+				_mainThreadQueue.Enqueue(action);
+			}
 		}
 			
 		protected virtual void OnRenderFrame(double elapsedSeconds)

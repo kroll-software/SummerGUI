@@ -132,6 +132,43 @@ namespace SummerGUI
 			}
 		}
 
+		public static TextureImage FromBytes(byte[] data, IGUIContext ctx, string key, Size size = default(Size))
+		{
+			if (data == null || data.Length == 0)
+				return null;
+
+			try
+			{
+				// Direkt aus dem Speicher-Buffer lesen ohne Umweg über File-I/O
+				using (MemoryStream ms = new MemoryStream(data))
+				{
+					// StbImageSharp dekodiert JPEG, PNG, etc. automatisch
+					ImageResult image = ImageResult.FromStream(ms, ColorComponents.RedGreenBlueAlpha);
+
+					// Optionales Scaling (deine vorhandene Logik)
+					if (size != Size.Empty && (size.Width != image.Width || size.Height != image.Height))
+					{
+						var scaledBytes = ImageScaler.ScaleImageData(image.Data, image.Width, image.Height, size.Width, size.Height);
+						image.Data = scaledBytes;
+						image.Width = size.Width;
+						image.Height = size.Height;
+					}
+
+					TextureImage retVal = new TextureImage(key);
+					retVal.TextureID = UploadTextureToOpenGL(image); // Deine interne GL-Upload Methode
+					retVal.Size = new Size(image.Width, image.Height);
+					retVal.URI = "memory://" + key; // Kennzeichnung für In-Memory Content
+
+					return retVal;
+				}
+			}
+			catch (Exception ex)
+			{
+				ex.LogError();
+				return null;
+			}
+		}
+
 		// Die neue Methode, die das Bild an OpenGL übergibt
 		static int UploadTextureToOpenGL(ImageResult image, int id = 0)
 		{   
