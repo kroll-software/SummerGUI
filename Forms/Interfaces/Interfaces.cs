@@ -31,6 +31,8 @@ namespace SummerGUI
 		Rectangle Bounds { get; }		
 		AnimationService Animator { get; }
 
+		public int DeltaTicks { get; }
+
 		ClipBoundStackClass ClipBoundStack { get; }
 		MenuManager MenuManager { get; }
 		IRootController Controller { get; }

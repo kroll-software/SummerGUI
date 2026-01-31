@@ -169,6 +169,9 @@ namespace SummerGUI
 
 		private static int _mainThreadId;
 
+		private DeltaTimer _frameTimer;
+		public int DeltaTicks { get => _frameTimer.Delta; }
+
 		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
         {
 			Interlocked.Increment(ref _instanceCount);
@@ -177,6 +180,7 @@ namespace SummerGUI
 			this.Context.MakeCurrent();
 						
 			m_FrameRate = frameRate;
+			_frameTimer = new DeltaTimer();
 			this.VSync = VSyncMode.Adaptive;
 			this.AutoIconify = false;
 			this.CursorState = CursorState.Normal;
@@ -580,14 +584,21 @@ namespace SummerGUI
 			}
 		}
 
+		bool _mouseCursorHidden = false;
+
 		public void HideCursor()
-		{
-			QueueWorkItem(() => PlatformExtensions.HideMouseCursor(this));
+		{						
+			PlatformExtensions.HideMouseCursor(this);
+			_mouseCursorHidden = true;
 		}
 
 		public void ShowCursor()
 		{			
-			QueueWorkItem(() => PlatformExtensions.ShowMouseCursor(this));
+			if (_mouseCursorHidden)
+			{
+				_mouseCursorHidden = false;				
+				PlatformExtensions.ShowMouseCursor(this);
+			}
 		}
 
 		// Slow-down rendering when the user is inactive for a while
@@ -982,7 +993,9 @@ namespace SummerGUI
 				//return;
 				goto Label1;
 			}
-				
+			
+			_frameTimer.Update();			
+			
 			if (iDirtyLayout > 0) {				
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
 				this.Controls.OnLayout (this, rec);
