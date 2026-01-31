@@ -48,11 +48,11 @@ namespace SummerGUI
                     return string.IsNullOrEmpty(FileName) ? DialogResults.Cancel : DialogResults.OK;						
                 case PlatformExtensions.OS.Linux:
                     var linuxDlg = new SystemSpecific.Linux.SystemDialogs();
-                    FileName = linuxDlg.SaveFileDialog(ctx, caption, filter, defaultFileName, filterIndex, initialDirectory, restoreDirectory);
+                    FileName = linuxDlg.SaveFileDialog(ctx, caption, defaultFileName, filter, filterIndex, initialDirectory, restoreDirectory);
                     return string.IsNullOrEmpty(FileName) ? DialogResults.Cancel : DialogResults.OK;
                 case PlatformExtensions.OS.Mac:
                     var macDlg = new SystemSpecific.Mac.SystemDialogs();
-                    FileName = macDlg.SaveFileDialog(ctx, caption, filter, defaultFileName, filterIndex, initialDirectory, restoreDirectory);
+                    FileName = macDlg.SaveFileDialog(ctx, caption, defaultFileName, filter, filterIndex, initialDirectory, restoreDirectory);
                     return string.IsNullOrEmpty(FileName) ? DialogResults.Cancel : DialogResults.OK;
             }
             return DialogResults.None;

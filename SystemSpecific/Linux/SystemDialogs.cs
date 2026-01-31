@@ -62,6 +62,9 @@ namespace SummerGUI.SystemSpecific.Linux
         [DllImport("libgtk-3.so.0")]
         public static extern void gtk_file_chooser_set_filter(IntPtr chooser, IntPtr filter);
 
+        [DllImport("libgtk-3.so.0", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr gtk_file_chooser_get_filter(IntPtr chooser);
+
         [DllImport("libgtk-3.so.0")]
         public static extern void gtk_file_chooser_set_current_folder(IntPtr chooser, string name);
 
@@ -167,8 +170,8 @@ namespace SummerGUI.SystemSpecific.Linux
                 IntPtr.Zero
             );
             
-            return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);
-        }
+            return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);            
+        }        
 
         public string SelectFolderDialog(
             IGUIContext ctx, 
@@ -209,6 +212,8 @@ namespace SummerGUI.SystemSpecific.Linux
                 GtkNative.gtk_file_chooser_set_current_folder(dialog, linuxPath);
             }
 
+            List<IntPtr> filterPointers = new List<IntPtr>();
+
             // --- Filter parsen (Windows Syntax: "Name|*.ext|Name2|*.ext2") ---
             if (!string.IsNullOrEmpty(filter))
             {
@@ -232,6 +237,7 @@ namespace SummerGUI.SystemSpecific.Linux
                     }
 
                     GtkNative.gtk_file_chooser_add_filter(dialog, gtkFilter);
+                    filterPointers.Add(gtkFilter);
 
                     // Den vom User gewünschten FilterIndex (1-basiert) merken
                     if (currentFilterIdx == filterIndex)
@@ -303,6 +309,11 @@ namespace SummerGUI.SystemSpecific.Linux
                 }
             }
 
+            if (action == (int)GTK_FILE_CHOOSER_ACTION_SAVE)
+            {
+                resultPath = AppendExtensionIfMissing(dialog, resultPath, filterPointers, filter);
+            }
+
             GtkNative.gtk_widget_destroy(dialog);
             
             // Main-Loop kurz abarbeiten für sauberes Schließen
@@ -312,6 +323,48 @@ namespace SummerGUI.SystemSpecific.Linux
             return resultPath;
         }
 
+        private string AppendExtensionIfMissing(IntPtr dialog, string path, List<IntPtr> filterPointers, string filter)
+        {            
+            // Hat die Datei bereits eine Endung? (z.B. .txt oder .png)
+            string currentExt = System.IO.Path.GetExtension(path);
+            if (!string.IsNullOrEmpty(currentExt))
+            {
+                return path; // User hat die Extension manuell mit eingegeben
+            }
+
+            // Welcher Filter ist gerade im Dropdown ausgewählt?
+            IntPtr currentFilter = GtkNative.gtk_file_chooser_get_filter(dialog);
+            if (currentFilter == IntPtr.Zero) return path;            
+
+            int selectedIndex = filterPointers.IndexOf(currentFilter) + 1; // +1 weil Index 1-basiert ist
+
+            if (selectedIndex <= 0)
+                return path;
+
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(filter) || selectedIndex <= 0)
+                return path;
+
+            string[] parts = filter.Split('|');
+            int patternPartIdx = (selectedIndex * 2) - 1;
+
+            if (patternPartIdx < parts.Length)
+            {
+                // Nimm die erste Extension des Patterns (z.B. "*.png" von "*.png;*.jpg")
+                string firstPattern = parts[patternPartIdx].Split(';')[0].Trim();
+
+                if (firstPattern != "*.*" && firstPattern != "*")
+                {
+                    string ext = firstPattern.Replace("*", ""); // Macht ".png" daraus
+                    if (!path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return path + ext;
+                    }
+                }
+            }            
+            
+            return path; 
+        }
+        
         public static void ApplyModalStateDirect(IntPtr display, IntPtr childXid, IntPtr parentXid, bool isModal)
         {
             if (display == IntPtr.Zero || childXid == IntPtr.Zero) return;

@@ -39,8 +39,14 @@ namespace SummerGUI
 			Enabled = false;
 			try {
 				if (m_TokenSource != null) {
-					m_TokenSource.Cancel ();
-					//m_TokenSource = null;	// nullreferece error
+					try 
+					{
+						m_TokenSource.Cancel();
+					}
+					catch (ObjectDisposedException) 
+					{
+						// Falls das Token gerade in der Finalisierung war
+					}
 				}	
 			} catch {			
 			}
@@ -51,9 +57,8 @@ namespace SummerGUI
 		}
 
 		public void Reset()
-		{
-			// Wir setzen die Zeit zurück auf den Startwert (Due oder Delay)
-			currDelay = Due > 0 ? Due : Delay;
+		{			
+			currDelay = Due > 0 ? Due : Delay;		
 
 			// Der Trick: Wir lösen einen Abbruch des aktuellen Delays aus.
 			// Die Schleife in Loop() fängt das ab und startet sofort neu, 
@@ -76,14 +81,24 @@ namespace SummerGUI
 				Start();
 			}
 		}
+
+		public readonly object SyncObject = new object();
 			
 		async void Loop()
 		{	
 			try {
 				if (m_TokenSource != null) {
-					m_TokenSource.Cancel ();
+					try 
+					{
+						m_TokenSource.Cancel();
+					}
+					catch (ObjectDisposedException) 
+					{
+						// Falls das Token gerade in der Finalisierung war
+					}					
 				}
-				m_TokenSource = new CancellationTokenSource ();
+				m_TokenSource = new CancellationTokenSource ();				
+				
 				while (Enabled) {
 					await Task.Delay(currDelay, m_TokenSource.Token)	//.ContinueWith(tsk => {})						
 						.ContinueWith((t) => {

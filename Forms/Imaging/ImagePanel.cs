@@ -247,7 +247,7 @@ namespace SummerGUI
 		protected RectangleF DestRect(RectangleF bounds)
 		{           
 			if (Image == null || Image.Width <= 0 || Image.Height <= 0)
-				return RectangleF.Empty;           
+				return RectangleF.Empty;
 
 			// 1. Nutzbaren Bereich (Canvas) berechnen: Bounds minus Padding und Border
 			float border = Style.Border;

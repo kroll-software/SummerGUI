@@ -56,7 +56,8 @@ namespace SummerGUI
 			this.Padding = new Padding (6, 3, 5, 3);
 			this.Margin = Padding.Empty;
 
-			DefaultPanel = new StatusTextPanel ("default", Docking.Fill, "");
+			DefaultPanel = new StatusTextPanel ("default", Docking.Left, "");
+			DefaultPanel.ZIndex = 100;
 			this.AddChild (DefaultPanel);
 
 			ProgressPanel = new StatusProgressPanel ("progress");
