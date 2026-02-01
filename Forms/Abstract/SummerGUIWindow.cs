@@ -990,11 +990,11 @@ namespace SummerGUI
 			RaiseSleepTime ();			
 			if (iDirtyPaint <= 0) {
 				Thread.Sleep (ThreadSleepOnEmptyUpdateFrame);
-				//return;
+				_frameTimer.Update();
 				goto Label1;
 			}
 			
-			_frameTimer.Update();			
+			_frameTimer.Update();
 			
 			if (iDirtyLayout > 0) {				
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);

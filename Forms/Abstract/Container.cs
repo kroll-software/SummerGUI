@@ -284,7 +284,7 @@ namespace SummerGUI
 
 			for (int i = 0; i < Children.Count; i++) {
 				Widget child = Children [i];
-				if (child != null) {
+				if (child != null && child.Visible) {
 					Widget c = child.HitTest (x, y);
 					if (c != null)
 						return c;

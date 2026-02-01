@@ -79,7 +79,7 @@ namespace SummerGUI
 		}
 
 		public void RegisterOverlay(Widget widget)
-		{
+		{		
 			if (widget != null && !Overlays.Contains(widget))
 				Overlays.Add (widget);
 		}
@@ -132,7 +132,7 @@ namespace SummerGUI
 		}
 
 		public override void Update (IGUIContext ctx)
-		{						
+		{	
 			// We start a new round here.
 			// Ensure the stack is empty
 			ctx.ClipBoundStack.Clear ();
@@ -143,7 +143,8 @@ namespace SummerGUI
 				if (!clip.IsEmptyClip) {
 					for (int i = Children.Count - 1; i >= 0; i--) {
 						Widget child = Children [i];												
-						if (child != null && child.Visible && child.ZIndex < 10000) {
+						//if (child != null && child.Visible && child.ZIndex < 10000) {
+						if (child != null && child.Visible) {
 							try {								
 								using (var clipChild = new ClipBoundClip (ctx, child.Bounds, true)) {
 									if (!clipChild.IsEmptyClip) {

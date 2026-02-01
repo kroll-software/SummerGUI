@@ -15,6 +15,9 @@ namespace SummerGUI
 {
 	public class TextWidget : Widget
 	{				
+		[DpiScalable]
+		public float YOffset {get; set;}
+
 		public TextWidget (string name) : this(name, Docking.None, new DefaultTextWidgetStyle(), null, null) {}		
 
 		public TextWidget (string name, Docking dock, IWidgetStyle style, string text, IGUIFont font)
@@ -175,6 +178,7 @@ namespace SummerGUI
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{		
 			bounds = PaddingBounds;
+			bounds.Y += YOffset;
 
 			if (IconFont != null && Icon != 0) {				
 				RectangleF iconRect = bounds;				

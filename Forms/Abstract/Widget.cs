@@ -448,7 +448,7 @@ namespace SummerGUI
 		}
 		protected virtual void OnVisibleChanged()
 		{			
-			Update (true);
+			Update (true);			
 		}
 
 		private bool m_Enabled = true;

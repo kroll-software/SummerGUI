@@ -22,7 +22,7 @@ namespace SummerGUI
 			SetForeColor (Theme.Colors.Base3);
 			SetBorderColor (Color.Empty);
 		}
-	}		
+	}
 
 	public class ActiveCaptionPanelStyle : GradientWidgetStyle
 	{
@@ -55,10 +55,13 @@ namespace SummerGUI
 			set {
 				if (m_CanCollapse != value) {
 					m_CanCollapse = value;
+
+					/***
 					if (m_CanCollapse)
 						Padding = new Padding (6, 6, 24, 6);
 					else
-						Padding = new Padding (6);
+						Padding = new Padding (6);					
+					***/
 				}
 			}
 		}
@@ -81,8 +84,10 @@ namespace SummerGUI
 			: base(name, Docking.Top, style, text, null)
 		{
 			Styles.SetStyle (new ActiveCaptionPanelStyle (), WidgetStates.Active);
-			Format = FontFormat.DefaultSingleLine;
+			Format = FontFormat.DefaultSingleLine;			
 			Padding = new Padding (6);
+			ZIndex = 1000;
+			YOffset = -2;
 		}
 
 		public override void UpdateStyle()
@@ -95,17 +100,26 @@ namespace SummerGUI
 
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{
+			Padding oldPadding = Padding;
+			if (CanCollapse)
+				Padding = new Padding(Padding.Left, Padding.Top, Padding.Right + 18 * ScaleFactor, Padding.Bottom);
+
 			base.OnPaint (ctx, bounds);
+			Padding = oldPadding;
+
 			if (!m_CanCollapse || IconFont == null)
 				return;
+			
 			RectangleF iconRect = PaddingBounds;
+			iconRect.Y += YOffset;
+
 			char icon;
 			if (m_Collapsed)
 				icon = (char)FontAwesomeIcons.fa_caret_right;
 			else
 				icon = (char)FontAwesomeIcons.fa_caret_down;
 			
-			ctx.DrawString (icon.ToString (), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatFar);
+			ctx.DrawString (icon.ToString(), IconFont, Style.ForeColorBrush, iconRect, FontFormat.DefaultIconFontFormatFar);
 		}
 
 		public event EventHandler<EventArgs> CollapsedChanged;
