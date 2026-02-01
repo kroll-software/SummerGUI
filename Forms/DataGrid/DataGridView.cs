@@ -102,7 +102,10 @@ namespace SummerGUI
 		{
 			// RowManager == null || RowManager.RowCount <= 0 || 
 			if (Columns.IsNullOrEmpty () || String.IsNullOrEmpty (this.Name))
+			{
+				this.LogWarning("DataGridView LoadSettings: Columns not initialized.");
 				return;
+			}
 			ConfigFile conf = ConfigurationService.Instance.ConfigFile;
 			if (conf == null)
 				return;
@@ -1386,7 +1389,7 @@ namespace SummerGUI
 		{
 			base.OnPaintBackground (ctx, bounds);
 
-			if (RowManager == null)
+			if (!HasData)
 				return;
 
 			// Linke untere Ecke
