@@ -19,7 +19,7 @@ using SummerGUI.Scrolling;
 namespace SummerGUI
 {
 	public class CommandInputBar : Container
-	{		
+	{
 		public CommandInputTextBox Input { get; private set; }
 		public Button OkButton { get; private set; }
 		public Button CancelButton { get; private set; }

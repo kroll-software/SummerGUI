@@ -43,7 +43,7 @@ namespace SummerGUI
 			} finally {
 				m_TokenSource = null;
 				IsStarted = false;
-			}				
+			}
 		}
 
 		public void Stop()
@@ -58,7 +58,7 @@ namespace SummerGUI
 			} catch {				
 			}
 		}
-
+				
 		public void Dispose()
 		{
 			Stop ();

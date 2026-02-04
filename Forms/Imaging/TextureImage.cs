@@ -172,14 +172,15 @@ namespace SummerGUI
 		// Die neue Methode, die das Bild an OpenGL übergibt
 		static int UploadTextureToOpenGL(ImageResult image, int id = 0)
 		{   
-			if (id <= 0) id = GL.GenTexture();
-			GL.BindTexture(TextureTarget.Texture2D, id);
+			if (id <= 0) 
+				id = GL.GenTexture();
+			GL.BindTexture(TextureTarget.Texture2D, id);			
 
 			// Filter setzen wir einmal beim Upload
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);			
 
 			GL.TexImage2D(
 				TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 

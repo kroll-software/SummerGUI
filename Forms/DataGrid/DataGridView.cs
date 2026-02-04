@@ -392,7 +392,7 @@ namespace SummerGUI
 
 		public void SetupScrollBars()
 		{
-			if (Bounds.IsEmpty)
+			if (Bounds.IsEmpty || ColumnManager == null)
 				return;
 
 			// ToDo:
@@ -468,8 +468,9 @@ namespace SummerGUI
 		//string LastFindString;
 		public bool CanFind
 		{
-			get{
-				return RowManager != null && RowManager.RowCount > 0;
+			get{				
+				//return RowManager != null && RowManager.RowCount > 0;
+				return true;
 			}
 		}
 
@@ -490,7 +491,7 @@ namespace SummerGUI
 		}
 
 		public void Find()
-		{
+		{			
 		}
 
 		public void FindNext()

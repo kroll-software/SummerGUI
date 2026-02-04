@@ -45,7 +45,7 @@ namespace SummerGUI
 			}
 			set {
 				value = Math.Max (0, Math.Min (1, value));
-				if (Math.Abs (value - m_Value) > 0.001) {
+				if (Math.Abs (value - m_Value) > float.Epsilon) {
 					m_Value = value;
 					this.Invalidate ();
 
