@@ -1755,19 +1755,21 @@ namespace SummerGUI
 				bProcess = true;
 				break;
 			case Keys.KeyPad0:	// pad insert
-				bHandled = true;								
-				if (RowManager.CanMoveForward) {
-					if (m_LastShiftDownPosition < 0)
-						m_LastShiftDownPosition = RowIndex;
-					RowManager.MoveNext ();
-					if (ColumnIndex < 0)
-						ColumnIndex = 0;
-					SelectionManager.SelectRow(RowIndex);					
-					this.Invalidate();
-					this.StartSelectionTimer();
-					bSeekRow = false;
-					bProcess = true;
-				}	
+				bHandled = true;				
+				if (m_LastShiftDownPosition < 0)
+					m_LastShiftDownPosition = RowIndex;				
+				if (ColumnIndex < 0)
+					ColumnIndex = 0;				
+				if (SelectionManager.IsRowSelected(RowIndex) && SelectionManager.SelectedRowsCount > 1)
+					SelectionManager.UnselectRow(RowIndex);
+				else				
+					SelectionManager.SelectRow(RowIndex);
+				RowManager.MoveNext ();
+				this.Invalidate();
+				this.StartSelectionTimer();				
+				bSeekRow = false;
+				bProcess = true;
+				
 				break;
 			case Keys.Enter:
 				bHandled = true;
@@ -1777,12 +1779,15 @@ namespace SummerGUI
 				}
 				break;
 			case Keys.Escape:				
-				if (m_LastShiftDownPosition >= 0 && SelectionManager.SelectedRowsCount > 1)
+				//if (m_LastShiftDownPosition >= 0 && SelectionManager.SelectedRowsCount > 1)
+				if (SelectionManager.SelectedRowsCount > 1)
 				{
-					RowIndex = m_LastShiftDownPosition;
+					if (m_LastShiftDownPosition >= 0)
+						RowIndex = m_LastShiftDownPosition;
 					m_LastShiftDownPosition = -1;
 					SelectionManager.SelectNone();
 					EnsureRowindexVisible(RowIndex);
+					bHandled = true;
 					bSeekRow = true;
 					bProcess = true;					
 				}				
@@ -1815,9 +1820,12 @@ namespace SummerGUI
 							SelectionManager.SelectRow(m_LastShiftDownPosition);
 					}
 					else
-					{   												
-						SelectionManager.SelectNone();
-						SelectionManager.SelectRow(RowIndex);
+					{   
+						if (SelectionManager.SelectedRowsCount <= 1)
+						{
+							SelectionManager.SelectNone();
+							SelectionManager.SelectRow(RowIndex);
+						}
 						m_LastShiftDownPosition = -1;
 					}					
 
