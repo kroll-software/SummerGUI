@@ -1403,6 +1403,9 @@ namespace SummerGUI
 			int startRowIndex = FirstRowOnScreen;
 			int endRowIndex = LastRowOnScreen;			
 
+			//Brush SelectedRowBrushLight = new SolidBrush(Theme.Colors.HighLightBlueTransparent);
+			//Pen SelectedBorderPen = new Pen(Color.DarkSlateGray, 1, LineStyles.Dotted);
+
 			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
 			using (var clip = new ClipBoundClip (ctx, ClipRect)) {				
 				for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) 
@@ -1415,13 +1418,21 @@ namespace SummerGUI
 					{
 						if (IsFocused) 
 						{							
-							ctx.FillRectangle (SelectedRowBrush, R);
+							ctx.FillRectangle (SelectedRowBrush, R);							
 						} 
 						else if (!HideSelection)
 						{															
 							ctx.FillRectangle (SelectedRowInactiveBrush, R);
 						}						
-					} 
+					}
+					
+					/***
+					if (HighlightSelection && !m_PrintingFlag && !m_IsEditing && IsFocused && rowIndex == RowIndex && (SelectionManager.SelectedRowsCount > 1 || !SelectionManager.IsRowSelected(RowIndex)))
+					{
+						ctx.FillRectangle (SelectedRowBrushLight, R);
+						ctx.DrawRectangle(SelectedBorderPen, R);
+					}
+					***/
 					
 					if (!AlternatingRowColor.IsEmpty && rowIndex % 2 > 0 && (!isSelected || HideSelection))
 					{

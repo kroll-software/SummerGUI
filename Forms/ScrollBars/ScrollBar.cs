@@ -91,7 +91,7 @@ namespace SummerGUI
 			Invalidate ();
 			if (Enabled && WidgetState == WidgetStates.Pressed)
 				StartTimer ();
-		}
+		}        
 	}
 
 	public class VerticalScrollBar : ScrollBar

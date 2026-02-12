@@ -33,6 +33,12 @@ namespace SummerGUI.Scrolling
 			}
 		}
 
+        public override void Focus()
+        {
+            if (Parent != null)
+				Parent.Focus();
+        }
+
 		public override void OnPaintBackground (IGUIContext ctx, RectangleF bounds)
 		{
 			if (ParentScroll.Enabled)
@@ -236,6 +242,11 @@ namespace SummerGUI.Scrolling
 			base.OnMouseUp (e);
 		}
 
+		public override void Focus()
+        {
+            if (Parent != null)
+				Parent.Focus();
+        }
 
 		// *************** Painting ******************
 
@@ -482,6 +493,12 @@ namespace SummerGUI.Scrolling
 			if (IsVisibleEnabled)
 				Value = Maximum;
 		}
+
+		public override void Focus()
+        {
+            if (Parent != null && Parent.CanFocus)
+				Parent.Focus();
+        }
 
 		protected override void CleanupManagedResources ()
 		{

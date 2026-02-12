@@ -113,25 +113,7 @@ namespace SummerGUI
 			OnItemSelected();
 			OnClose ();
         }
-
-
-        public override void Update(bool updateParent = false, int frames = 0)
-        {
-            base.Update(updateParent, frames);
-        }
-
-        public override void Update(IGUIContext ctx)
-        {
-            base.Update(ctx);
-        }
-		
-
-		public override void OnPaintBackground(IGUIContext ctx, RectangleF bounds)
-        {			
-			base.OnPaintBackground(ctx, bounds);
-        }
-
-			
+        	
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{			
 			ComboBoxBase parent = Parent as ComboBoxBase;

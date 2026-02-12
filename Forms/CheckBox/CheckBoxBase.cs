@@ -81,11 +81,12 @@ namespace SummerGUI
 		}			
 			
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
-		{
-			base.OnKeyDown (e);
-
+		{			
 			if (!IsFocused)
 				return false;
+
+			if (base.OnKeyDown (e))
+				return true;
 
 			switch (e.Key) {
 			case Keys.Space:
