@@ -46,9 +46,11 @@ namespace SummerGUI
 			base.AddLast(new ListBoxItem(text, null));
 		}
 
-		public void AddUnsorted(string text, object value)
+		public ListBoxItem AddUnsorted(string text, object value)
 		{
-			base.AddLast(new ListBoxItem(text, value));
+			var item = new ListBoxItem(text, value);
+			base.AddLast(item);
+			return item;
 		}
 	}
 }

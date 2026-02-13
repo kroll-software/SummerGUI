@@ -1544,14 +1544,14 @@ namespace SummerGUI
 							string text = null;
 							if (columnDeviderX > Left) {
 								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
-								text = DataProvider.GetFormattedValue (rowIndex, iCol);
+								text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
 							}
 
 							if (AutoColumnWidth && col.SizeMode == DataGridColumn.SizeModes.Fixed)
 							{
 								if (text == null)
-									text = DataProvider.GetFormattedValue (rowIndex, iCol);
+									text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 
 								float stringWidth = Font.Measure(text).Width;
 								if (stringWidth > col.m_DesiredWidth)

@@ -29,6 +29,9 @@ namespace SummerGUI.DataGrid
 		public ToolBarButton CmdNew { get; private set; }
 		public ToolBarButton CmdDelete { get; private set; }
 		public ToolBarButton CmdEdit { get; private set; }
+
+		public ToolBarButton CmdFind { get; private set; }
+		public ToolBarButton CmdColumns { get; private set; }
 		public ToolBarLabel LblRecordCount { get; private set; }
 
 		public IRowManager RowManager { get; private set; }
@@ -54,6 +57,14 @@ namespace SummerGUI.DataGrid
 			CmdDelete = AddChild(new ToolBarButton("delete", "Delete", (char)FontAwesomeIcons.fa_remove,
 				ButtonDisplayStyles.ImageAndText, Theme.Colors.Red));			
 
+			AddChild(new ToolBarSeparator("separator2", new ComponentToolBarSeparatorStyle()));
+
+			CmdFind = AddChild(new ToolBarButton("find", "Find", (char)FontAwesomeIcons.fa_binoculars,
+				ButtonDisplayStyles.ImageAndText, Theme.Colors.Black));
+
+			CmdColumns = AddChild(new ToolBarButton("columns", "Columns..", (char)FontAwesomeIcons.fa_table_columns,
+				ButtonDisplayStyles.ImageAndText, Theme.Colors.Green));
+
 			LblRecordCount = AddChild (new ToolBarLabel ("recordcount", "- / -"));
 			LblRecordCount.Dock = Docking.Right;
 
@@ -68,6 +79,8 @@ namespace SummerGUI.DataGrid
 			CmdNew.Click += CmdNew_Click;
 			CmdEdit.Click += CmdEdit_Click;
 			CmdDelete.Click += CmdDelete_Click;
+
+			CmdColumns.Click += CmdColumns_Click;
 
 			// ***********
 			//RowManagerObserver = new Observable<EventMessage>.Observer (OnNext, OnError, OnCompleted);
@@ -121,6 +134,20 @@ namespace SummerGUI.DataGrid
 				return;
 			ActiveDataGrid.OnNewItem();
 			ActiveDataGrid.Focus ();
+		}		
+
+		void CmdColumns_Click (object sender, EventArgs e)
+		{
+			if (ActiveDataGrid == null)
+				return;
+			
+			var parent = Root.CTX as SummerGUIWindow;
+			if (parent == null)
+				return;
+
+			VisibleColumnsDialog Dlg = new VisibleColumnsDialog(parent, ActiveDataGrid.ColumnManager.Columns);
+			Dlg.ShowDialog(parent);			
+			Dlg.Dispose();			
 		}
 			
 		public void UpdateRecordCount(int current, int total)

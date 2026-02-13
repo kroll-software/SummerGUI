@@ -53,12 +53,12 @@ namespace SummerGUI
 		//public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, WindowPositions position = WindowPositions.CenterParent)
 		//	: base(caption, width, height, parent)
 
-		public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, bool sizable = false, WindowPositions position = WindowPositions.CenterParent, int frameRate = 30)
+		public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = true, bool sizable = false, WindowPositions position = WindowPositions.CenterParent, int frameRate = 30)
 			: base(new NativeWindowSettings()
 			{
 				SharedContext = parent.Context,
 				Title = caption,				
-				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),				
+				ClientSize = new Vector2i((width * parent?.ScaleFactor ?? 1f).Ceil(), (height * parent?.ScaleFactor ?? 1f).Ceil()),
 				StartVisible = false,
 				StartFocused = true,
 				//IsEventDriven = false,

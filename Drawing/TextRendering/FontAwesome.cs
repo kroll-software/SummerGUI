@@ -632,6 +632,7 @@ namespace SummerGUI
 		fa_superscript = 0xf12b,
 		fa_support = 0xf1cd,
 		fa_table = 0xf0ce,
+		fa_table_columns = 0xf0db,
 		fa_tablet = 0xf10a,
 		fa_tachometer = 0xf0e4,
 		fa_tag = 0xf02b,

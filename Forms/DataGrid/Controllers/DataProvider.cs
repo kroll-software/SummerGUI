@@ -19,9 +19,9 @@ namespace SummerGUI.DataGrid
 		IRowManager RowManager { get; }
 		ISelectionManager SelectionManager { get; }
 
-		object GetValue (int row, int col);
+		object GetValue (int row, string key);
 
-		string GetFormattedValue (int row, int col);
+		string GetFormattedValue (int row, string key);
 		int GroupLevel (int row);
 		void ApplySort ();
 		void Clear();
@@ -61,11 +61,11 @@ namespace SummerGUI.DataGrid
 		public abstract void InitializeColumns ();
 		public abstract void InitializeRows ();		
 
-		public abstract object GetValue (int row, int col);
+		public abstract object GetValue (int row, string key);
 
-		public virtual string GetFormattedValue (int row, int col)
+		public virtual string GetFormattedValue (int row, string key)
 		{
-			return GetValue(row, col).SafeString();
+			return GetValue(row, key).SafeString();
 		}
 
 		public virtual void Clear()
