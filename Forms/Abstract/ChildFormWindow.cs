@@ -48,6 +48,8 @@ namespace SummerGUI
 		public bool AllowMinimize { get; set; }
 		public bool AllowMaximize { get; set; }
 
+		private WindowPositions StartPosition { get; set; }
+
 		public DialogResults Result { get; protected set; }
 
 		//public ChildFormWindow (string name, string caption, int width, int height, SummerGUIWindow parent, bool modal = false, WindowPositions position = WindowPositions.CenterParent)
@@ -76,7 +78,9 @@ namespace SummerGUI
 			}, parent, frameRate)
 		{			
 			if (String.IsNullOrEmpty (name))
-				name = "ChildWindow";			
+				name = "ChildWindow";
+
+			var test = WindowBorder;
 			
 			Name = name;
 			IsModal = modal;
@@ -93,12 +97,9 @@ namespace SummerGUI
 				AllowMaximize = false;
 			}
 
-			if (position == WindowPositions.CenterParent)
-			{
-				CenterWindowOnParent(ParentWindow, this);
-			}
+			StartPosition = position;			
 
-			DetectDPI ();
+			DetectDPI ();			
 			
 			if (ParentWindow != null)
 			{
@@ -106,6 +107,17 @@ namespace SummerGUI
 				EnergySavingMode = ParentWindow.EnergySavingMode;
 			}
 		}
+
+        public override void OnLoadSettings()
+        {			
+            base.OnLoadSettings();
+
+			if (StartPosition == WindowPositions.CenterParent)
+			{
+				CenterWindowOnParent(ParentWindow, this);
+			}			
+        }
+
 
 		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
 		{
@@ -203,33 +215,28 @@ namespace SummerGUI
 		{			
 			Result = DialogResults.Cancel;
 			this.Close ();
-		}
-
-        protected override void OnRenderFrame(double elapsedSeconds)
-        {
-			Batcher.BindContext(this);
-            base.OnRenderFrame(elapsedSeconds);
-        }
+		}        
 
 		private WindowBorder _oldParentWindowsBorder;		
 
 		public void ShowDialog(SummerGUIWindow parent)
 		{									
 			if (ParentWindow != parent)
-				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");
-
-			this.IsVisible = true;	// Important before MakeWindowModal!
+				throw new ArgumentException("Parameter 'parent' must match ParentWindow.");			
+						
+			if (PlatformExtensions.CurrentOS != PlatformExtensions.OS.Windows)
+				IsVisible = true;
 
 			PlatformExtensions.MakeWindowModal(this, ParentWindow);
 
 			_oldParentWindowsBorder = ParentWindow.WindowBorder;
 			ParentWindow.WindowBorder = WindowBorder.Fixed;
 
-			this.Focus();		
+			this.Focus();
 			
 			Batcher.BindContext(this);			
 
-			this.Run ();	
+			this.Run ();
 
 			if (ParentWindow != null) 
 			{
@@ -239,12 +246,6 @@ namespace SummerGUI
 				ParentWindow.Focus ();				
 			}			
 		}
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-        }
-		
 
 		public override void OnProcessEvents ()
 		{			

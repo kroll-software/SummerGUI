@@ -301,10 +301,10 @@ namespace SummerGUI
 		protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
 		{
 			base.OnFramebufferResize(e);
-			MakeCurrent();
+			//MakeCurrent();
 
 			// Viewport IMMER zuerst			
-			GL.Viewport(0, 0, e.Width, e.Height);			
+			//GL.Viewport(0, 0, e.Width, e.Height);			
 
 			// Projection exakt gleich
 			//Batcher.UpdateSize(e.Width, e.Height);			
@@ -319,25 +319,32 @@ namespace SummerGUI
 
 		private Rectangle m_LastResizeBounds = Rectangle.Empty;
 
+		private bool m_InDispatch = false;
+
 		protected override void OnResize(ResizeEventArgs e)
-		{			
-			base.OnResize(e);			
-			this.MakeCurrent();			
-
-			if (Bounds != m_LastResizeBounds) {				
+		{
+			base.OnResize(e);
+			
+			if (Bounds != m_LastResizeBounds) 
+			{
 				m_LastResizeBounds = Bounds;
-				//SetupViewport ();
-				iDirtyLayout = MaxDirtyLayout * 2;	// be safe and allow 10 layouts
-				Invalidate ();
+				
+				// REENTRANCY SCHUTZ
+				if (m_InDispatch) return; 
 
-				// *** Test
-				// später aber erst, sobald das richtig funktioniert..
-				// DetectDPI ();
-				// DetectDevice ();
+				m_InDispatch = true;
+				try {
+					iDirtyLayout = MaxDirtyLayout * 2;
+					Invalidate(2);
+					DispatchUpdateAndRenderFrame();
+				}
+				finally {
+					m_InDispatch = false;
+				}
 
 				if (WindowState == WindowState.Normal)
-					DefaultSize = Size;				
-			}			
+					DefaultSize = Size;
+			}
 		}
 
         protected override void OnMove(WindowPositionEventArgs e)
@@ -384,11 +391,8 @@ namespace SummerGUI
 				this.Batcher.Init(this.Size.X, this.Size.Y);
 				this.Batcher.SetGamma(1.2f);
 			}
-			
-			SetOpacity(0);
-			IsVisible = true;
-			IsCreated = true;
 
+			IsCreated = true;
 
 			PerformanceTimer.Time (() => {
 				InitializeWidgets ();
@@ -424,14 +428,20 @@ namespace SummerGUI
 			GL.Disable(EnableCap.DepthTest);
 
 			// activate immediate swapping for flicker-free painting.
-			Context.SwapInterval = 0;
+			Context.SwapInterval = 0;			
 		}
 
 		protected Vector2i DefaultLocation { get; set; }
 		protected Vector2i DefaultSize { get; set; }
 
+		bool _settingsLiaded = false;
 		public virtual void OnLoadSettings()
 		{			
+			// Ensure called once
+			if (_settingsLiaded)
+				return;
+			_settingsLiaded = true;
+
 			ConfigurationService.Instance.ConfigFile.Do (cfg => {
 				if (!String.IsNullOrEmpty (Name) && this.WindowBorder == WindowBorder.Resizable) {				
 					WindowState winState = (WindowState)cfg.GetSetting (this.Name, "WindowState", this.WindowState).SafeString ().ToEnum (this.WindowState);
@@ -979,7 +989,7 @@ namespace SummerGUI
 
 		private float _opacity = 0.0f;
 		private const float _fadeSpeed = 2.5f; // Steuert die Geschwindigkeit (höher = schneller)
-		private bool _isFadingIn = true;
+		private bool _isFadingIn = false;
 
 		/// <summary>
 		/// this is called every frame, put game logic here
@@ -1640,9 +1650,7 @@ namespace SummerGUI
 		{
 			LayoutFrameRate = (float)updates_per_second;
 			PaintFrameRate = (float)renderframes_per_second;
-			Animator.FrameRate = renderframes_per_second;
-			//base.Run (updateRate, renderRate);
-			// ToDo:			
+			Animator.FrameRate = renderframes_per_second;			
 
 			try
 			{
@@ -1659,8 +1667,13 @@ namespace SummerGUI
 				OriginalUpdateFrequency = updates_per_second;
 				OriginalRenderFrequency = renderframes_per_second;
 
-				//Visible = true;   // Make sure the GameWindow is visible.
-				//OnResize(EventArgs.Empty);
+				bool isWindows = PlatformExtensions.CurrentOS == PlatformExtensions.OS.Windows;
+				if (!isWindows)
+				{
+					SetOpacity(0);
+					IsVisible = true;
+					_isFadingIn = true;
+				}
 
 				OnLoad(EventArgs.Empty);
 				Vector2i currentSize = new Vector2i(this.Width, this.Height);
@@ -1669,7 +1682,12 @@ namespace SummerGUI
 
 				OnApplicationRunning ();
 				IsInitialized = true;
-				ShowLoadingErros();
+				ShowLoadingErros();				
+
+				if (isWindows)
+				{
+					IsVisible = true;
+				}
 
 				//this.LogVerbose("Entering main loop.");
 				watch.Start();
@@ -1723,7 +1741,7 @@ namespace SummerGUI
 
 		protected virtual void DispatchUpdateAndRenderFrame()
 		{
-			this.MakeCurrent();
+			//this.MakeCurrent();
 
 			int is_running_slowly_retries = 4;
 			double timestamp = watch.Elapsed.TotalSeconds;

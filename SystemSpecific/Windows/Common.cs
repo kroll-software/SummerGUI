@@ -45,6 +45,20 @@ namespace SummerGUI.SystemSpecific.Windows
 		public const uint SWP_NOZORDER = 0x0004;
 		public const uint SWP_FRAMECHANGED = 0x0020; // WICHTIG: Erzwingt Neuzeichnen des Rahmens
 
+		[DllImport("user32.dll", EntryPoint = "SetClassLongPtr")]
+		public static extern IntPtr SetClassLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+		[DllImport("user32.dll", EntryPoint = "GetClassLongPtr")]
+		public static extern IntPtr GetClassLongPtr(IntPtr hWnd, int nIndex);
+
+		// Die benötigten Konstanten
+		public const int GCL_STYLE = -26;
+		public const uint CS_VREDRAW = 0x0001;
+		public const uint CS_HREDRAW = 0x0002;
+		// Falls du auf einem 32-Bit System kompilierst, bräuchtest du SetClassLong.
+		// Da SummerGUI aber modern auf 64-Bit ausgelegt ist, ist dies der Standard:
+		public const int GCLP_HBRBACKGROUND = -10;
+
 		[DllImport("user32.dll")]
 		private static extern int ShowCursor(bool bShow);
 
@@ -82,7 +96,11 @@ namespace SummerGUI.SystemSpecific.Windows
 				uint exStyle = GetWindowLong(childHwnd, GWL_EXSTYLE);
 				exStyle &= ~WS_EX_TOOLWINDOW; // Tool-Look entfernen
 				exStyle |= WS_EX_DLGMODALFRAME;
+				//exStyle |= (0x02000000 | 0x04000000); // WS_CLIPCHILDREN | WS_CLIPSIBLINGS	// Test
 				SetWindowLong(childHwnd, GWL_EXSTYLE, exStyle);
+
+				//SetClassLongPtr(childHwnd, -10, IntPtr.Zero); // GCLP_HBRBACKGROUND = -10
+				//SetClassLongPtr(childHwnd, -26, (IntPtr)(GetClassLongPtr(childHwnd, -26).ToInt64() | 0x0001 | 0x0002));
 
 				// 4. Hauptfenster deaktivieren
 				EnableWindow(parentHwnd, false);

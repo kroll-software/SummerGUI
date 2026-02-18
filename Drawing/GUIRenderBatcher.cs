@@ -105,6 +105,10 @@ namespace SummerGUI
             whiteTextureId = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, whiteTextureId);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, white);            
+
+            m_ClipOffset = 0;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                m_ClipOffset = 1;
         }
 
 
@@ -938,6 +942,8 @@ namespace SummerGUI
             if (s.DepthTest) GL.Enable(EnableCap.DepthTest); else GL.Disable(EnableCap.DepthTest);
         }
 
+        private int m_ClipOffset = 0;
+
         public void SetClip(IGUIContext ctx, RectangleF bounds)
         {
             Rectangle rb;
@@ -953,7 +959,7 @@ namespace SummerGUI
                                 
                 Flush(); // Zeichne alles bisherige mit dem alten Scissor                
                                                     
-                int glY = ctx.Height - (rb.Y + rb.Height) - ctx.TitleBarHeight + 1;
+                int glY = ctx.Height - (rb.Y + rb.Height) - ctx.TitleBarHeight + m_ClipOffset;
                 GL.Scissor(rb.X, glY, rb.Width, rb.Height);
             }
         }

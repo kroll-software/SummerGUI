@@ -32,7 +32,7 @@ namespace SummerGUI.DataGrid
         
 
         public VisibleColumnsDialog(SummerGUIWindow parent, DataGridColumnCollection columns)
-            : base ("VisibleColumnsDialog", "Visible Columns", 200, 200, parent, true, true)
+            : base ("VisibleColumnsDialog", "Visible Columns", 340, 240, parent, modal: true, sizable: true)
         {
             m_Columns = columns;
 
