@@ -433,15 +433,9 @@ namespace SummerGUI
 
 		protected Vector2i DefaultLocation { get; set; }
 		protected Vector2i DefaultSize { get; set; }
-
-		bool _settingsLiaded = false;
+		
 		public virtual void OnLoadSettings()
 		{			
-			// Ensure called once
-			if (_settingsLiaded)
-				return;
-			_settingsLiaded = true;
-
 			ConfigurationService.Instance.ConfigFile.Do (cfg => {
 				if (!String.IsNullOrEmpty (Name) && this.WindowBorder == WindowBorder.Resizable) {				
 					WindowState winState = (WindowState)cfg.GetSetting (this.Name, "WindowState", this.WindowState).SafeString ().ToEnum (this.WindowState);
