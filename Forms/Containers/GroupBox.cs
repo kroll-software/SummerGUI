@@ -43,7 +43,7 @@ namespace SummerGUI
 			//this.BorderColor = Theme.Colors.Base1;
 			this.BorderColor = Theme.Colors.Silver;
 
-			this.Padding = new Padding(12);			
+			this.Padding = new Padding(12, 16, 12, 12);			
 		}
 
 		public virtual void DrawBorder(IGUIContext ctx, System.Drawing.RectangleF bounds)

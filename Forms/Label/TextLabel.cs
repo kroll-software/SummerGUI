@@ -21,12 +21,13 @@ namespace SummerGUI
 			: base (name, Docking.Fill, new DefaultFormLabelWidgetStyle(), text, FontManager.Manager.DefaultFont)
 		{
 			Styles.SetStyle (new DisabledFormLabelWidgetStyle (), WidgetStates.Disabled);
-			Format = FontFormat.DefaultSingleLine;
-			//Font = SummerGUIWindow.CurrentContext.FontManager.SmallFont;
+			Format = FontFormat.DefaultSingleLine;			
 			this.SetFontByTag(CommonFontTags.Small);
 			Text = Text.ToUpper ();
 			Margin = Padding.Empty;
-			Padding = new Padding (7, 0, 3, 3);
+
+			//Padding = Padding.Empty;
+			Padding = new Padding (4, 0, 3, 0);
 		}
 
 		protected override void OnParentChanged ()
@@ -35,7 +36,7 @@ namespace SummerGUI
 
 			TableLayoutContainer tlc = Parent as TableLayoutContainer;
 			if (tlc != null)
-				OffsetY = tlc.CellPadding.Height;
+				OffsetY = tlc.CellPadding.Height / 2;
 		}
 
 		public override void OnLayout (IGUIContext ctx, System.Drawing.RectangleF bounds)
