@@ -19,9 +19,9 @@ namespace SummerGUI
 		public Button Button { get; private set; }
 		public bool AutoEnableButton { get; set; }
 
-		int m_FixedButtonWidth;
+		float m_FixedButtonWidth;
 		[DpiScalable]
-		public int FixedButtonWidth 
+		public float FixedButtonWidth 
 		{ 
 			get {
 				return m_FixedButtonWidth;
@@ -48,6 +48,7 @@ namespace SummerGUI
 			Button.Padding = new Padding (8, 0, 8, 0);
 			Button.MaxSize = TB.MaxSize;
 			Button.MinSize = SizeF.Empty;
+			//Button.Dock = Docking.Right;
 
 			AddChild (Button);
 
@@ -76,15 +77,16 @@ namespace SummerGUI
 		}
 
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{			
+		{						
 			if (IsLayoutSuspended)
 				return;
 			SetBounds (bounds);
 
-			if (TB.Font != null) {				
+			if (TB.Font != null) {
 				float height = TB.Font.TextBoxHeight;
-				Button.SetBounds (new RectangleF (bounds.Right - height - 1, bounds.Top, height, height));
-				TB.OnLayout (ctx, new RectangleF(bounds.Left, bounds.Top, bounds.Width - height, height));
+				float buttonwidth = Math.Max(FixedButtonWidth, height);
+				Button.SetBounds (new RectangleF (bounds.Right - buttonwidth, bounds.Top, buttonwidth, height));
+				TB.OnLayout (ctx, new RectangleF(bounds.Left, bounds.Top, bounds.Width - buttonwidth, height));
 			}				
 		}			
 	}

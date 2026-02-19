@@ -583,74 +583,73 @@ namespace SummerGUI
         }
 
         public void AddRoundedRectangleOutline(RectangleF rect, Color4 color, float thick, float radius, int segments = 8)
-        {                        
-            // Radius begrenzen und sicherstellen, dass er nicht kleiner als die halbe Dicke ist
+        {
+            // 1. Radius validieren
             radius = Math.Max(thick / 2f, Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f));
-            
-            if (vertexCount + ((segments + 1) * 4 * 2) >= MAX_VERTICES) Flush();
-            SetWhiteTexture();
-
-            // Wir definieren den äußeren und inneren Radius
-            float outerRadius = radius;
             float innerRadius = radius - thick;
 
-            // Hilfsfunktion für einen Bogen-Abschnitt
-            void AddArc(Vector2 center, float startAngle, float endAngle)
+            // Platzprüfung: Wir brauchen 4 Ecken * (segments + 1) * 2 Vertices
+            int totalNewVertices = 4 * (segments + 1) * 2;
+            if (vertexCount + totalNewVertices >= MAX_VERTICES) Flush();
+            
+            SetWhiteTexture();
+            uint firstVertexIdx = (uint)vertexCount;
+
+            // Definition der vier Ecken: Zentrum und Winkelbereich
+            var corners = new[]
+            {
+                new { Center = new Vector2(rect.Right - radius, rect.Top + radius),    Start = 270f, End = 360f }, // Top-Right
+                new { Center = new Vector2(rect.Right - radius, rect.Bottom - radius), Start = 0f,   End = 90f  }, // Bottom-Right
+                new { Center = new Vector2(rect.Left + radius,  rect.Bottom - radius), Start = 90f,  End = 180f }, // Bottom-Left
+                new { Center = new Vector2(rect.Left + radius,  rect.Top + radius),    Start = 180f, End = 270f }  // Top-Left
+            };
+
+            foreach (var corner in corners)
             {
                 for (int i = 0; i <= segments; i++)
                 {
-                    float theta = MathHelper.DegreesToRadians(startAngle + (endAngle - startAngle) * i / segments);
+                    float theta = MathHelper.DegreesToRadians(corner.Start + (corner.End - corner.Start) * i / segments);
                     float cos = (float)Math.Cos(theta);
                     float sin = (float)Math.Sin(theta);
 
-                    // Äußerer Punkt
-                    Vector2 pOuter = new Vector2(center.X + cos * outerRadius, center.Y + sin * outerRadius);
-                    // Innerer Punkt
-                    Vector2 pInner = new Vector2(center.X + cos * innerRadius, center.Y + sin * innerRadius);
+                    // Vertices für diesen Schritt hinzufügen
+                    vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(corner.Center.X + cos * radius, corner.Center.Y + sin * radius), Color = color, TexCoord = Vector2.Zero };
+                    vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(corner.Center.X + cos * innerRadius, corner.Center.Y + sin * innerRadius), Color = color, TexCoord = Vector2.Zero };
 
-                    uint startIdx = (uint)vertexCount;
-                    vertexArray[vertexCount++] = new GUIVertex { Position = pOuter, Color = color, TexCoord = Vector2.Zero };
-                    vertexArray[vertexCount++] = new GUIVertex { Position = pInner, Color = color, TexCoord = Vector2.Zero };
-
-                    // Indizes für das Quad (außer beim letzten Punkt des Bogens)
-                    if (i < segments)
+                    // Indizes setzen, um das aktuelle Paar mit dem vorherigen zu verbinden
+                    // (Überspringen beim allerersten Paar des gesamten Rechtecks)
+                    uint currentIdx = (uint)vertexCount - 2;
+                    if (currentIdx > firstVertexIdx)
                     {
-                        indexArray[indexCount++] = startIdx;
-                        indexArray[indexCount++] = startIdx + 1;
-                        indexArray[indexCount++] = startIdx + 3;
-                        indexArray[indexCount++] = startIdx + 3;
-                        indexArray[indexCount++] = startIdx + 2;
-                        indexArray[indexCount++] = startIdx;
+                        uint pOuter = currentIdx - 2;
+                        uint pInner = currentIdx - 1;
+                        uint cOuter = currentIdx;
+                        uint cInner = currentIdx + 1;
+
+                        indexArray[indexCount++] = pOuter;
+                        indexArray[indexCount++] = pInner;
+                        indexArray[indexCount++] = cInner;
+
+                        indexArray[indexCount++] = cInner;
+                        indexArray[indexCount++] = cOuter;
+                        indexArray[indexCount++] = pOuter;
                     }
                 }
             }
 
-            // Die vier Ecken zeichnen. 
-            // Zwischen den Bögen entstehen automatisch die geraden Linien, 
-            // wenn wir die Indizes korrekt verbinden oder die Bögen nacheinander in den Buffer schreiben.
-            
-            // Wir müssen hier die Bögen manuell verbinden oder die Methode leicht anpassen:
-            // Um Lücken zu vermeiden, zeichnen wir einen durchgehenden Loop.
-            
-            // 1. Top-Right
-            AddArc(new Vector2(rect.Right - radius, rect.Top + radius), 270, 360);
-            // 2. Verbindung zu Bottom-Right (wird durch AddArc implizit vorbereitet)
-            AddArc(new Vector2(rect.Right - radius, rect.Bottom - radius), 0, 90);
-            // 3. Bottom-Left
-            AddArc(new Vector2(rect.Left + radius, rect.Bottom - radius), 90, 180);
-            // 4. Top-Left
-            AddArc(new Vector2(rect.Left + radius, rect.Top + radius), 180, 270);
+            // 2. Letzte Lücke schließen (Verbindung vom letzten zum ersten Paar)
+            uint lastOuter = (uint)vertexCount - 2;
+            uint lastInner = (uint)vertexCount - 1;
+            uint firstOuter = firstVertexIdx;
+            uint firstInner = firstVertexIdx + 1;
 
-            // Letzte Lücke schließen: Verbinde den allerletzten Vertex mit dem allerersten
-            uint firstIdx = (uint)(vertexCount - ((segments + 1) * 4 * 2));
-            uint lastIdx = (uint)(vertexCount - 2);
-            
-            indexArray[indexCount++] = lastIdx;
-            indexArray[indexCount++] = lastIdx + 1;
-            indexArray[indexCount++] = firstIdx + 1;
-            indexArray[indexCount++] = firstIdx + 1;
-            indexArray[indexCount++] = firstIdx;
-            indexArray[indexCount++] = lastIdx;            
+            indexArray[indexCount++] = lastOuter;
+            indexArray[indexCount++] = lastInner;
+            indexArray[indexCount++] = firstInner;
+
+            indexArray[indexCount++] = firstInner;
+            indexArray[indexCount++] = firstOuter;
+            indexArray[indexCount++] = lastOuter;
 
             DrawCount++;
         }
