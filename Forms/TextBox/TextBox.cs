@@ -21,7 +21,7 @@ namespace SummerGUI
 	{
 		public static readonly FontFormat DefaultSingleLineFontFormat = new FontFormat (Alignment.Near, Alignment.Center, FontFormatFlags.None);
 
-		public static readonly char DefaultPasswortChar = '●';
+		public static readonly char DefaultPasswortChar = '●';		
 
 		public event EventHandler<EventArgs> TextChanged;
 		public void OnTextChanged()
@@ -38,7 +38,9 @@ namespace SummerGUI
 			}
 			set {
 				if (value == null)
-					value = String.Empty;
+					value = String.Empty;				
+                if (MaxLength > 0 && value.Length > MaxLength)
+					value = value.StrLeft(MaxLength);
 				if (m_Text != value) {
 					m_Text = value;					
 					OnTextChanged ();
@@ -91,6 +93,7 @@ namespace SummerGUI
 		}
 
 		public bool ReadOnly { get; set; }
+		public int MaxLength { get; set; }
 		public bool Modified { get; set; }
 		public bool AllowTabKey { get; set; }
 		public FontFormat Format { get; set; }			
@@ -258,7 +261,7 @@ namespace SummerGUI
 		public virtual void InsertRange(int pos, string value)
 		{
 			if (ReadOnly)
-				return;
+				return;			
 
 			if (Text == null) {
 				Text = value;
@@ -493,8 +496,9 @@ namespace SummerGUI
 				SetSelection (e.Shift);
 				return true;
 			case Keys.Backspace:
-				if (SelLength > 0) {
-					//this.SetUndoDelete (CursorPosition, 0);
+				if (ReadOnly)
+					break;
+				if (SelLength > 0) {		
 					Delete ();
 				} else if (CursorPosition > 0) {					
 					UndoRedoManager.Do (new UndoRedoBackspaceMemento{
@@ -606,11 +610,19 @@ namespace SummerGUI
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
 			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
+				if (MaxLength > 0)
+				{
+					int textLen = Text == null ? 0 : Text.Length;
+					if (textLen >= MaxLength)
+						return false;					
+				}
+
                 SetUndoInsert (e.KeyChar.ToString ());
 				if (SelLength > 0) {
 					DeleteSelection ();
 					SelLength = 0;
 				}
+
 				InsertChar(CursorPosition++, e.KeyChar);
                 SelStart = CursorPosition;
 
@@ -741,13 +753,22 @@ namespace SummerGUI
 			// Important: filter valid characters
 			if (content != null) {
 				content = new string (content.Where (IsInputChar).ToArray ());
-			}
+			}			
 
 			if (!String.IsNullOrEmpty (content)) {
 				SetUndoInsert (content);
 				if (SelLength > 0)
 					DeleteSelection ();
 				SelLength = 0;
+
+				if (MaxLength > 0)
+				{
+					int textLen = Text == null ? 0 : Text.Length;
+					content = content.StrLeft(MaxLength - textLen);
+					if (String.IsNullOrEmpty(content))
+						return;
+				}
+
 				if (Text == null || (CursorPosition >= Text.Length))
 					Text += content;
 				else

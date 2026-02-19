@@ -1372,7 +1372,7 @@ namespace SummerGUI.Editor
 						paragraphs.AddLast (new Paragraph (index++, BreakWidth, line.Replace("\n", " ") + "\n", Font, Flags));
 						paragraphs.AddLast (new Paragraph (index++, BreakWidth, "\n", Font, Flags));
 					});						
-				}					
+				}
 					
 				paragraphs.OnUpdate ();
 				Concurrency.LockFreeUpdate(ref m_Paragraphs, paragraphs);

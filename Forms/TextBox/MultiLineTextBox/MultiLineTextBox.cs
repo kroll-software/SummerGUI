@@ -101,8 +101,9 @@ namespace SummerGUI
         }
 
         public bool ReadOnly { get; set; }
+		public int MaxLength { get; set; }
 		public bool Modified { get; set; }
-		public bool AllowTabKey { get; set; }			
+		public bool AllowTabKey { get; set; }		
 
 		public bool IsLoading { get; private set; }
 		public override bool Enabled {
@@ -120,6 +121,10 @@ namespace SummerGUI
 				return RowManager.ToString();
 			}
 			set {
+				if (value == null)
+					value = String.Empty;				
+                if (MaxLength > 0 && value.Length > MaxLength)
+					value = value.StrLeft(MaxLength);				
 				IsLoading = true;
 				OnEnabledChanged ();
 				SelStart = 0;
@@ -486,7 +491,9 @@ namespace SummerGUI
 				RowManager.MovePageDown ((int)((Height - Padding.Height) / RowManager.LineHeight));
 				SetSelection (e.Shift);
 				break;
-			case Keys.Backspace:				
+			case Keys.Backspace:
+				if (ReadOnly)
+					break;
 				if (SelLength > 0) {					
 					DeleteBack ();
 				} else {
@@ -664,6 +671,13 @@ namespace SummerGUI
 					DeleteSelection ();
 					SelLength = 0;
 				}
+			
+				if (MaxLength > 0)
+				{
+					if (RowManager.Length >= MaxLength)					
+						return false;
+				}
+
 				RowManager.InsertChar(e.KeyChar);
                 //SelStart = RowManager.CursorPosition;
 				SetSelection(false);
@@ -1089,7 +1103,7 @@ namespace SummerGUI
 
 		public void Paste()
 		{
-			if (!CanPaste)
+			if (!CanPaste || ReadOnly)
 				return;
 			
 			string content = Root?.CTX.GlWindow.ClipboardString;
@@ -1097,15 +1111,22 @@ namespace SummerGUI
 				return;
 
 			// Important: filter valid characters
-			if (content != null) {
-				content = new string (content.Where (IsInputChar).ToArray ());
-			}
+			content = new string (content.Where (IsInputChar).ToArray ());			
 
 			if (!String.IsNullOrEmpty (content)) {
 				SetUndoInsert (content);
 				if (SelLength > 0)
 					DeleteSelection ();				
 				SelLength = 0;
+
+				if (MaxLength > 0)
+				{
+					int textLen = RowManager.Length;
+					content = content.StrLeft(MaxLength - textLen);
+					if (String.IsNullOrEmpty(content))
+						return;
+				}
+
 				RowManager.InsertRange (content);
 				EnsureCurrentRowVisible ();
 				float height = RowManager.LineCount * RowManager.LineHeight;
@@ -1346,6 +1367,16 @@ namespace SummerGUI
 		}
 		public void InsertRange (string text)
 		{
+			if (ReadOnly)
+				return;
+			if (MaxLength > 0)
+			{
+				int textLen = RowManager.Length;
+				text = text.StrLeft(MaxLength - textLen);
+				if (String.IsNullOrEmpty(text))
+					return;
+			}
+
 			RowManager.InsertRange (text);
 		}
 
