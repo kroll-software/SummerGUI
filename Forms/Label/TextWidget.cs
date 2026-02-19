@@ -165,7 +165,7 @@ namespace SummerGUI
 						h = Math.Max (h, sz.Height);
 						w += sz.Width;
 					}
-				}					
+				}
 
 				CachedPreferredSize = ClampMinMax(new SizeF (w + Padding.Width, h + Padding.Height));
 			}				

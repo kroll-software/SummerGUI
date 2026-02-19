@@ -680,8 +680,9 @@ namespace SummerGUI
 			//this.LogDebug ("AltPressed: {0}", ModifierKeys.AltPressed);
 		}
 
-		protected virtual void OnUnhandledKeyDown(KeyboardKeyEventArgs e)
-		{			
+		protected virtual bool OnUnhandledKeyDown(KeyboardKeyEventArgs e)
+		{
+			return false;
 		}
 
 		protected override void OnKeyUp (KeyboardKeyEventArgs e)

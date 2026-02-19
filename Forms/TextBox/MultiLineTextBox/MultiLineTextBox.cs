@@ -1360,7 +1360,7 @@ namespace SummerGUI
 				ScrollOffsetX = value.X;
 				ScrollOffsetY = value.Y;
 			}
-		}			
+		}
 		public void SetCursorPosition (int pos)
 		{
 			RowManager.SetCursorAbsPosition (pos);
