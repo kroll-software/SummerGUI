@@ -229,17 +229,8 @@ namespace SummerGUI
                 ScrollOffsetX = 0;
                 ScrollOffsetY = 0;
                 IsLoading = false;
-				OnEnabledChanged ();                
-
-				RowManager.Paragraphs.UpdateCompleted += delegate {
-					try {
-						EnsureCurrentRowVisible ();
-						Invalidate(1);
-					} catch (Exception ex) {
-						ex.LogError();
-					}
-				};
-			};			
+				OnEnabledChanged ();
+			};
 		}
 
 		public void InitCodeEditorStyle()
@@ -643,7 +634,7 @@ namespace SummerGUI
 		}
 
         protected override void OnVScrollbarVisibleChanged()
-        {
+        {			
             RowManager.OnResize(BreakWidth);
             base.OnVScrollbarVisibleChanged();
         }
@@ -1161,12 +1152,13 @@ namespace SummerGUI
 					if (String.IsNullOrEmpty(content))
 						return;
 				}
-
+				
 				RowManager.InsertRange (content);
 				EnsureCurrentRowVisible ();
+
 				float height = RowManager.LineCount * RowManager.LineHeight;
 				if (height < VScrollBar.Height)
-					VScrollBar.Value = 0;
+					VScrollBar.Value = 0;				
 
 				ResetSelection ();
 				Modified = true;

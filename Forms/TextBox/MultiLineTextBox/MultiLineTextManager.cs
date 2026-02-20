@@ -12,9 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace SummerGUI.Editor
 {
-	public class ParagraphList : BinarySortedList<Paragraph>
-	//public class ParagraphList : List<Paragraph>
-	//public class ParagraphList : BalancedOrderStatisticTree<Paragraph>
+	public class ParagraphList : BinarySortedList<Paragraph>	
 	{		
 		public event EventHandler<EventArgs> UpdateCompleted;
 
@@ -184,7 +182,7 @@ namespace SummerGUI.Editor
 		}
 
 		public void OnUpdate(int startIndex, float breakwidth, bool forceAll = false, int maxRows = 0)
-		{	
+		{				
 			this.RWLock.EnterReadLock();
 			try {
 				bool doWordWrap = breakwidth != BreakWidth || forceAll;
@@ -257,7 +255,7 @@ namespace SummerGUI.Editor
 				ex.LogError ();
 			}
 			finally {
-				this.RWLock.ExitReadLock();
+				this.RWLock.ExitReadLock();				
 			}
 		}
 	}
@@ -509,10 +507,9 @@ namespace SummerGUI.Editor
 		}
 
 		public void OnResize(float breakWidth)
-		{
-			//this.LogDebug ("OnResize: {0}", breakWidth);
+		{			
 			BreakWidth = breakWidth;
-			Paragraphs.OnUpdateBreakWidthAsync (breakWidth);
+			Paragraphs.OnUpdateBreakWidthAsync (breakWidth);			
 		}
 			
 		public void InsertChar(char c)
@@ -1010,6 +1007,16 @@ namespace SummerGUI.Editor
 
 			m_Paragraphs = new ParagraphList (LineHeight, BreakWidth);
 
+			m_Paragraphs.UpdateCompleted += (sender, args) =>
+			{
+				try {
+					Owner.EnsureCurrentRowVisible();
+					Owner.Invalidate(1);
+				} catch (Exception ex) {
+					ex.LogError();
+				}
+			};
+
 			Paragraph para = new Paragraph (0, BreakWidth, String.Empty, Font, Flags);
 			Paragraphs.AddLast (para);
 		}
@@ -1390,6 +1397,16 @@ namespace SummerGUI.Editor
 					
 				paragraphs.OnUpdate ();
 				Concurrency.LockFreeUpdate(ref m_Paragraphs, paragraphs);
+
+				paragraphs.UpdateCompleted += (sender, args) =>
+				{
+					try {
+						Owner.EnsureCurrentRowVisible();
+						Owner.Invalidate(1);
+					} catch (Exception ex) {
+						ex.LogError();
+					}
+				};				
 
 				this.LogVerbose ("{0} characters of text in {1} paragraphs loaded into the editor in {2} ms.", value.Length.ToString("n0"), Paragraphs.Count.ToString("n0"), sw.ElapsedMilliseconds.ToString("n0"));
 			}).ContinueWith((t) => {
