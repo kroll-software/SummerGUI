@@ -15,6 +15,7 @@ using System.Drawing;
 using KS.Foundation;
 using SummerGUI.Editor;
 using SummerGUI.Scrolling;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SummerGUI
 {
@@ -142,6 +143,9 @@ namespace SummerGUI
 			set {
 				if (m_Font != value) {
 					m_Font = value;
+					if (RowManager != null)
+						RowManager.SetFont(m_Font);
+
 					OnFontChanged ();
 				}
 			}
@@ -188,33 +192,46 @@ namespace SummerGUI
 
         public bool BreakWidthRulerVisible { get; set; }
 
-		public MultiLineTextBox (string name) : this(name, new MultiLineTextEditWidgetStyle()) {}
+		public Color SelectionForeColor { get; set; }
+		public Color SpecialCharsColor { get; set; }
+
+		public MultiLineTextBox (string name) : this(name, null) {}
 		public MultiLineTextBox (string name, IWidgetStyle style)
 			: base (name, Docking.Fill, style)
 		{
-			m_Font = FontManager.Manager.MonoFont;
+			//m_Font = FontManager.Manager.MonoFont;
+			m_Font = FontManager.Manager.DefaultFont;
 			RowManager = new MultiLineTextManager(this, SpecialCharacterFlags.All);
 			UndoRedoManager = new UndoRedoStack (this, 100);
 			CursorOptions = CursorFlags.Default;
 			CanFocus = true;
 			HideSelection = true;
 			AutoScroll = true;
-			ScrollBars = ScrollBars.Vertical;
-			VScrollBar.SetColorScheme (ScrollBarColorSchemes.Dark);
+			ScrollBars = ScrollBars.Vertical;			
+			
+			if (style == null)
+			{
+				Styles.Clear();
+				Styles.SetStyle (new TextBoxWidgetStyle (), WidgetStates.Default);
+				Styles.SetStyle (new TextBoxActiveWidgetStyle (), WidgetStates.Active);
+				Styles.SetStyle(new TextBoxDisabledWidgetStyle(), WidgetStates.Disabled);
+			}
 
-			Padding = new Padding (Font.Height, Font.LineHeight / 2);
-			CursorPen = new Pen(Theme.Colors.White, 1.5f);
-
-			BreakWidthRulerVisible = true;
+			SelectionBrush = new SolidBrush (Theme.Colors.HighLightBlue);
+			SelectionForeColor = Color.White;
+			SpecialCharsColor = Color.LightGray;
+			
+			Padding = new Padding (6, 3);
+			CursorPen = new Pen(Color.Black, 1f);
 
 			RowManager.LoadingCompleted += delegate {
                 RowManager.MoveHome();
                 ScrollOffsetX = 0;
                 ScrollOffsetY = 0;
                 IsLoading = false;
-				OnEnabledChanged ();
+				OnEnabledChanged ();                
 
-                RowManager.Paragraphs.UpdateCompleted += delegate {
+				RowManager.Paragraphs.UpdateCompleted += delegate {
 					try {
 						EnsureCurrentRowVisible ();
 						Invalidate(1);
@@ -222,26 +239,33 @@ namespace SummerGUI
 						ex.LogError();
 					}
 				};
-			};				
+			};			
+		}
+
+		public void InitCodeEditorStyle()
+		{
+			Font = FontManager.Manager.MonoFont;
+			Padding = new Padding (Font.Height, Font.LineHeight / 2);
+			CursorPen = new Pen(Theme.Colors.White, 1.5f);
+			BreakWidthRulerVisible = true;
+			VScrollBar.SetColorScheme (ScrollBarColorSchemes.Dark);
+
+			LineBreaksVisible = true;
+        	EndOfTextVisible = true;
+        	WhiteSpaceVisible = true;
+			SelectionBrush = new SolidBrush (Color.FromArgb(212, Theme.Colors.Magenta));
+			SelectionForeColor = ForeColor;
+			SpecialCharsColor = Theme.Colors.Base00;
+
+			Styles.Clear();
+			Styles.SetStyle(new MultiLineTextEditWidgetStyle(), WidgetStates.Default);
 		}
 
 		protected override void OnScaleWidget (IGUIContext ctx, float absoluteScaleFactor, float relativeScaleFactor)
 		{			
 			RowManager.OnScalingChanged (BreakWidth);
 			base.OnScaleWidget (ctx, absoluteScaleFactor, relativeScaleFactor);
-		}
-
-		public override void OnUpdateTheme (IGUIContext ctx)
-		{
-			base.OnUpdateTheme (ctx);
-			SelectionBrush = new SolidBrush (Color.FromArgb(212, Theme.Colors.Magenta));
-		}
-
-		protected override void OnRootChanged ()
-		{
-			base.OnRootChanged ();
-			SelectionBrush = new SolidBrush (Color.FromArgb(212, Theme.Colors.Magenta));
-		}
+		}		
 
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
@@ -410,6 +434,7 @@ namespace SummerGUI
 		protected void SetupDocumentSize()
 		{
 			if (VScrollBar != null) {
+				
 				VScrollBar.SetUp (VScrollBar.Height, RowManager.Height + Padding.Height, RowManager.LineHeight);
 			}
 		}
@@ -677,12 +702,12 @@ namespace SummerGUI
 					if (RowManager.Length >= MaxLength)					
 						return false;
 				}
-
-				RowManager.InsertChar(e.KeyChar);
-                //SelStart = RowManager.CursorPosition;
+				
+				RowManager.InsertChar(e.KeyChar);                
 				SetSelection(false);
 
-                EnsureCurrentRowVisible ();
+                EnsureCurrentRowVisible();
+
 				CursorOn = true;
 				Invalidate ();
 				return true;
@@ -794,7 +819,7 @@ namespace SummerGUI
 					return 0;					
 				return -VScrollBar.Value;
 			}
-			set {
+			set {				
 				if (VScrollBar != null)
 					VScrollBar.Value = -value;
 			}
@@ -877,7 +902,7 @@ namespace SummerGUI
 				if (BreakWidthRulerVisible && Padding.Right > 0) {
 					int breakWidth = (int)(bounds.Left + Padding.Left + BreakWidth);
 					ctx.DrawLine (Theme.Pens.Base01, breakWidth, bounds.Top, breakWidth, bounds.Bottom);
-				}				
+				}
 
 				if (SelLength <= 0)
 					return;
@@ -978,6 +1003,8 @@ namespace SummerGUI
 						bounds.Top + para.Top + offsetY,
 						bounds.Width, 
 						lineHeight);
+
+					int idx = para.PositionOffset;
 					
 					foreach (var line in para.ToLines()) 
 					{
@@ -987,27 +1014,30 @@ namespace SummerGUI
 							float currentX = MathF.Round(rowBounds.X);
 							float baselineY = MathF.Round(rowBounds.Y + font.Ascender);
 							var node = line.StartNode;
-							Color color;
+							Color color = Style.ForeColorBrush.Color;
 
 							for (int i = 0; i < line.Length && node != null; i++)
 							{
-								char c = node.Value.Char;								
+								char c = node.Value.Char;
 
 								switch (c)
 								{
 									case ' ':
 										c = SpecialCharacters.SpaceDot;
-										color = Theme.Colors.Base00;
+										color = SpecialCharsColor;
 										break;
 
 									case '\n':
 										c = SpecialCharacters.Paragraph;
-										color = Theme.Colors.Base00;
+										color = SpecialCharsColor;
 										break;
-									default:
-										color = Style.ForeColorBrush.Color;
+									default:										
+										if (idx >= SelStart && idx < SelStart + SelLength)
+											color = SelectionForeColor;
+										else
+											color = Style.ForeColorBrush.Color;
 										break;		
-								}									
+								}
 								
 								GlyphInfo glyphInfo;
 								if (font.GetGlyphInfo(c, out glyphInfo))
@@ -1025,7 +1055,12 @@ namespace SummerGUI
 
 								currentX += glyphInfo.Advance;
 								node = node.Next;
+								idx++;
 							}
+						}
+						else
+						{
+							idx += line.Length;
 						}
 						
 						rowBounds.Offset(0, lineHeight);

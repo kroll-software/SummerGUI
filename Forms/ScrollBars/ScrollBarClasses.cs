@@ -371,7 +371,7 @@ namespace SummerGUI.Scrolling
 
 		private void AdjustValue()
 		{
-			m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1f, m_Value));
+			m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1f, m_Value));			
 		}
 
 		private float m_Value = 0;
@@ -383,7 +383,7 @@ namespace SummerGUI.Scrolling
 			set {
 				if (m_Value != value) {
 					ResetCachedLayout ();
-					m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1, value));
+					m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1, value));					
 
 					FirstButton.Enabled = m_Value > Minimum;
 					LastButton.Enabled = m_Value + LargeChange < Maximum;

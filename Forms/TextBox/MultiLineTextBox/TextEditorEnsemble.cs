@@ -35,6 +35,7 @@ namespace SummerGUI
 			: base(name, Docking.Fill, new EmptyWidgetStyle())
 		{			
 			Editor = new MultiLineTextBox("editor", new MultiLineTextEditWidgetStyle());
+			Editor.InitCodeEditorStyle();
 			//Tools = new TextEditorToolBar (Editor, null);
 			RowColumn = new TextEditorRowColumn (Editor);
 

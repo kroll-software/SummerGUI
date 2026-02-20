@@ -64,7 +64,7 @@ namespace SummerGUI.Editor
 		public float Height 
 		{ 
 			get {
-				return LineCount * LineHeight;
+				return (float)LineCount * LineHeight;
 			}
 		}
 
@@ -480,12 +480,20 @@ namespace SummerGUI.Editor
 			int line = 0;
 			CurrentParagraphIndex = FindParagraphIndexOnScreen (y);
 			Paragraph para = CurrentParagraph;
-			if (para.LineCount > 0)				
+
+			if (y > para.Bottom)	// Sonderfall
+			{
+				CursorPosition = para.PositionOffset + para.Length - 1;
+				ResetCursorColoumns ();
+				return;	
+			}
+
+			if (para.LineCount > 0)
 				line = (int)((y - para.Top - 1) / LineHeight);
 			ParagraphPosition pos = para.PositionAtLineWidth (x, line);
 			CursorPosition = pos.Position;
 			ResetCursorColoumns ();
-		}			
+		}
 
 		public void LogPosition()
 		{
@@ -987,6 +995,12 @@ namespace SummerGUI.Editor
 		public SpecialCharacterFlags Flags { get; set; }
 		public MultiLineTextBox Owner { get; private set; }
 
+		public void SetFont(IGUIFont font)
+		{
+			Font = font;
+			LineHeight = (int)Font.LineHeight.Ceil();
+		}
+
 		public MultiLineTextManager(MultiLineTextBox owner, SpecialCharacterFlags flags)
 		{
 			Owner = owner;
@@ -1396,6 +1410,7 @@ namespace SummerGUI.Editor
 				Paragraphs.Clear ();
 			}
 			Owner = null;
+			Font = null;
 			base.CleanupUnmanagedResources ();
 		}
 	}
