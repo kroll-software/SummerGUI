@@ -287,10 +287,10 @@ namespace SummerGUI
 			
 		public static Rectangle Combine(this Rectangle rect, Rectangle other)
 		{
-			if (other.Width <= 0 || other.Height <= 0)
+			if (other == Rectangle.Empty)
 				return rect;
 
-			if (rect.Width <= 0 || rect.Height <= 0)
+			if (rect == Rectangle.Empty)
 				return other;
 
 			return new Rectangle (Math.Min(rect.X, other.X), Math.Min(rect.Y, other.Y), Math.Max(rect.Width, other.Width), Math.Max(rect.Height, other.Height));
@@ -298,6 +298,12 @@ namespace SummerGUI
 
 		public static RectangleF Combine(this RectangleF rect, RectangleF other)
 		{
+			if (other == RectangleF.Empty)
+				return rect;
+
+			if (rect == RectangleF.Empty)
+				return other;
+				
 			return new RectangleF (MathF.Min(rect.X, other.X), MathF.Min(rect.Y, other.Y), MathF.Max(rect.Width, other.Width), MathF.Max(rect.Height, other.Height));
 		}
 
