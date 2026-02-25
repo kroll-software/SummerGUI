@@ -58,6 +58,7 @@ namespace SummerGUI
 			TextMargin = new Size (6, 2);
 
 			ItemHeight = Font.TextBoxHeight;
+			//ItemHeight = Font.LineHeight;
 			MaxSize = new SizeF (Int32.MaxValue, ItemHeight);
 		}
 
@@ -65,7 +66,7 @@ namespace SummerGUI
 		{
 			base.OnScaleWidget (ctx, absoluteScaleFactor, relativeScaleFactor);
 			ItemHeight = Font.TextBoxHeight;
-		}
+		}        
 
 		/***
 		public override void OnMouseDown (OpenTK.Input.MouseButtonEventArgs e)

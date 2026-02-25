@@ -743,13 +743,12 @@ namespace SummerGUI
 		public override void OnAfterLayout (IGUIContext ctx, RectangleF bounds)
 		{			
 			if (AutoSize) {				
-				//SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));		
-				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width, Layout.Height + Padding.Height));
+				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));
+				//SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width, Layout.Height + Padding.Height));
 			}
 
 			base.OnAfterLayout (ctx, bounds);
-		}
-
+		}        
 
 		public override string ToString ()
 		{

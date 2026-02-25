@@ -18,7 +18,7 @@ namespace SummerGUI
 		[DpiScalable]
 		public float YOffset {get; set;}
 
-		public TextWidget (string name) : this(name, Docking.None, new DefaultTextWidgetStyle(), null, null) {}		
+		public TextWidget (string name, string text = null) : this(name, Docking.None, new DefaultTextWidgetStyle(), text, null) {}		
 
 		public TextWidget (string name, Docking dock, IWidgetStyle style, string text, IGUIFont font)
 			: base(name, dock, style)

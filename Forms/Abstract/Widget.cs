@@ -193,6 +193,24 @@ namespace SummerGUI
 		public RootContainer Root
 		{ 
 			get {
+				if (m_Root == null)
+				{
+					Widget p = Parent;
+					while (p != null)
+					{
+						if (p.Root != null)
+						{
+							m_Root = p.Root;
+							break;
+						}
+						if (p as RootContainer != null)
+						{
+							m_Root = p as RootContainer;
+							break;
+						}
+						p = p.Parent;
+					}
+				}
 				return m_Root;
 			}
 			internal set {				

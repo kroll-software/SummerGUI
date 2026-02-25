@@ -246,7 +246,7 @@ namespace SummerGUI
 				DropUp ();
 			else
 				DropDown ();
-		}
+		}        
 
 		public void DropDown()
 		{
@@ -254,11 +254,12 @@ namespace SummerGUI
 				return;			
 
 			if (DropDownWindow == null) {
-				DropDownWindow = new ComboBoxDropDownOverlay ();
+				DropDownWindow = new ComboBoxDropDownOverlay ();				
 
 				DropDownWindow.SelectedIndex = SelectedIndex;
 				
 				AddChild (DropDownWindow);
+				Root?.RegisterOverlay(DropDownWindow);
 				DropDownWindow.Focus ();
 
 				DropDownWindow.ItemSelected += delegate {
@@ -268,6 +269,7 @@ namespace SummerGUI
 				DropDownWindow.Closing += delegate {
 					if (!Button.IsFocused) {
 						DropUp ();
+						Root?.UnregisterOverlay(DropDownWindow);
 						this.Focus ();
 					}	
 				};
