@@ -21,7 +21,17 @@ namespace SummerGUI
 		public void SetValidValue(float value)
 		{
 			Value = value.Clamp (MinValue, MaxValue);
-		}			
+		}
+
+		protected float NormalizedValue
+		{
+			get
+			{
+				float range = MaxValue - MinValue;
+				if (Math.Abs(range) < 0.0001f) return 0f; // Division durch 0 verhindern
+				return (Value - MinValue) / range;
+			}
+		}
 
 		protected SliderBase (string name, Docking dock, IWidgetStyle style)
 			: base(name, dock, style)

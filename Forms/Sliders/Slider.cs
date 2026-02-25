@@ -55,7 +55,7 @@ namespace SummerGUI
 
 		public float DefaultWidth { get; set; }
 		public float LineWidth { get; set; }
-		public float GripperWidth { get; set; }		
+		public float GripperWidth { get; set; }
 
 		public Slider (string name, SliderOrientation orientation, ColorContexts context = ColorContexts.Default)
 			: base(name, Docking.Fill, new SliderWidgetStyle())
@@ -70,15 +70,36 @@ namespace SummerGUI
 		}
 
 		PointF DragStartPoint = PointF.Empty;
-		public override void OnMouseDown (MouseButtonEventArgs e)
+		public override void OnMouseDown(MouseButtonEventArgs e)
 		{
-			base.OnMouseDown (e);
-			if (e.Button == MouseButton.Left) {
-				DragStartPoint = new PointF (e.X, e.Y);
+			base.OnMouseDown(e);
+			if (e.Button == MouseButton.Left) 
+			{
+				DragStartPoint = new PointF(e.X, e.Y);
+				
+				float ratio;
+				float range = MaxValue - MinValue;
+
 				if (Orientation == SliderOrientation.Horizontal)
-					SetValidValue((e.X - (Bounds.Left + GripperWidth / 2)) / (Bounds.Width - GripperWidth));
+				{
+					// 1. Berechne die relative Position (0.0 bis 1.0) innerhalb des nutzbaren Bereichs
+					float usableWidth = Bounds.Width - GripperWidth;
+					if (usableWidth <= 0) ratio = 0;
+					else ratio = (e.X - (Bounds.Left + GripperWidth / 2f)) / usableWidth;
+				}
 				else
-					SetValidValue(1.0f - ((e.Y - (Bounds.Top + GripperWidth / 2)) / (Bounds.Height - GripperWidth)));
+				{
+					// 2. Vertikal (invertiert, da 0 meist oben ist)
+					float usableHeight = Bounds.Height - GripperWidth;
+					if (usableHeight <= 0) ratio = 0;
+					else ratio = 1.0f - ((e.Y - (Bounds.Top + GripperWidth / 2f)) / usableHeight);
+				}
+
+				// 3. Den Ratio-Wert auf den Bereich MinValue...MaxValue umrechnen
+				float newValue = MinValue + (ratio * range);
+				
+				SetValidValue(newValue);
+				Invalidate(2); // Neu zeichnen, damit der Gripper direkt springt
 			}
 		}
 
@@ -86,24 +107,42 @@ namespace SummerGUI
 		{
 			base.OnMouseMove(e);
 			
-			if (DragStartPoint != Point.Empty) {
+			// Prüfen, ob wir uns im Drag-Modus befinden
+			if (DragStartPoint != PointF.Empty) 
+			{
+				float range = MaxValue - MinValue;
+				
 				if (Orientation == SliderOrientation.Horizontal)
 				{
 					if (ModifierKeys.ControlPressed)
-						// Feineinstellung via Delta
-						SetValidValue(Value + (e.DeltaX / 1000f)); 
+					{
+						// Feineinstellung: Delta skaliert mit dem Wertebereich
+						// (1/1000 des Bereichs pro Pixel Bewegung)
+						SetValidValue(Value + (e.DeltaX * (range / 1000f)));
+					}
 					else
-						// Absolute Position: (MausX - WidgetLinks) / WidgetBreite
-						SetValidValue((e.X - (Bounds.Left + GripperWidth / 2)) / (Bounds.Width - GripperWidth));
+					{
+						// Absolute Position: Ratio berechnen und auf Range mappen
+						float usableWidth = Bounds.Width - GripperWidth;
+						float ratio = (usableWidth <= 0) ? 0 : (e.X - (Bounds.Left + GripperWidth / 2f)) / usableWidth;
+						SetValidValue(MinValue + (ratio * range));
+					}
 				}
 				else
 				{
 					if (ModifierKeys.ControlPressed)
-						// Bei vertikalen Slidern ist 'oben' meist 1.0 und 'unten' 0.0
-						SetValidValue(Value - (e.DeltaY / 1000f));
+					{
+						// Vertikal: DeltaY ist bei OpenTK nach unten positiv, 
+						// Slider-Werte steigen meist nach oben -> Minus verwenden
+						SetValidValue(Value - (e.DeltaY * (range / 1000f)));
+					}
 					else
-						// Invertiert, falls 0 unten sein soll:
-						SetValidValue(1.0f - ((e.Y - (Bounds.Top + GripperWidth / 2)) / (Bounds.Height - GripperWidth)));
+					{
+						// Absolute Position Vertikal (Invertiert)
+						float usableHeight = Bounds.Height - GripperWidth;
+						float ratio = (usableHeight <= 0) ? 0 : 1.0f - ((e.Y - (Bounds.Top + GripperWidth / 2f)) / usableHeight);
+						SetValidValue(MinValue + (ratio * range));
+					}
 				}
 								
 				Invalidate(2);
@@ -139,17 +178,20 @@ namespace SummerGUI
 			DrawSliderLine(ctx, bounds);
 			DrawTicks(ctx, bounds);
 			DrawGripper(ctx, bounds);
-        }
+        }		
 
 		protected virtual void DrawSliderLine(IGUIContext ctx, RectangleF bounds)
 		{
+			float norm = NormalizedValue; // Einmal berechnen für Performance
+
 			if (Orientation == SliderOrientation.Horizontal)
 			{
 				float center = bounds.Height / 2f;
 				RectangleF rback = new RectangleF(bounds.Left, bounds.Top + center - (LineWidth / 2), bounds.Width, LineWidth);
 				ctx.FillRectangle(Style.BackColorBrush, rback);
 
-				RectangleF rval = new RectangleF(rback.Left, rback.Top, bounds.Width * Value, rback.Height);
+				// Breite basiert jetzt auf dem normalisierten Wert
+				RectangleF rval = new RectangleF(rback.Left, rback.Top, bounds.Width * norm, rback.Height);
 				ctx.FillRectangle(Style.ForeColorBrush, rval);
 			}
 			else
@@ -158,7 +200,9 @@ namespace SummerGUI
 				RectangleF rback = new RectangleF(bounds.Left + center - (LineWidth / 2), bounds.Top, LineWidth, bounds.Height);
 				ctx.FillRectangle(Style.BackColorBrush, rback);
 
-				RectangleF rval = new RectangleF(rback.Left, rback.Bottom - (rback.Height * Value), LineWidth, rback.Height * Value);
+				// Höhe und Position basieren auf dem normalisierten Wert
+				float fillHeight = rback.Height * norm;
+				RectangleF rval = new RectangleF(rback.Left, rback.Bottom - fillHeight, LineWidth, fillHeight);
 				ctx.FillRectangle(Style.ForeColorBrush, rval);
 			}
 		}
@@ -167,18 +211,21 @@ namespace SummerGUI
 		{
 			float centerX;
 			float centerY;
+			float norm = NormalizedValue;
 
 			if (Orientation == SliderOrientation.Horizontal)
 			{
-				centerX = bounds.Left + (GripperWidth / 2) + ((bounds.Width - GripperWidth)  * Value);
+				// Der Gripper bewegt sich innerhalb der verfügbaren Breite minus Gripper-Breite
+				centerX = bounds.Left + (GripperWidth / 2) + ((bounds.Width - GripperWidth) * norm);
 				centerY = bounds.Top + (bounds.Height / 2);
 			}
 			else
 			{
 				centerX = bounds.Left + (bounds.Width / 2);
-				centerY = bounds.Bottom - (GripperWidth / 2) - ((bounds.Height - GripperWidth) * Value);				
+				// Unten ist MinValue (norm=0), Oben ist MaxValue (norm=1)
+				centerY = bounds.Bottom - (GripperWidth / 2) - ((bounds.Height - GripperWidth) * norm);                
 			}
-			ctx.FillCircle(Style.ForeColorBrush, centerX, centerY, GripperWidth / 2, ScaleFactor);
+			ctx.FillCircle(Style.ForeColorBrush, centerX, centerY, (GripperWidth / 2) * ScaleFactor);
 		}
 
 		protected virtual void DrawTicks(IGUIContext ctx, RectangleF bounds)

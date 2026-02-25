@@ -41,8 +41,8 @@ namespace SummerGUI
 			}
 		}
 
-		int m_Indent;
-		public int Indent 
+		float m_Indent;
+		public float Indent
 		{ 
 			get {
 				return m_Indent;
@@ -76,8 +76,10 @@ namespace SummerGUI
 			IconOffsetY = 1f;
 
 			Styles.SetStyle (new DisabledTextWidgetStyle (), WidgetStates.Disabled);
-			Styles.SetStyle (new ActiveTextWidgetStyle (), WidgetStates.Active);
+			//Styles.SetStyle (new ActiveTextWidgetStyle (), WidgetStates.Active);
 			CanFocus = true;
+
+			Indent = 0.85f;
 		}			
 			
 		public override bool OnKeyDown (KeyboardKeyEventArgs e)
@@ -102,7 +104,7 @@ namespace SummerGUI
 			if (CachedPreferredSize == System.Drawing.Size.Empty) {
 				if (!String.IsNullOrEmpty (Text)) {
 					SizeF sz = Font.Measure (Text);
-					float iconWidth = Font.CaptionHeight * (Indent + 1);
+					float iconWidth = Font.CaptionHeight * Indent;
 					CachedPreferredSize = new SizeF (sz.Width + iconWidth + Padding.Width, Font.TextBoxHeight);
 				}
 			}
@@ -120,9 +122,9 @@ namespace SummerGUI
 				char icon = CheckChars [Checked.ToInt ()];
 				RectangleF iconBounds = bounds;
 				float cp = Font.CaptionHeight;
-				iconBounds.Offset (cp * Indent, IconOffsetY);
+				iconBounds.Offset (0, IconOffsetY);
 				ctx.DrawString (icon.ToString(), IconFont, Style.ForeColorBrush, iconBounds, FontFormat.DefaultIconFontFormatLeft);
-				iconWidth = cp * (Indent + 1);
+				iconWidth = cp * Indent;
 			}
 
 			ctx.DrawString (Text, Font, Style.ForeColorBrush, new RectangleF (

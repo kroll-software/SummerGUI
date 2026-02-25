@@ -106,17 +106,34 @@ namespace SummerGUI
 			}
 		}
 
-		public override void OnMouseMove (MouseMoveEventArgs e)
+		public override void OnMouseMove(MouseMoveEventArgs e)
 		{
-			base.OnMouseMove (e);
+			base.OnMouseMove(e);
 			
-			if (DragStartPoint != Point.Empty && e.DeltaY != 0) {
+			// Wir reagieren nur, wenn der Drag aktiv ist
+			if (DragStartPoint != PointF.Empty && e.DeltaY != 0) 
+			{
+				float range = MaxValue - MinValue;
+
 				if (ModifierKeys.ControlPressed)
-					SetValidValue (Value - (e.DeltaY / 1000f));
+				{
+					// Feineinstellung: 1/1000 der Range pro Pixel
+					SetValidValue(Value - (e.DeltaY * (range / 1000f)));
+				}
 				else
-					SetValidValue (Value - (e.DeltaY / (Radius * 3.14f)));
-				Invalidate (2);
-			}			
+				{
+					// Deine Logik: Die Range wird über die Strecke des halben Umfangs verteilt.
+					// DeltaY abziehen, da "Maus runter" meist "Wert kleiner" bedeutet.
+					float divisor = Radius * 3.1415f; 
+					if (divisor > 0)
+					{
+						float deltaValue = (e.DeltaY / divisor) * range;
+						SetValidValue(Value - deltaValue);
+					}
+				}
+				
+				Invalidate(2);
+			}           
 		}
 
 		public override void OnMouseUp (MouseButtonEventArgs e)
@@ -139,48 +156,62 @@ namespace SummerGUI
 				.Distance (new PointF (x, y)) <= Radius) ? this : null;
 		}
 
-		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
+		public override void OnPaint(IGUIContext ctx, RectangleF bounds)
 		{
-			base.OnPaint (ctx, bounds);
+			base.OnPaint(ctx, bounds);
 
-			bounds.Inflate (-Padding.Width, -Padding.Height);
-			bounds.Offset (Padding.Left, Padding.Top);
+			bounds.Inflate(-Padding.Width, -Padding.Height);
+			bounds.Offset(Padding.Left, Padding.Top);
 
-			PointF CenterPoint = new PointF (
+			PointF CenterPoint = new PointF(
 				bounds.Left + (bounds.Width / 2f),
 				bounds.Top + (bounds.Height / 2f));
 
+			// 1. Normalisierten Wert berechnen (0.0 bis 1.0)
+			float range = MaxValue - MinValue;
+			float normalized = (Math.Abs(range) < 0.0001f) ? 0f : (Value - MinValue) / range;
+			float sweepAngle = 360f * normalized;
+
 			float pieRadius = Radius - Math.Max(2, (Radius / 10f));
 
-			// for smoothness, any better idea ?
-			using (Pen pen = new Pen (Color.Gray, 3f)) {
-				ctx.DrawCircle (pen, CenterPoint.X, CenterPoint.Y, Radius - 1.5f);
-			}				
+			// --- Hintergrund & Glättung ---
+			// Tipp für Smoothness: Zeichne den Hintergrundkreis minimal größer 
+			// als den Pie, um "Blitzer" an den Rändern zu vermeiden.
+			using (Pen pen = new Pen(Color.Gray, 1f)) {
+				ctx.DrawCircle(pen, CenterPoint.X, CenterPoint.Y, Radius);
+			}               
 
-			using (Brush brush = new SolidBrush (Style.BorderColorPen.Color)) {
-				ctx.FillCircle (brush, CenterPoint.X, CenterPoint.Y, Radius - 0.5f);
+			using (Brush brush = new SolidBrush(Style.BorderColorPen.Color)) {
+				ctx.FillCircle(brush, CenterPoint.X, CenterPoint.Y, Radius);
 			}
 
+			// --- Daten-Farbe ---
 			Color dataColor;
 			if (!Enabled)
 				dataColor = Theme.Colors.Base1;
 			else if (CustomColor != Color.Empty)
 				dataColor = CustomColor;
 			else
-				dataColor = Theme.GetContextColor (ColorContext);
+				dataColor = Theme.GetContextColor(ColorContext);
 
-			using (Brush dataBrush = new SolidBrush (dataColor)) {
-				ctx.FillPie (dataBrush,
+			// --- Der Fortschritts-Pie ---
+			using (Brush dataBrush = new SolidBrush(dataColor)) {
+				ctx.FillPie(dataBrush,
 					CenterPoint.X, 
 					CenterPoint.Y,
 					pieRadius, 
-					pieRadius,
-					0, 360f * Value / (MaxValue - MinValue));
-			}				
+					pieRadius,				
+					0, // Start bei 12 Uhr (oben)
+					sweepAngle);
+			}               
 				
-			ctx.FillCircle (Style.BackColorBrush, CenterPoint.X, CenterPoint.Y, Radius * 0.5f);			
+			// Das "Loch" in der Mitte für den Ring-Look
+			ctx.FillCircle(Style.BackColorBrush, CenterPoint.X, CenterPoint.Y, Radius * 0.5f);         
 
-			ctx.DrawString ((Value * 100f).ToString("n0") + "%", Font, Style.ForeColorBrush,
+			// --- Text-Anzeige ---
+			// Hier berechnen wir die Prozent basierend auf der Range
+			string percentText = (normalized * 100f).ToString("n0") + "%";
+			ctx.DrawString(percentText, Font, Style.ForeColorBrush,
 				bounds, FontFormat.DefaultSingleLineCentered);
 		}
 

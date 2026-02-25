@@ -19,6 +19,7 @@ namespace SummerGUI
 			: base(name, text)
 		{
 			CheckChars = [(char)FontAwesomeIcons.fa_toggle_off, (char)FontAwesomeIcons.fa_toggle_on];
+			Indent = 1.1f;
 		}
 	}
 }

@@ -704,16 +704,17 @@ namespace SummerGUI
 		//SizeF lastProposedSize;
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
-			//if (true || CachedPreferredSize == SizeF.Empty) {
-
+			// ToDo: Optimieren/Cachen
+			if (CachedPreferredSize == SizeF.Empty) 
+			{
 				if (Layout == null)
-					return base.PreferredSize (ctx, proposedSize);
+					return base.PreferredSize (ctx, proposedSize);				
 				
 				SizeF sz = Layout.PreferredSize(ctx, new SizeF(proposedSize.Width - Padding.Width, proposedSize.Height - Padding.Height));
-			return new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
-			//}
+				CachedPreferredSize = new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
+			}			
 		
-			//return CachedPreferredSize;
+			return CachedPreferredSize;
 		}						
 
 		/*** ***/
@@ -743,8 +744,8 @@ namespace SummerGUI
 		public override void OnAfterLayout (IGUIContext ctx, RectangleF bounds)
 		{			
 			if (AutoSize) {				
-				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));
-				//SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width, Layout.Height + Padding.Height));
+				// ToDo: Margin nicht richtig
+				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));				
 			}
 
 			base.OnAfterLayout (ctx, bounds);
