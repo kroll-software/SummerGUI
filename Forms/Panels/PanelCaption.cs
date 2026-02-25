@@ -87,7 +87,7 @@ namespace SummerGUI
 			Format = FontFormat.DefaultSingleLine;			
 			Padding = new Padding (6);
 			ZIndex = 1000;
-			YOffset = -2;
+			TextOffsetY = -2;
 		}
 
 		public override void UpdateStyle()
@@ -111,7 +111,7 @@ namespace SummerGUI
 				return;
 			
 			RectangleF iconRect = PaddingBounds;
-			iconRect.Y += YOffset;
+			iconRect.Y += TextOffsetY;
 
 			char icon;
 			if (m_Collapsed)

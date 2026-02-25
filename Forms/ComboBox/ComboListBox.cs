@@ -57,15 +57,14 @@ namespace SummerGUI
 			Font = FontManager.Manager.DefaultFont;
 			TextMargin = new Size (6, 2);
 
-			ItemHeight = Font.TextBoxHeight;
-			//ItemHeight = Font.LineHeight;
-			MaxSize = new SizeF (Int32.MaxValue, ItemHeight);
+			ItemHeight = Font.TextBoxHeight;			
+			MaxSize = new SizeF (Int32.MaxValue, ItemHeight);			
 		}
 
 		protected override void OnScaleWidget (IGUIContext ctx, float absoluteScaleFactor, float relativeScaleFactor)
 		{
 			base.OnScaleWidget (ctx, absoluteScaleFactor, relativeScaleFactor);
-			ItemHeight = Font.TextBoxHeight;
+			//ItemHeight = Font.TextBoxHeight;			
 		}        
 
 		/***
@@ -96,8 +95,8 @@ namespace SummerGUI
 
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
-			return new SizeF(proposedSize.Width, ItemHeight);
-			//return new SizeF (proposedSize.Width, Font.TextBoxHeight);
+			//return new SizeF(proposedSize.Width, ItemHeight);
+			return new SizeF (proposedSize.Width, Font.TextBoxHeight);
 		}        
 
 		public override void Update (IGUIContext ctx)

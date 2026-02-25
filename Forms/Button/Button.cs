@@ -64,7 +64,7 @@ namespace SummerGUI
 
 		public Color IconColor { get; set; }
 		[DpiScalable]
-		public float TextOffsetY { get; set; }
+		public float IconOffsetY { get; set; }
 
 		protected ColorContexts m_ColorContext;
 		public ColorContexts ColorContext
@@ -296,7 +296,7 @@ namespace SummerGUI
 			if (String.IsNullOrEmpty (Text))
 				iconWidth = PaddingBounds.Width;
 			if (Icon != 0 && IconFont != null && DisplayStyle != ButtonDisplayStyles.Text) {												
-				RectangleF rt = new RectangleF (bounds.Left + Padding.Left, bounds.Top + TextOffsetY, iconWidth, bounds.Height);				
+				RectangleF rt = new RectangleF (bounds.Left + Padding.Left, bounds.Top + IconOffsetY, iconWidth, bounds.Height);				
 				
 				if (IconColor != Color.Empty && Enabled) {
 					using (Brush brush = new SolidBrush (IconColor)) {
@@ -317,7 +317,7 @@ namespace SummerGUI
 					bounds.X += delta;
 				}
 
-				//bounds.Offset (0, 0);
+				bounds.Offset (0, TextOffsetY);
 				ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, FontFormat.DefaultMnemonicLineCentered);
 			}
 		}

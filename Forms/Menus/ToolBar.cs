@@ -160,7 +160,7 @@ namespace SummerGUI
 			MaxSize = SizeMax;
 			Margin = Padding.Empty;
 			Padding = new Padding (6, 3, 6, 3);
-			TextOffsetY = 0;			
+			IconOffsetY = 0;			
 			this.SetFontByTag(CommonFontTags.Caption);
 			CanFocus = false;
 		}

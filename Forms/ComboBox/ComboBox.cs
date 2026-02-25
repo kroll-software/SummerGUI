@@ -43,7 +43,7 @@ namespace SummerGUI
 		protected override void OnScaleWidget (IGUIContext ctx, float absoluteScaleFactor, float relativeScaleFactor)
 		{
 			base.OnScaleWidget (ctx, absoluteScaleFactor, relativeScaleFactor);
-			ItemHeight = TB.Font.TextBoxHeight;
+			//ItemHeight = TB.Font.TextBoxHeight;
 		}
 			
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)

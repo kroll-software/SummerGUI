@@ -56,7 +56,7 @@ namespace SummerGUI
 					ctx.DrawLine (Style.BorderColorPen, w, bounds.Top, w, bounds.Bottom);
 				}
 
-				RectangleF rt = new RectangleF (w, bounds.Top + TextOffsetY, h, h);
+				RectangleF rt = new RectangleF (w, bounds.Top + IconOffsetY, h, h);
 
 				if (IconColor != Color.Empty && Enabled) {
 					using (Brush brush = new SolidBrush (IconColor)) {

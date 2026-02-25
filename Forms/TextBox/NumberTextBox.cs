@@ -73,7 +73,7 @@ namespace SummerGUI
 
 			UpButton = new Button ("up", null, (char)FontAwesomeIcons.fa_angle_up);
 			SetButtonStyles (UpButton);
-			UpButton.TextOffsetY = -1;
+			UpButton.IconOffsetY = -1;
 			UpButton.Padding = new Padding (3.75f, 0, 2.25f, 0);
 			UpButton.Fire += UpButton_Fire;
 			UpButton.IsAutofire = true;
@@ -83,7 +83,7 @@ namespace SummerGUI
 
 			DownButton = new Button ("down", null, (char)FontAwesomeIcons.fa_angle_down);
 			SetButtonStyles (DownButton);
-			DownButton.TextOffsetY = -1;
+			DownButton.IconOffsetY = -1;
 			DownButton.Padding = new Padding (3.75f, 0, 2.25f, 0);
 			DownButton.Fire += DownButton_Fire;
 			DownButton.IsAutofire = true;

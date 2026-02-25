@@ -179,8 +179,8 @@ namespace SummerGUI
 
 			if (Parent != null) {
 				RootContainer root = Parent.Root ?? Parent as RootContainer;
-				if (root != null)
-					Root = root;
+				//if (root != null)
+				Root = root;
 
 				ResetCachedLayout ();
 				Parent.ResetCachedLayout ();
@@ -228,7 +228,7 @@ namespace SummerGUI
 		protected virtual void OnRootChanged()
 		{
 			if (!IsDisposed && Root != null) {
-				try {					
+				try {
 					if (Math.Abs (Parent.ScaleFactor - ScaleFactor) > float.Epsilon) {
 						this.ParentWindow.DpiScaling.ScaleGUI (this);
 					}
