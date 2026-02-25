@@ -16,7 +16,8 @@ namespace SummerGUI
 		Warning,
 		Error,
 		Help,
-		Success
+		Success,
+		ErrorRetry,
 	}		
 
 	[Flags]
@@ -33,7 +34,7 @@ namespace SummerGUI
 		YesNoCancel = Yes + No + Cancel,
 		ContinueCancel = Continue + Cancel,
 		RepeatCancel = Repeat + Cancel,
-		ContinueRepeatCancel = Continue + Repeat + Cancel
+		ContinueRepeatCancel = Continue + Repeat + Cancel,		
 	}
 
 	/***
@@ -97,6 +98,12 @@ namespace SummerGUI
 			this.Close ();
 		}
 
+		public virtual void OnIgnore()
+		{
+			Result = DialogResults.Ignore;
+			this.Close ();
+		}
+
 		public virtual void OnRepeat()
 		{
 			Result = DialogResults.Repeat;
@@ -106,7 +113,7 @@ namespace SummerGUI
 		protected virtual void InitButtons(MessageBoxButtons buttons)
 		{			
 			// panel
-			DefaultButton btn = null;
+			DefaultButton btn = null;			
 
 			if (buttons.HasFlag (MessageBoxButtons.Continue)) {
 				btn = ButtonContainer.AddChild (new DefaultButton ("continuebutton", "&Continue"));
@@ -116,7 +123,7 @@ namespace SummerGUI
 			if (buttons.HasFlag (MessageBoxButtons.Repeat)) {
 				btn = ButtonContainer.AddChild (new DefaultButton ("repeatbutton", "&Repeat"));
 				btn.Click += (sender, eRepeat) => OnRepeat();
-			}
+			}			
 
 			if (buttons.HasFlag (MessageBoxButtons.Yes)) {
 				btn = ButtonContainer.AddChild (new DefaultButton ("yesbutton", "&Yes"));
@@ -271,6 +278,15 @@ namespace SummerGUI
 				caption = "Error";
 
 			return Show (caption, msg, MessageBoxTypes.Error, MessageBoxButtons.OK, parent);
+		}
+
+		public static DialogResults ShowErrorRetry(string msg, SummerGUIWindow parent)
+		{
+			string caption = DefaultCaption;
+			if (String.IsNullOrEmpty (caption))
+				caption = "Error";
+
+			return Show (caption, msg, MessageBoxTypes.ErrorRetry, MessageBoxButtons.ContinueRepeatCancel, parent);
 		}
 
 		public static DialogResults ShowWarning(string msg, SummerGUIWindow parent)

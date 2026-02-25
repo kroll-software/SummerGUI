@@ -101,7 +101,13 @@ namespace SummerGUI
 		{
 			Result = DialogResults.Repeat;
 			this.OnClose ();
-		}			
+		}
+
+		public virtual void OnIgnore()
+		{
+			Result = DialogResults.Ignore;
+			this.OnClose ();
+		}
 
 		public override void OnClose ()
 		{			
@@ -111,7 +117,7 @@ namespace SummerGUI
 		protected virtual void InitButtons(MessageBoxButtons buttons, ColorContexts colorContext)
 		{			
 			DefaultButton btn = null;
-
+			
 			if (buttons.HasFlag (MessageBoxButtons.Continue)) {
 				btn = new DefaultButton ("continuebutton", "&Continue", colorContext, (char)0, true);
 				btn.Click += (sender, eContinue) => OnContinue();
@@ -124,7 +130,7 @@ namespace SummerGUI
 				btn.Click += (sender, eRepeat) => OnRepeat();
 				ButtonContainer.AddChild (btn);
 			}
-
+			
 			if (buttons.HasFlag (MessageBoxButtons.Yes)) {
 				btn = new DefaultButton ("yesbutton", "&Yes", colorContext, (char)0, true);
 				btn.Click += (sender, eYes) => OnYes();
@@ -281,6 +287,11 @@ namespace SummerGUI
 		public static DialogResults ShowError(string msg, SummerGUIWindow parent)
 		{
 			return Show (msg, MessageBoxTypes.Error, MessageBoxButtons.OK, parent);
+		}
+
+		public static DialogResults ShowErrorRetry(string msg, SummerGUIWindow parent)
+		{
+			return Show (msg, MessageBoxTypes.Error, MessageBoxButtons.ContinueRepeatCancel, parent);
 		}
 
 		public static DialogResults ShowWarning(string msg, SummerGUIWindow parent)

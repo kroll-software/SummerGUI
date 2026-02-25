@@ -18,7 +18,7 @@ namespace SummerGUI
 		public ToggleCheckBox (string name, string text)
 			: base(name, text)
 		{
-			CheckChars = new char[2] {(char)FontAwesomeIcons.fa_toggle_off, (char)FontAwesomeIcons.fa_toggle_on};
+			CheckChars = [(char)FontAwesomeIcons.fa_toggle_off, (char)FontAwesomeIcons.fa_toggle_on];
 		}
 	}
 }

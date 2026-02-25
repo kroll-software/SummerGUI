@@ -43,9 +43,8 @@ namespace SummerGUI
 
 		public RadioButton (string name, string text)
 			: base (name, text)
-		{
-			//CheckChars = new char[2] {'(', ')'};
-			CheckChars = new char[2] {(char)FontAwesomeIcons.fa_circle_thin, (char)FontAwesomeIcons.fa_dot_circle_o};
+		{			
+			CheckChars = [(char)FontAwesomeIcons.fa_circle_thin, (char)FontAwesomeIcons.fa_dot_circle_o];
 			//IconOffsetY = -0.25f;
 		}
 

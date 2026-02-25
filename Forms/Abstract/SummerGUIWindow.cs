@@ -1143,6 +1143,20 @@ namespace SummerGUI
 				MessageBoxOverlay.ShowError (message, this);				
 		}
 
+		public DialogResults ShowErrorRetry(string message)
+		{
+			if (!IsInitialized)
+			{
+				LoadingErrorsQueue.Enqueue (new LoadingError(MessageBoxTypes.Error, message));
+				return DialogResults.None;
+			}
+
+			if (Device == Devices.Desktop)
+				return MessageBoxWindow.ShowErrorRetry (message, this);
+			else
+				return MessageBoxOverlay.ShowErrorRetry (message, this);				
+		}
+
 		public void ShowWarning(string message)
 		{
 			if (!IsInitialized)

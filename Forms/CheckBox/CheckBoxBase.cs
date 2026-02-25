@@ -39,7 +39,7 @@ namespace SummerGUI
 					OnCheckedChanged ();
 				}
 			}
-		}			
+		}
 
 		int m_Indent;
 		public int Indent 

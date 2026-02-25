@@ -609,7 +609,7 @@ namespace SummerGUI
 			
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
-			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
+			if (IsFocused && Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
 				if (MaxLength > 0)
 				{
 					int textLen = Text == null ? 0 : Text.Length;

@@ -37,7 +37,8 @@ namespace SummerGUI
 		Yes,
 		No,
 		Continue,
-		Repeat
+		Repeat,		
+		Ignore,
 	}
 		
 	public abstract class ChildFormWindow : SummerGUIWindow, IChildFormHost, IComparable<ChildFormWindow>

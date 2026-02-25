@@ -17,7 +17,7 @@ namespace SummerGUI
 		public CheckBox (string name, string text)
 			: base (name, text)
 		{			
-			CheckChars = new char[2] {(char)FontAwesomeIcons.fa_square_o, (char)FontAwesomeIcons.fa_check_square_o};
+			CheckChars = [(char)FontAwesomeIcons.fa_square_o, (char)FontAwesomeIcons.fa_check_square_o];
 			//IconOffsetY = -1f;
 		}
 

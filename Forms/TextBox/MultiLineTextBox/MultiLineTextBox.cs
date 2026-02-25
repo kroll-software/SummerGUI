@@ -679,7 +679,7 @@ namespace SummerGUI
 
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
-			if (Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
+			if (IsFocused && Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
                 //if (e.KeyChar == ' ' || e.KeyChar == '\n')
 				SetUndoInsert (e.KeyChar.ToString ());
 
