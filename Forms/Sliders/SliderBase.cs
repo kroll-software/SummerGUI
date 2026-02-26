@@ -14,7 +14,31 @@ namespace SummerGUI
 {
 	public abstract class SliderBase : Container
 	{
-		public float Value { get; set; }
+		private float m_Value = 0;
+		public float Value
+		{ 
+			get
+			{
+				return m_Value;
+			}
+			set
+			{
+				value = value.Clamp (MinValue, MaxValue);
+				if (value != m_Value)
+				{
+					m_Value = value;
+					OnValueChanged();
+				}
+			}
+		}
+
+		public event EventHandler<EventArgs> ValueChanged;
+
+		protected void OnValueChanged()
+		{
+			ValueChanged?.Invoke(this, EventArgs.Empty);
+		}
+
 		public float MinValue { get; set; }
 		public float MaxValue { get; set; }
 

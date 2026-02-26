@@ -108,7 +108,7 @@ namespace SummerGUI
 			get {				
 				return Styles.GetStyle (WidgetState);
 			}
-		}			
+		}
 			
 		public string Name { get; private set; }	
 

@@ -34,11 +34,11 @@ namespace SummerGUI
 	{
 		public override void InitStyle ()
 		{
-			SetBackColor (Theme.Colors.Base0);
-			SetForeColor (Theme.Colors.Base2);
-			SetBorderColor (Theme.Colors.Base00);
+			SetBackColor (Theme.Colors.Base2);
+			SetForeColor (Theme.Colors.Base1);
+			SetBorderColor (Theme.Colors.Base02);
 		}
-	}	
+	}
 
 	public enum SliderOrientation
 	{
@@ -62,7 +62,7 @@ namespace SummerGUI
 		{
 			Orientation = orientation;
 			ColorContext = context;
-			Styles.SetStyle (new CircleSliderDisabledWidgetStyle (), WidgetStates.Disabled);
+			Styles.SetStyle (new SliderDisabledWidgetStyle(), WidgetStates.Disabled);
 
 			DefaultWidth = 16;
 			LineWidth = 4;

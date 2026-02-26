@@ -90,7 +90,7 @@ namespace SummerGUI
 			: base(name, Docking.Fill, new CircleSliderWidgetStyle())
 		{
 			ColorContext = context;
-			Styles.SetStyle (new CircleSliderDisabledWidgetStyle (), WidgetStates.Disabled);
+			Styles.SetStyle (new CircleSliderDisabledWidgetStyle(), WidgetStates.Disabled);
 
 			Font = FontManager.Manager.DefaultFont;
 			Radius = 48;
@@ -167,9 +167,8 @@ namespace SummerGUI
 				bounds.Left + (bounds.Width / 2f),
 				bounds.Top + (bounds.Height / 2f));
 
-			// 1. Normalisierten Wert berechnen (0.0 bis 1.0)
-			float range = MaxValue - MinValue;
-			float normalized = (Math.Abs(range) < 0.0001f) ? 0f : (Value - MinValue) / range;
+			// 1. Normalisierten Wert berechnen (0.0 bis 1.0)			
+			float normalized = NormalizedValue;
 			float sweepAngle = 360f * normalized;
 
 			float pieRadius = Radius - Math.Max(2, (Radius / 10f));
@@ -209,8 +208,12 @@ namespace SummerGUI
 			ctx.FillCircle(Style.BackColorBrush, CenterPoint.X, CenterPoint.Y, Radius * 0.5f);         
 
 			// --- Text-Anzeige ---
-			// Hier berechnen wir die Prozent basierend auf der Range
-			string percentText = (normalized * 100f).ToString("n0") + "%";
+			DrawLabel(ctx, bounds);			
+		}
+
+		protected virtual void DrawLabel(IGUIContext ctx, RectangleF bounds)
+		{
+			string percentText = (NormalizedValue * 100f).ToString("n0") + "%";
 			ctx.DrawString(percentText, Font, Style.ForeColorBrush,
 				bounds, FontFormat.DefaultSingleLineCentered);
 		}
