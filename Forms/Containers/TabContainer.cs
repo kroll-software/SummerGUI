@@ -119,6 +119,15 @@ namespace SummerGUI
 			//Padding = Padding.Empty;
 		}
 
+        public override void Initialize()
+        {
+            base.Initialize();
+
+			// Keine Ahnung, warum das manchmal notwendig ist.
+			if (Children.Count > 0)
+				Children[0].UpdateStyle();
+        }
+
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
 			if (CachedPreferredSize == SizeF.Empty) {
