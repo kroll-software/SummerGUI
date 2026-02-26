@@ -75,7 +75,7 @@ namespace SummerGUI
 							visibleChildCount++;
 							sz = child.PreferredSize (ctx);
 							w += sz.Width + child.Margin.Width;
-							h = Math.Max (h, sz.Height);
+							h = Math.Max (h, sz.Height + child.Margin.Height);
 						}
 					}
 					w += ItemDistance * (visibleChildCount - 1);
@@ -89,7 +89,7 @@ namespace SummerGUI
 							visibleChildCount++;
 							sz = child.PreferredSize (ctx);
 							h += sz.Height + child.Margin.Height;
-							w = Math.Max (w, sz.Width);
+							w = Math.Max (w, sz.Width + child.Margin.Width);
 						}
 					}
 					h += ItemDistance * (visibleChildCount - 1);
@@ -114,7 +114,7 @@ namespace SummerGUI
 					if (child.Visible) {
 						float w = child.PreferredSize (ctx).Width;
 						r.X += child.Margin.Left;
-						r.Width = w;
+						r.Width = w + child.Margin.Width;
 						LayoutChild(ctx, child, r);
 						r.X += w + child.Margin.Right + ItemDistance;
 					}
@@ -134,8 +134,8 @@ namespace SummerGUI
 					if (child.Visible) {
 						float w = child.PreferredSize (ctx).Width;
 						r.X -= w + child.Margin.Right;
-						r.Width = w;						
-						LayoutChild(ctx, child, r);						
+						r.Width = w + child.Margin.Width;
+						LayoutChild(ctx, child, r);
 						r.X -= child.Margin.Left + ItemDistance;
 					}
 				}
@@ -158,7 +158,7 @@ namespace SummerGUI
 					if (child.Visible) {
 						float w = child.PreferredSize (ctx).Width;
 						r.X += child.Margin.Left;
-						r.Width = w;
+						r.Width = w + child.Margin.Width;
 						LayoutChild(ctx, child, r);
 						r.X += w + child.Margin.Right + ItemDistance;
 					}
@@ -178,7 +178,7 @@ namespace SummerGUI
 					if (child.Visible) {						
 						float h = child.PreferredSize (ctx).Height;
 						r.Y += child.Margin.Top;
-						r.Height = h;
+						r.Height = h + child.Margin.Height;
 						LayoutChild(ctx, child, r);
 						r.Y += h + child.Margin.Bottom + ItemDistance;
 					}
@@ -198,7 +198,7 @@ namespace SummerGUI
 					if (child.Visible) {
 						float h = child.PreferredSize (ctx).Height;
 						r.Y -= h + child.Margin.Bottom;
-						r.Height = h;						
+						r.Height = h + child.Margin.Height;
 						LayoutChild(ctx, child, r);						
 						r.Y -= child.Margin.Top + ItemDistance;
 					}
@@ -222,7 +222,7 @@ namespace SummerGUI
 					if (child.Visible) {
 						float h = child.PreferredSize (ctx).Height;
 						r.Y += child.Margin.Top;
-						r.Height = h;
+						r.Height = h + child.Margin.Height;
 						LayoutChild(ctx, child, r);
 						r.Y += h + child.Margin.Bottom + ItemDistance;
 					}
@@ -252,12 +252,7 @@ namespace SummerGUI
 				LayoutColumnCentered (ctx, bounds);
 				break;			
 			}				
-		}
-
-		protected override void LayoutChild (IGUIContext ctx, Widget child, RectangleF bounds)
-		{
-			base.LayoutChild (ctx, child, bounds);
-		}
+		}		
 	}
 
 	public class ButtonContainerWidgetStyle : WidgetStyle
@@ -278,7 +273,7 @@ namespace SummerGUI
 		public ButtonContainer(string name, Docking dock, IWidgetStyle style) : base (name, dock, style) {
 			FlexDirection = FlexDirections.RowReverse;
 			ItemDistance = 15;
-			Padding = new Padding (6);
+			Padding = new Padding (6);			
 		}
 
 		protected override void OnAddChild (Widget child)
@@ -286,7 +281,7 @@ namespace SummerGUI
 			base.OnAddChild (child);
 			Button btn = child as Button;
 			if (btn != null) {				
-				btn.MinSize = new SizeF (96, btn.MinSize.Height);
+				btn.MinSize = new SizeF (96, btn.MinSize.Height);				
 			}
 		}
 			

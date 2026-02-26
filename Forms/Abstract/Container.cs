@@ -316,6 +316,16 @@ namespace SummerGUI
 			LayoutChildren (ctx, PaddingBounds);	// Base = Bounds with Padding		
 			OnAfterLayout (ctx, bounds);
 		}
+
+        public override void OnResize()
+        {
+            base.OnResize();
+			foreach (Widget child in Children)
+			{
+				if (child != null && child.Visible)
+					child.OnResize();
+			}
+		}
 			
 		/// <summary>
 		/// Layouts the children. Gives derived classes a chance to have their own logic
@@ -325,13 +335,13 @@ namespace SummerGUI
 		protected virtual void LayoutChildren(IGUIContext ctx, RectangleF bounds)
 		{			
 			if (this.Children.Count > 0) {				
-				RectangleF r = bounds;
+				RectangleF r = bounds;				
 				// iterate forward by ZIndex
 				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
 
-					if (child.Visible) {
+					if (child.Visible) {						
 						LayoutChild(ctx, child, r);
 						//if (child.IsOverlay || child.Bounds.IsEmpty)
 						//if (child.Bounds.IsEmpty || child.ZIndex >= 10000)
@@ -357,7 +367,7 @@ namespace SummerGUI
 							break;
 						case Docking.Fill:							
 							break;
-						}							
+						}
 					}
 				}
 			}
@@ -371,8 +381,8 @@ namespace SummerGUI
 		/// <param name="ctx">Context.</param>
 		/// <param name="bounds">Bounds.</param>
 		protected virtual void LayoutChild(IGUIContext ctx, Widget child, RectangleF bounds)
-		{
-			child.OnLayout (ctx, bounds);
+		{			
+			child.OnLayout (ctx, bounds.Inflate(child.Margin));
 		}
 			
 		// RECURSIVE Update Function

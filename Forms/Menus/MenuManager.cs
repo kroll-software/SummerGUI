@@ -66,8 +66,7 @@ namespace SummerGUI
 			menuInterface.InterfaceType = interfaceType;
 
 			//Console.WriteLine (menuInterface.InterfaceName);
-			//Console.WriteLine (menuInterface.MessageSubject);
-
+			//Console.WriteLine (menuInterface.MessageSubject);			
 			foreach (MethodInfo method in interfaceType.GetMethods()) {					
 				if (!method.Name.StartsWith("get_")) {																		
 					IGuiMenuItem menu = Menu.FindItem(method.Name);
@@ -88,6 +87,7 @@ namespace SummerGUI
 					}
 				}
 			}
+
 			//Interfaces.Add(menuInterface.MessageSubject, menuInterface);
 			Interfaces.Add(interfaceType, menuInterface);
 		}
@@ -134,7 +134,7 @@ namespace SummerGUI
 									// which is not invoked by user input. We have invoked it here
 									// we are responsible for an update.
 									HandleMenusUpdate (consumer);
-								}	
+								}
 							} catch (Exception ex) {
 								ex.LogError();
 							}

@@ -114,7 +114,7 @@ namespace SummerGUI
 			if (Widget != null) {
 				if (bounds.Width != Bounds.Width)
 					Widget.Update (false, -1);
-				Widget.OnLayout (ctx, bounds);
+				Widget.OnLayout (ctx, bounds.Inflate(Widget.Margin));
 				Bounds = new RectangleF(bounds.Left, bounds.Top, bounds.Width, 
 					Math.Max(bounds.Height, Widget.Height));
 			} else {
@@ -578,7 +578,7 @@ namespace SummerGUI
 				}
 
 				top += Table.Rows [i].Height + CellPadding.Height;
-			}
+			}			
 		}
 
 		void LayoutCollapsed(IGUIContext ctx, RectangleF bounds)
@@ -701,21 +701,28 @@ namespace SummerGUI
 			Layout.Update ();
 		}
 
-		//SizeF lastProposedSize;
+		SizeF lastProposedSize = SizeF.Empty;
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
-		{
+		{			
 			// ToDo: Optimieren/Cachen
-			if (CachedPreferredSize == SizeF.Empty) 
+			if (CachedPreferredSize == SizeF.Empty)
 			{
 				if (Layout == null)
 					return base.PreferredSize (ctx, proposedSize);				
 				
 				SizeF sz = Layout.PreferredSize(ctx, new SizeF(proposedSize.Width - Padding.Width, proposedSize.Height - Padding.Height));
 				CachedPreferredSize = new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
-			}			
+			}		
+
+			lastProposedSize = proposedSize;	
 		
 			return CachedPreferredSize;
-		}						
+		}
+
+        public override void OnResize()
+        {
+            base.OnResize();			
+        }
 
 		/*** ***/
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
@@ -723,29 +730,20 @@ namespace SummerGUI
 			if (!Visible || IsLayoutSuspended)
 				return;			
 
-			SizeF size = PreferredSize (ctx, bounds.Size);
+			SizeF size = PreferredSize (ctx, bounds.Size);		
 			bounds = new RectangleF (bounds.Location, size);
 			base.OnLayout (ctx, bounds);
-
-			/*** 
-			if (AutoSize) {				
-				//this.SetBounds (bounds);
-				SetBounds (new RectangleF (Bounds.Left, Bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));		
-			}
-			***/
 		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
 		{			
 			Layout.OnLayout (ctx, bounds);
 		}
-
-		/*** ***/
+		
 		public override void OnAfterLayout (IGUIContext ctx, RectangleF bounds)
 		{			
 			if (AutoSize) {				
-				// ToDo: Margin nicht richtig
-				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width + Margin.Width, Layout.Height + Padding.Height + Margin.Height));				
+				SetBounds (new RectangleF (bounds.Left, bounds.Top, Layout.Width + Padding.Width, Layout.Height + Padding.Height));				
 			}
 
 			base.OnAfterLayout (ctx, bounds);

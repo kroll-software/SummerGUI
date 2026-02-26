@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Input;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 
 namespace SummerGUI
@@ -22,6 +23,7 @@ namespace SummerGUI
 		IGuiMenuItem Add (string key, string text, char icon = (char)0);
 		IGuiMenuItem Insert (int index, string key, string text, char icon = (char)0);
 		IGuiMenuItem FindItem (string name);
+		void InitEditMenu();
 	}		
 		
 	public class GuiMenu : List<IGuiMenuItem>, IGuiMenu, IGuiMenuNode
@@ -41,6 +43,32 @@ namespace SummerGUI
 		{
 			Name = name;
 			Enabled = true;
+		}
+
+		public void InitEditMenu()
+		{
+			IGuiMenuItem mnuEdit = Add ("Edit", "&Edit");
+			IGuiMenuItem mnuCopy = mnuEdit.AddChild ("Copy", "Copy", (char)FontAwesomeIcons.fa_copy)
+				.SetHotKey(KeyModifiers.Control, Keys.C);
+			IGuiMenuItem mnuPaste = mnuEdit.AddChild ("Paste", "Paste", (char)FontAwesomeIcons.fa_paste)
+				.SetHotKey(KeyModifiers.Control, Keys.V);
+			IGuiMenuItem mnuCut = mnuEdit.AddChild ("Cut", "Cut", (char)FontAwesomeIcons.fa_cut)
+				.SetHotKey(KeyModifiers.Control, Keys.X);
+			mnuEdit.AddSeparator ();
+			IGuiMenuItem mnuUndo = mnuEdit.AddChild ("Undo", "Undo", (char)FontAwesomeIcons.fa_undo)
+				.SetHotKey(KeyModifiers.Control, Keys.Z);
+			IGuiMenuItem mnuRedo = mnuEdit.AddChild ("Redo", "Redo", (char)FontAwesomeIcons.fa_repeat)
+				.SetHotKey(KeyModifiers.Control, Keys.Y);
+			mnuEdit.AddSeparator ();
+			IGuiMenuItem mnuSelectAll = mnuEdit.AddChild ("SelectAll", "Select All", (char)0)
+				.SetHotKey(KeyModifiers.Control, Keys.A);
+			IGuiMenuItem mnuInvertSelection = mnuEdit.AddChild ("InvertSelection", "Invert Selection", (char)0)
+				.SetHotKey(KeyModifiers.Control, Keys.I);
+
+			// Test: Disable something
+			mnuCopy.Enabled = false;
+			mnuRedo.Enabled = false;
+			mnuCut.Enabled = false;
 		}
 
 		public IGuiMenuItem Add (string key, string text, char icon = (char)0) 

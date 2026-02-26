@@ -1027,13 +1027,19 @@ namespace SummerGUI
 
 			RectangleF oldBounds = Bounds;
 
-			/*** ***/
+			/*** 
+			Widgets never deal with their margins!
+			It is always the container's responsibility to consider the margins of its children during layout.
+
 			RectangleF rBounds = new RectangleF (
 				bounds.Left + Margin.Left,
 				bounds.Top + Margin.Top,
 				Math.Max(0, bounds.Width - Margin.Width),
 				Math.Max(0, bounds.Height - Margin.Height)
-			);				
+			);	
+			***/
+			RectangleF rBounds = bounds;
+						
 				
 			if (Dock == Docking.Fill) {				
 				SetBounds (rBounds);
@@ -1080,8 +1086,8 @@ namespace SummerGUI
 		public virtual void OnResize()
 		{						
 			ResetCachedLayout ();
-			if (Parent != null)
-				Parent.ResetCachedLayout ();
+			//if (Parent != null)
+			//	Parent.ResetCachedLayout ();
 		}
 
 		/// <summary>

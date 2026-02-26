@@ -100,59 +100,56 @@ namespace SummerGUI
 		public SizeF DocumentSize { get; protected set; }
 
 		protected override void LayoutChildren(IGUIContext ctx, RectangleF bounds)
-		{
-			if (Children.Count > 0) {
-				RectangleF r = bounds;
-				SizeF docSize = new SizeF();
+		{			
+			SizeF docSize = new SizeF();
 
-				for (int i = 0; i < Children.Count; i++)				
+			if (this.Children.Count > 0) {				
+				RectangleF r = bounds;				
+				// iterate forward by ZIndex
+				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
-					if (child != null && child.Visible) {
+
+					if (child.Visible) {						
 						LayoutChild(ctx, child, r);
 
-						if (child.Dock == Docking.Top || child.Dock == Docking.Fill) {
-							if (VScrollBar != null && VScrollBar.ZIndex > child.ZIndex) {
-								docSize.Height += child.Height + child.Margin.Top;
-								if (i == 0)
-									docSize.Height += child.Margin.Bottom;
-							}
-							else
-								r.Height -= child.Height;
+						if (child.Bounds.IsEmpty)
+							continue;
 
-							r.Y += child.Height;
-							if (child.Margin.Bottom > 0)
-								r.Offset (0, child.Margin.Bottom);
-						}
+						RectangleF cmb = child.MarginBounds;	// Child-Margin-Bounds
 
-						if (child.Dock == Docking.Left || child.Dock == Docking.Fill) {
-							if (HScrollBar != null && HScrollBar.ZIndex > child.ZIndex) {
-								docSize.Width += child.Width + child.Margin.Left;
-								if (i == 0)
-									docSize.Width += child.Margin.Right;
-							}
-							else
-								r.Width -= child.Width;
-
-							r.X += child.Width;
-							if (child.Margin.Right > 0)
-								r.Offset (child.Margin.Right, 0);
-						}
-							
 						switch (child.Dock) {
-						case Docking.Right:				
-							r.Width -= child.MarginBounds.Width;
+						case Docking.Top:							
+							r.Height -= cmb.Height;
+							r.Y += cmb.Height;
+							docSize.Height += cmb.Height;
 							break;
-						case Docking.Bottom:							
-							r.Height -= child.MarginBounds.Height;
-							break;						
+						case Docking.Left:
+							r.Width -= cmb.Width;
+							r.X += cmb.Width;
+							docSize.Width += cmb.Width;
+							break;
+						case Docking.Right:
+							r.Width -= cmb.Width;
+							if (child != VScrollBar)
+								docSize.Width += cmb.Width;
+							break;
+						case Docking.Bottom:
+							r.Height -= cmb.Height;
+							if (child != HScrollBar)
+								docSize.Height += cmb.Height;
+							break;
+						case Docking.Fill:
+							docSize.Width += cmb.Width;
+							docSize.Height += cmb.Height;
+							break;
 						}							
 					}
 				}
-					
-				DocumentSize = docSize;
 			}
-		}
+
+			DocumentSize = docSize;
+		}		
 
 		protected float HScrollBarHeight
 		{

@@ -453,8 +453,8 @@ namespace SummerGUI
 			this.SetBounds (bounds);
 			float maxRight = bounds.Right;
 			if (HamburgerMenuVisible) {
-				HamburgerMenu.OnLayout (ctx, bounds);
-				maxRight = Right - Padding.Width - (HamburgerMenu.Width * 2);
+				this.LayoutChild(ctx, HamburgerMenu, bounds);				
+				maxRight = Right - Padding.Right - HamburgerMenu.MarginBounds.Width;
 			}
 
 			float x = Left + Padding.Left;

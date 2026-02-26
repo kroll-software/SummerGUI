@@ -709,16 +709,15 @@ namespace SummerGUI
 		}
 
 		public SizeF Measure(string text, float maxWidth, FontFormat format)
-		{       
+		{
 			if (string.IsNullOrEmpty(text))
 				return SizeF.Empty;
 
 			float maxLineWidth = 0;
 			int lineCount = 1;
-			
+
 			bool wrapEnabled = format.HasFlag(FontFormatFlags.WrapText) && maxWidth > 0;
 
-			// Wir arbeiten mit ReadOnlySpan für maximale Performance ohne Substring-Allokationen
 			ReadOnlySpan<char> span = text.AsSpan();
 			int start = 0;
 			int lastBreakIdx = -1;
@@ -732,7 +731,7 @@ namespace SummerGUI
 				{
 					float lineWidth = MeasureSegment(span.Slice(start, i - start));
 					maxLineWidth = Math.Max(maxLineWidth, lineWidth);
-					
+
 					start = i + 1;
 					lineCount++;
 					lastBreakIdx = -1;
@@ -748,28 +747,48 @@ namespace SummerGUI
 				// 2. Automatischer Zeilenumbruch (Wrap)
 				if (wrapEnabled)
 				{
-					// Wir messen das aktuelle Wort/Segment bis hierhin
+					// Wir messen das aktuelle Segment bis einschließlich i
 					float currentWidth = MeasureSegment(span.Slice(start, i - start + 1));
 
 					if (currentWidth > maxWidth)
 					{
+						// Fall A: wir haben eine vorherige Break-Position innerhalb der aktuellen Zeile
 						if (lastBreakIdx != -1 && lastBreakIdx > start)
 						{
-							// Umbruch am letzten Space
+							// Umbruch am letzten Break (inklusive des Break-Zeichens)
 							float lineWidth = MeasureSegment(span.Slice(start, lastBreakIdx - start + 1));
 							maxLineWidth = Math.Max(maxLineWidth, lineWidth);
-							
-							i = lastBreakIdx; // Springe zurück
+
+							// setze Schleifenindex so, dass die nächste Iteration mit dem Zeichen nach lastBreakIdx startet
+							i = lastBreakIdx;
 							start = i + 1;
 						}
 						else
 						{
-							// Wort zu lang -> Notumbruch (umbruch direkt vor dem aktuellen Zeichen)
-							float lineWidth = MeasureSegment(span.Slice(start, i - start));
-							maxLineWidth = Math.Max(maxLineWidth, lineWidth);
-							start = i;
-							i--; // Dieses Zeichen in der nächsten Zeile prüfen
+							// Kein Break gefunden innerhalb der aktuellen Zeile
+							// Sonderfall: das einzelne Zeichen an Index i passt nicht in die Zeile (i == start)
+							if (i == start)
+							{
+								// Ein einzelnes Zeichen ist breiter als maxWidth -> es bekommt eine eigene Zeile.
+								// Messe genau dieses Zeichen als Linie und überspringe es.
+								float lineWidth = MeasureSegment(span.Slice(start, 1));
+								maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+
+								start = i + 1; // das zu breite Zeichen wurde "verbraucht"
+								// kein i-- hier, sonst würde die Schleife auf derselben Position hängen bleiben
+							}
+							else
+							{
+								// Wort (ohne Breaks) ist zu lang, wir brechen vor dem aktuellen Zeichen
+								float lineWidth = MeasureSegment(span.Slice(start, i - start));
+								maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+
+								// aktuelle Position i soll in der nächsten Zeile erneut geprüft werden
+								start = i;
+								i--; // beim nächsten i++ in der for-Schleife bleibt i auf der aktuellen Position
+							}
 						}
+
 						lineCount++;
 						lastBreakIdx = -1;
 					}

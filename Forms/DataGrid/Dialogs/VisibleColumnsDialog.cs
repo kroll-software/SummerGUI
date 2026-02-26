@@ -21,6 +21,7 @@ namespace SummerGUI.DataGrid
         DataGridColumnCollection m_Columns;
 
         Panel m_buttonContainer;
+        //ButtonContainer m_buttonContainer;
 
         public DefaultButton CmdOK { get; private set; }
         public DefaultButton CmdCancel { get; private set; }
@@ -37,10 +38,11 @@ namespace SummerGUI.DataGrid
             m_Columns = columns;
 
             m_buttonContainer = Controls.AddChild(new Panel("m_buttonContainer", Docking.Right, null));
-            //m_buttonContainer.Padding = new Padding(8);
+            m_buttonContainer.Padding = new Padding(8);
+            
             //m_buttonContainer = Controls.AddChild(new ButtonContainer("m_buttonContainer", Docking.Right, null));
             //m_buttonContainer.FlexDirection = FlexDirections.Column;            
-            //m_buttonContainer.ItemDistance = 8;
+            //m_buttonContainer.ItemDistance = 8;            
 
             CmdOK = m_buttonContainer.AddChild(new DefaultButton("cmdOK", "&OK", ColorContexts.Default));
             CmdCancel = m_buttonContainer.AddChild(new DefaultButton("cmdCancel", "C&ancel", ColorContexts.Default));
@@ -61,9 +63,9 @@ namespace SummerGUI.DataGrid
             CmdMoveDown.Click += MoveDown;
 
             foreach(var child in m_buttonContainer.Children)
-                child.Margin = new Padding(4);
+                child.Margin = new Padding(4);                
 
-            m_buttonContainer.Padding = new Padding(0, 6, 6, 6);
+            m_buttonContainer.Padding = new Padding(0, 6, 6, 6);            
 
             LB = Controls.AddChild(new CheckedListBox("Columns"));
             LB.Margin = new Padding(6);

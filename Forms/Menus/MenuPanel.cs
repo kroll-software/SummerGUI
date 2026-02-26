@@ -214,7 +214,7 @@ namespace SummerGUI
 			}
 		}
 
-		#pragma warning disable 219		// disable warnings about unused menu items
+		#pragma warning disable 219		// disable warnings about unused menu items		
 
 		public void InitMenu()
 		{						
