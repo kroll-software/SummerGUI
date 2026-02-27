@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Drawing;
 
 namespace SummerGUI
 {
@@ -39,16 +41,11 @@ namespace SummerGUI
 				OffsetY = tlc.CellPadding.Height / 2;
 		}
 
-		public override void OnLayout (IGUIContext ctx, System.Drawing.RectangleF bounds)
+		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
 		{
 			bounds.Offset (0, OffsetY);
 			base.OnLayout (ctx, bounds);
 		}		
-
-		public override void OnPaint (IGUIContext ctx, System.Drawing.RectangleF bounds)
-		{
-			base.OnPaint (ctx, bounds);
-		}
 	}
 }
 

@@ -309,34 +309,36 @@ namespace SummerGUI
 		public void EnsureCurrentRowVisible ()
 		{
 			if (IsMouseMoving)
-				return;
-
-			//Console.WriteLine ("ScrollOffsetY: {0}, Cursor.Bottom: {1}", ScrollOffsetY, RowManager.CursorRectangle.Bottom);
+				return;			
 
 			try {	
 				Paragraph para = RowManager.CurrentParagraph;
 				if (para == null)
 					return;
 
-				float lineHeight = RowManager.LineHeight;
-				float halfRowHeight = lineHeight / 2f;
+				float lineHeight = RowManager.LineHeight;				
 				int lineIndex = para.LineOffset + para.LineFromPosition(RowManager.CursorPosition);
 
-				float rowTop = (lineIndex * lineHeight) + ScrollOffsetY + Padding.Top;
+				float rowTop = lineIndex * lineHeight;
 				float rowBottom = rowTop + lineHeight;
 
-				// Ensure Current Row Visible
-				if (rowTop < 0) {						
-					VScrollBar.Value = (int)((lineIndex * lineHeight) + Padding.Top - halfRowHeight + 0.5f);
+				float visibleTop = VScrollBar.Value;
+				float visibleBottom = visibleTop + (Height - Padding.Height);
+
+				if (rowTop < visibleTop)
+				{
+					VScrollBar.Value = rowTop;
 				}
-				else if (rowBottom > Height - halfRowHeight) {						
-					float newVal = (int)((lineIndex * lineHeight) + Padding.Top + lineHeight - Height + halfRowHeight + 0.5f);
-					VScrollBar.Value = newVal;
-					if (VScrollBar.Value < newVal) {
+				else if (rowBottom > visibleBottom)
+				{					
+					float newValue = rowBottom - (Height - Padding.Height);			
+					VScrollBar.Value = newValue;
+					if (VScrollBar.Value < newValue)
+					{
 						SetupDocumentSize();
-						VScrollBar.Value = newVal;
+						VScrollBar.Value = newValue;
 					}
-				}
+				}				
 			} catch (Exception ex) {
 				ex.LogError ();
 			}				
@@ -424,9 +426,8 @@ namespace SummerGUI
 
 		protected void SetupDocumentSize()
 		{
-			if (VScrollBar != null) {
-				
-				VScrollBar.SetUp (VScrollBar.Height, RowManager.Height + Padding.Height, RowManager.LineHeight);
+			if (VScrollBar != null) {								
+				VScrollBar.SetUp (VScrollBar.Height, RowManager.Height + Padding.Height, RowManager.LineHeight);				
 			}
 		}
 			
@@ -986,6 +987,8 @@ namespace SummerGUI
 
 			int rowIndex = RowManager.FirstParagraphOnScreen;
 			IGUIFont font = RowManager.Font;
+
+			//Debug.WriteLine($"DocumentSize: {DocumentSize}");
 
 			try {
 				while (rowIndex < RowManager.Paragraphs.Count) {					

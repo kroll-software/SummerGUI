@@ -719,11 +719,6 @@ namespace SummerGUI
 			return CachedPreferredSize;
 		}
 
-        public override void OnResize()
-        {
-            base.OnResize();			
-        }
-
 		/*** ***/
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
 		{

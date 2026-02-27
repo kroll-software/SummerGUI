@@ -42,31 +42,47 @@ namespace SummerGUI.Scrolling
 
 	public class VerticalScrollGrip : ScrollGripBase
 	{
-		public VerticalScrollGrip() : base() {}
+		public VerticalScrollGrip() : base() {}		
 
-		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{					
+		public override void OnLayout(IGUIContext ctx, RectangleF bounds)
+		{
 			ScrollBar sb = ParentScroll;
-			if (sb == null || sb.Maximum - sb.Minimum <= 0)
+			if (sb == null)
 				return;
 
-			float gripSize = sb.GripSize;
-			float scrollSize = sb.ScrollSize;
+			float documentSize = sb.DocumentSize;
+			float windowSize   = sb.WindowSize;
 
-			if (gripSize < ScrollBar.MinGripSize) {
-				scrollSize -= (ScrollBar.MinGripSize - gripSize);
-				gripSize = ScrollBar.MinGripSize;
-			}
-
-			if (scrollSize <= 0)
+			if (documentSize <= 0 || windowSize <= 0)
 				return;
 
-			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
+			float trackTop  = ScrollBar.ScrollBarWidth + sb.Top;
+			float trackSize = sb.ScrollSize;
 
-			float top = (sb.Value / factor) + ScrollBar.ScrollBarWidth + sb.Top;
-			this.SetBounds(new RectangleF (bounds.Right - ScrollBar.ScrollBarWidth + 2, top, 
-				ScrollBar.ScrollBarWidth - 4, gripSize));
-		}			
+			if (trackSize <= 0)
+				return;
+
+			// ---- Grip Size ----
+			float gripSize = trackSize * (windowSize / documentSize);
+			gripSize = Math.Max(ScrollBar.MinGripSize, gripSize);
+
+			// ---- Scroll Range ----
+			float scrollRange = sb.Maximum; // = documentSize - windowSize
+
+			float gripTravel = trackSize - gripSize;
+
+			float progress = 0f;
+			if (scrollRange > 0)
+				progress = sb.Value / scrollRange;
+
+			float top = trackTop + (progress * gripTravel);
+
+			this.SetBounds(new RectangleF(
+				bounds.Right - ScrollBar.ScrollBarWidth + 2,
+				top,
+				ScrollBar.ScrollBarWidth - 4,
+				gripSize));
+		}
 
 		public override Widget HitTest (float x, float y)
 		{
@@ -79,8 +95,8 @@ namespace SummerGUI.Scrolling
 			return this;
 		}
 
-		public override void OnMouseMove (MouseMoveEventArgs e)
-		{						
+		public override void OnMouseMove(MouseMoveEventArgs e)
+		{
 			if (WidgetState != WidgetStates.Pressed)
 				return;
 
@@ -88,15 +104,29 @@ namespace SummerGUI.Scrolling
 			if (sb == null)
 				return;
 
-			float scrollSize = sb.ScrollSize;
-			if (scrollSize <= 0 || sb.Maximum - sb.Minimum <= 0)
+			float scrollRange = sb.Maximum; // = DocumentSize - WindowSize
+			if (scrollRange <= 0)
 				return;
 
-			//Debug.WriteLine (e.Y, "e.Y");
+			float trackTop  = ScrollBar.ScrollBarWidth + sb.Top;
+			float trackSize = sb.ScrollSize;
+			if (trackSize <= 0)
+				return;
 
-			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
-			float y = e.Y - sb.Top - (LastMouseDownMousePosition.Y - LastMouseDownUpperLeft.Y) - ScrollBar.ScrollBarWidth;
-			sb.Value =  y * factor;
+			float gripSize   = this.Height;          // aktuelle Grip-Höhe
+			float gripTravel = trackSize - gripSize;
+			if (gripTravel <= 0)
+				return;
+
+			// Abstand Maus innerhalb des Grips beim Klick
+			float mouseOffset = LastMouseDownMousePosition.Y - LastMouseDownUpperLeft.Y;
+
+			float mouseY = e.Y - trackTop - mouseOffset;
+
+			float progress = mouseY / gripTravel;
+			progress = Math.Max(0f, Math.Min(1f, progress));
+
+			sb.Value = progress * scrollRange;
 		}
 	}
 
@@ -104,28 +134,43 @@ namespace SummerGUI.Scrolling
 	{
 		public HorizontalScrollGrip() : base() {}
 
-		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{					
+		public override void OnLayout(IGUIContext ctx, RectangleF bounds)
+		{
 			ScrollBar sb = ParentScroll;
-			if (sb == null || sb.Maximum - sb.Minimum <= 0)
+			if (sb == null)
 				return;
 
-			float gripSize = sb.GripSize;
-			float scrollSize = sb.ScrollSize;		
+			float documentSize = sb.DocumentSize;
+			float windowSize   = sb.WindowSize;
 
-			if (gripSize < ScrollBar.MinGripSize) {
-				scrollSize -= (ScrollBar.MinGripSize - gripSize);
-				gripSize = ScrollBar.MinGripSize;
-			}
-
-			if (scrollSize <= 0)
+			if (documentSize <= 0 || windowSize <= 0)
 				return;
 
-			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
+			float trackLeft = ScrollBar.ScrollBarWidth + sb.Left;
+			float trackSize = sb.ScrollSize;
 
-			float left = (sb.Value / factor) + ScrollBar.ScrollBarWidth + sb.Left;
-			this.SetBounds(new RectangleF (left, bounds.Bottom - ScrollBar.ScrollBarWidth + 2,
-				gripSize, ScrollBar.ScrollBarWidth - 4));
+			if (trackSize <= 0)
+				return;
+
+			// ---- Grip Size ----
+			float gripSize = trackSize * (windowSize / documentSize);
+			gripSize = Math.Max(ScrollBar.MinGripSize, gripSize);
+
+			// ---- Scroll Range ----
+			float scrollRange = sb.Maximum; // = documentSize - windowSize
+			float gripTravel  = trackSize - gripSize;
+
+			float progress = 0f;
+			if (scrollRange > 0)
+				progress = sb.Value / scrollRange;
+
+			float left = trackLeft + (progress * gripTravel);
+
+			this.SetBounds(new RectangleF(
+				left,
+				bounds.Bottom - ScrollBar.ScrollBarWidth + 2,
+				gripSize,
+				ScrollBar.ScrollBarWidth - 4));
 		}
 
 		public override Widget HitTest (float x, float y)
@@ -139,8 +184,8 @@ namespace SummerGUI.Scrolling
 			return this;
 		}
 
-		public override void OnMouseMove (MouseMoveEventArgs e)
-		{						
+		public override void OnMouseMove(MouseMoveEventArgs e)
+		{
 			if (WidgetState != WidgetStates.Pressed)
 				return;
 
@@ -148,13 +193,28 @@ namespace SummerGUI.Scrolling
 			if (sb == null)
 				return;
 
-			float scrollSize = sb.ScrollSize;
-			if (scrollSize <= 0 || sb.Maximum - sb.Minimum <= 0)
+			float scrollRange = sb.Maximum;
+			if (scrollRange <= 0)
 				return;
 
-			float factor = ((sb.Maximum - sb.Minimum) / scrollSize);
-			float x = e.X - sb.Left - (LastMouseDownMousePosition.X - LastMouseDownUpperLeft.X) - ScrollBar.ScrollBarWidth;
-			sb.Value =  x * factor;
+			float trackLeft = ScrollBar.ScrollBarWidth + sb.Left;
+			float trackSize = sb.ScrollSize;
+			if (trackSize <= 0)
+				return;
+
+			float gripSize   = this.Width;
+			float gripTravel = trackSize - gripSize;
+			if (gripTravel <= 0)
+				return;
+
+			float mouseOffset = LastMouseDownMousePosition.X - LastMouseDownUpperLeft.X;
+
+			float mouseX = e.X - trackLeft - mouseOffset;
+
+			float progress = mouseX / gripTravel;
+			progress = Math.Max(0f, Math.Min(1f, progress));
+
+			sb.Value = progress * scrollRange;
 		}
 	}
 
@@ -367,12 +427,7 @@ namespace SummerGUI.Scrolling
 			get{
 				return DocumentSize > WindowSize;
 			}
-		}
-
-		private void AdjustValue()
-		{
-			m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1f, m_Value));			
-		}
+		}		
 
 		private float m_Value = 0;
 		public float Value  
@@ -382,11 +437,11 @@ namespace SummerGUI.Scrolling
 			}
 			set {
 				if (m_Value != value) {
-					ResetCachedLayout ();
-					m_Value = Math.Max(Minimum, Math.Min(Maximum - LargeChange + 1, value));					
+					ResetCachedLayout ();					
+					m_Value = Math.Max(Minimum, Math.Min(Maximum, value));
 
 					FirstButton.Enabled = m_Value > Minimum;
-					LastButton.Enabled = m_Value + LargeChange < Maximum;
+					LastButton.Enabled  = m_Value < Maximum;
 
 					OnScroll ();
 					Invalidate ();
@@ -419,7 +474,8 @@ namespace SummerGUI.Scrolling
 			m_DocumentSize = documentSize;
 
 			Minimum = 0;
-			Maximum = Math.Max(0, documentSize);
+			//Maximum = Math.Max(0, documentSize);
+			Maximum = Math.Max(0, documentSize - windowSize);
 
 			SmallChange = 0;
 			LargeChange = windowSize;
@@ -432,8 +488,9 @@ namespace SummerGUI.Scrolling
 			bool needed = NeedsScrollBar;
 
 			Enabled = needed;
-			AdjustValue();
-			LastButton.Enabled = needed && (Value + LargeChange - 1) < Maximum;
+
+			m_Value = Math.Max(Minimum, Math.Min(Maximum, m_Value));			
+			LastButton.Enabled = needed && Value < Maximum;
 		}
 			
 		private TaskTimer m_Timer = null;

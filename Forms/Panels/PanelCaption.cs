@@ -28,8 +28,8 @@ namespace SummerGUI
 	{
 		public override void InitStyle ()
 		{
-			SetBackColor (Theme.Colors.Yellow, Theme.Colors.HighLightYellow);
-			SetForeColor (Theme.Colors.White);
+			SetBackColor (Theme.Colors.LightHighLightButton, Theme.Colors.HighLightButton);
+			SetForeColor (Theme.Colors.Base03);
 			SetBorderColor (Color.Empty);
 		}
 	}
@@ -97,6 +97,11 @@ namespace SummerGUI
 			else
 				WidgetState = WidgetStates.Default;			
 		}
+
+        public override void OnMouseEnter(IGUIContext ctx)
+        {
+            //base.OnMouseEnter(ctx);
+        }
 
 		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
 		{

@@ -54,7 +54,7 @@ namespace SummerGUI
 		{			
 			ScrollBars = ScrollBars.Both;
 			//VScrollBar.Visible = false;
-			//HScrollBar.Visible = false;
+			//HScrollBar.Visible = false;			
 
 			Font = FontManager.Manager.DefaultFont;
 			//Font = SummerGUIWindow.CurrentContext.FontManager.SerifFont;
@@ -72,7 +72,7 @@ namespace SummerGUI
 			CellPadding = new Padding (8, 4, 4, 4);
 			CellToolTips = true;
 
-			BackColor = Color.GhostWhite;
+			BackColor = Color.GhostWhite;			
 		}
 
 
@@ -391,10 +391,10 @@ namespace SummerGUI
 		}
 
 		public void SetupScrollBars()
-		{
+		{			
 			if (Bounds.IsEmpty || ColumnManager == null)
 				return;
-
+			
 			// ToDo:
 			if (ColumnHeaders)
 				VScrollBar.Margin = new Padding (0, m_HeaderHeight > 0 ? m_HeaderHeight : RowHeight, 0, 0);
@@ -405,7 +405,7 @@ namespace SummerGUI
 			if (!HasData)
 				return;
 
-			float documentWidth = ColumnManager.Columns.Where(c => c.Visible).Sum(c => c.Width);
+			float documentWidth = ColumnManager.Columns.Where(c => c.Visible).Sum(c => c.Width);			
 
 			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, RowManager.LastRowBottom, RowHeight);
 			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, documentWidth, ScrollBar.ScrollBarWidth);
@@ -1033,8 +1033,8 @@ namespace SummerGUI
 		public virtual void ScrollRight()
 		{
 			if (HScrollBar.Visible)
-			{
-				HScrollBar.Value = Math.Max(HScrollBar.Minimum, Math.Min(HScrollBar.Maximum - HScrollBar.LargeChange, HScrollBar.Value + HScrollBar.SmallChange));
+			{				
+				HScrollBar.Value = Math.Max(HScrollBar.Minimum, Math.Min(HScrollBar.Maximum, HScrollBar.Value + HScrollBar.SmallChange));
 			}
 		}
 

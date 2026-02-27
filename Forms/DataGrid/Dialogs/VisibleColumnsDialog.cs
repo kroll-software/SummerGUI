@@ -59,8 +59,12 @@ namespace SummerGUI.DataGrid
             CmdMoveUp.Dock = Docking.Bottom;
             CmdMoveDown.Dock = Docking.Bottom;
 
-            CmdMoveUp.Click += MoveUp;
-            CmdMoveDown.Click += MoveDown;
+
+            CmdMoveUp.IsAutofire = true;
+            CmdMoveUp.Fire += MoveUp;
+
+            CmdMoveDown.IsAutofire = true;
+            CmdMoveDown.Fire += MoveDown;
 
             foreach(var child in m_buttonContainer.Children)
                 child.Margin = new Padding(4);                
