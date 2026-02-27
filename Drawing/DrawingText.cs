@@ -16,7 +16,7 @@ namespace SummerGUI
     public static class GUIDrawingText
 	{        
 		public static SizeF DrawString(this IGUIContext ctx, string text, IGUIFont font, Brush brush, RectangleF bounds, FontFormat format)		
-		{
+		{			
 			return Print(ctx, font, brush, text, bounds, format, brush.Color);			
 		}
 
