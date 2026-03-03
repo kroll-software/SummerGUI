@@ -7,6 +7,8 @@
 
 Are you a C# developer used to the comfort of Windows development but want to break free into the world of high-performance, cross-platform OpenGL? **SummerGUI is for you.** ---
 
+![Screenshot](Screenshots/SummerGUI-Screenshot.png)
+
 ## ✨ What’s New? (The 2026 Evolution)
 We have completely rebuilt the engine to meet modern standards. No more legacy code—just pure performance.
 
