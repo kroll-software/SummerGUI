@@ -5,7 +5,7 @@
 
 **SummerGUI** is a high-performance, cross-platform UI framework built for the modern era. Written in **C#**, powered by **OpenTK**, and licensed under the **MIT License**, it empowers you to create stunning desktop applications that run seamlessly on **Windows** and **Ubuntu**.
 
-Are you a C# developer used to the comfort of Windows development but want to break free into the world of high-performance, cross-platform OpenGL? **SummerGUI is for you.** ---
+Are you a C# developer used to the comfort of Windows development but want to break free into the world of high-performance, cross-platform OpenGL? **SummerGUI is for you.**
 
 ![Screenshot](Screenshots/SummerGUI-Screenshot.png)
 
