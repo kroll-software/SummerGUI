@@ -61,7 +61,7 @@ namespace SummerGUI
 			this.AddChild (DefaultPanel);
 
 			ProgressPanel = new StatusProgressPanel ("progress");
-			ProgressPanel.Visible = false;
+			ProgressPanel.Visible = false;			
 			this.AddChild (ProgressPanel);
 
 			RootControllerObserver = new Observer<EventMessage> (OnNext, OnError, OnCompleted);
@@ -215,29 +215,29 @@ namespace SummerGUI
 
 		protected int LastProgressValue = -1;
 		protected object LockShowProgress = new object();
-		public void ShowProgress(int PercentDone)
+		public void ShowProgress(int PromilleDone)
 		{
-			if (ProgressPanel == null || PercentDone == LastProgressValue)
+			if (ProgressPanel == null || PromilleDone == LastProgressValue)
 				return;
 
 			try
 			{
 				lock (LockShowProgress)
 				{
-					LastProgressValue = PercentDone;
+					LastProgressValue = PromilleDone;
 
-					if (PercentDone < 0)
-						PercentDone = 0;
+					if (PromilleDone < 0)
+						PromilleDone = 0;
 
-					if (PercentDone >= 100)
+					if (PromilleDone >= 1000)
 					{						
 						ProgressPanel.Visible = false;
 						EnableGUI(true);
 					}
 					else
 					{
-						EnableGUI(false);
-						ProgressPanel.Value = PercentDone;
+						EnableGUI(false);						
+						ProgressPanel.Value = PromilleDone / 1000f;
 						ProgressPanel.Visible = true;
 					}
 				}

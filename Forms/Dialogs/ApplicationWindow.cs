@@ -219,9 +219,9 @@ namespace SummerGUI
 			StatusBar.ClearStatus ();
 		}
 			
-		public void ShowProgress(int percentDone)
+		public void ShowProgress(int promilleDone)
 		{
-			StatusBar.ShowProgress (percentDone);
+			StatusBar.ShowProgress (promilleDone);
 		}
 			
 		public IDisposable DisableGUI ()
