@@ -119,9 +119,9 @@ namespace SummerGUI
 			//Padding = Padding.Empty;
 		}
 
-        public override void Initialize()
+        public override void Initialize(IGUIContext ctx)
         {
-            base.Initialize();
+            base.Initialize(ctx);
 
 			// Keine Ahnung, warum das manchmal notwendig ist.
 			if (Children.Count > 0)

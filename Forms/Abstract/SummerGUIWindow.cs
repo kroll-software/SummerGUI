@@ -371,7 +371,7 @@ namespace SummerGUI
 			}
 
 			try {
-				widget.Initialize();
+				widget.Initialize(this);
 			} catch (Exception ex) {
 				ex.LogError ("Initialization failed for widget: {0}, Type: {1}, Error: {2}", widget.Name, widget.GetType().Name, ex.Message);
 			}

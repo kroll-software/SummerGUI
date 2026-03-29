@@ -133,7 +133,12 @@ namespace SummerGUI
 				ex.LogError ();
 				return false;
 			}
-		}			
+		}
+
+		public bool AddImage(string key, TextureImage image)
+		{					
+			return m_Images.TryAdd (key, image);
+		}
 
 		public bool AddImage(TextureImage image)
 		{

@@ -249,7 +249,7 @@ namespace SummerGUI
 		}
 
 		public bool IsInitialized { get; protected set; }
-		public virtual void Initialize()
+		public virtual void Initialize(IGUIContext ctx)
 		{
 			IsInitialized = true;
 		}
