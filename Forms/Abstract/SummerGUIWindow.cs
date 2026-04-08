@@ -815,7 +815,7 @@ namespace SummerGUI
 		public void Invalidate()
 		{
 			if (IsCreated)				
-				Invalidate (MaxDirtyLayout);
+				Invalidate (MaxDirtyLayout);				
 		}
 
 		private bool _isCurrentlyAnimating = false;

@@ -358,41 +358,48 @@ namespace SummerGUI
                 Type = type,
             };
         }
-
+        
         public void AddIndex(uint index)
         {
             if (indexCount >= MAX_INDICES) Flush();
             indexArray[indexCount++] = index;
-        }
+        }        
 
         public void AddGlyph(int textureId, RectangleF dest, RectangleF uv, Color4 color)
         {            
             DrawCount++;            
 
-            if ((textureId != currentTexture && currentTexture != -1) || (vertexCount + 4 >= MAX_VERTICES)) 
+            // 1. Textur-Wechsel prüfen
+            // Wenn die Textur anders ist als die aktuelle, müssen wir flashen (außer es ist das allererste Mal)
+            if (textureId != currentTexture && currentTexture != -1) 
+            {
                 Flush();
-
+            }
+            
+            // Aktuelle Textur setzen (auch wenn sie -1 war)
             currentTexture = textureId;
 
-            // Start-Index für dieses spezifische Quad merken
+            // 2. Kapazität prüfen (4 Vertices, 6 Indizes)
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES)
+            {
+                Flush();
+            }
+
             uint startVertex = (uint)vertexCount;
 
-            // 1. Vertices (4 Stück)
+            // Vertices (Type 1f für Glyphs/Textur-Rendering)
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(dest.X, dest.Y), Color = color, TexCoord = new Vector2(uv.X, uv.Y), Type = 1f };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(dest.Right, dest.Y), Color = color, TexCoord = new Vector2(uv.Right, uv.Y), Type = 1f  };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(dest.Right, dest.Bottom), Color = color, TexCoord = new Vector2(uv.Right, uv.Bottom), Type = 1f  };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(dest.X, dest.Bottom), Color = color, TexCoord = new Vector2(uv.X, uv.Bottom), Type = 1f  };
 
-            // 2. Indizes (6 Stück - immer relativ zu startVertex)
-            // Wenn du einen festen Index-Buffer (IBO) hast, brauchst du hier nichts tun, 
-            // außer den indexCount zu erhöhen. 
-            // Wenn du die Indizes jedes mal mitschickst:
+            // Indizes (Konsistent mit AddRectangle)
             indexArray[indexCount++] = startVertex + 0;
             indexArray[indexCount++] = startVertex + 1;
             indexArray[indexCount++] = startVertex + 2;
-            indexArray[indexCount++] = startVertex + 0;
             indexArray[indexCount++] = startVertex + 2;
             indexArray[indexCount++] = startVertex + 3;
+            indexArray[indexCount++] = startVertex + 0;
         }
 
         public void AddTextureRectangle(RectangleF rect, RectangleF uv, Color4 color, int textureId)
@@ -405,7 +412,10 @@ namespace SummerGUI
                 currentTexture = textureId;
             }
 
-            if (vertexCount + 4 >= MAX_VERTICES) Flush();
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES)
+            {
+                Flush();
+            }
 
             uint startIdx = (uint)vertexCount;
 
@@ -430,16 +440,28 @@ namespace SummerGUI
         public void AddRectangle(RectangleF rect, Color4 colorTL, Color4 colorTR, Color4 colorBR, Color4 colorBL)
         {
             DrawCount++;
-            if (vertexCount + 4 >= MAX_VERTICES) Flush();
+
+            // 1. Typ-Sicherheit garantieren
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            // 2. Platz für 4 Vertices UND 6 Indizes prüfen
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES)
+            {
+                Flush();
+            }
+
             SetWhiteTexture();
 
             uint startIdx = (uint)vertexCount;
 
+            // Vertices füllen
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Left, rect.Top), Color = colorTL, TexCoord = Vector2.Zero };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Right, rect.Top), Color = colorTR, TexCoord = Vector2.Zero };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Right, rect.Bottom), Color = colorBR, TexCoord = Vector2.Zero };
             vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(rect.Left, rect.Bottom), Color = colorBL, TexCoord = Vector2.Zero };
 
+            // Indizes füllen
             indexArray[indexCount++] = startIdx + 0;
             indexArray[indexCount++] = startIdx + 1;
             indexArray[indexCount++] = startIdx + 2;
@@ -449,38 +471,44 @@ namespace SummerGUI
         }
 
         public void AddRoundedRectangle(RectangleF rect, Color4 color, float radius, int segments = 8)
-        {            
-            // Sicherheitscheck: Radius darf nicht größer als die halbe Seite sein
+        {
             radius = Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f);
-            
             if (radius <= 0) {
                 AddRectangle(rect, color, color, color, color);
                 return;
-            }            
+            }
 
-            // Wir brauchen (segments + 1) * 4 Vertices
+            // 1. Platzbedarf berechnen
             int requiredVertices = (segments + 1) * 4;
-            if (vertexCount + requiredVertices >= MAX_VERTICES) Flush();
-            
+            // Jedes Dreieck verbindet den Startpunkt mit zwei aufeinanderfolgenden Punkten
+            int numTriangles = requiredVertices - 2; 
+            int requiredIndices = numTriangles * 3;
+
+            // 2. Kombinierter Check
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            if (vertexCount + requiredVertices >= MAX_VERTICES || indexCount + requiredIndices >= MAX_INDICES) 
+            {
+                Flush();
+            }
+
             SetWhiteTexture();
             uint startIdx = (uint)vertexCount;
 
-            // Hilfsfunktion zum Hinzufügen der Ecken-Punkte
-            // corners: 0=TopRight, 1=BottomRight, 2=BottomLeft, 3=TopLeft
+            // 3. Vertices generieren (4 Ecken)
             AddCorner(new Vector2(rect.Right - radius, rect.Top + radius), radius, 270, 360, segments, color); // TR
             AddCorner(new Vector2(rect.Right - radius, rect.Bottom - radius), radius, 0, 90, segments, color);   // BR
             AddCorner(new Vector2(rect.Left + radius, rect.Bottom - radius), radius, 90, 180, segments, color);  // BL
             AddCorner(new Vector2(rect.Left + radius, rect.Top + radius), radius, 180, 270, segments, color); // TL
 
-            // Indexing: Triangle Fan vom ersten Punkt aus oder Center-Punkt
-            // Einfachheitshalber als Triangle List (Center-Punkt Methode für sauberes Mesh)
-            // Hier nutzen wir einen "Center-Vertex" für den Fan-Stil oder bauen Streifen:
-            for (int i = 1; i < requiredVertices - 1; i++)
+            // 4. Indizes sicher befüllen
+            for (int i = 1; i <= numTriangles; i++)
             {
                 indexArray[indexCount++] = startIdx;
                 indexArray[indexCount++] = startIdx + (uint)i;
                 indexArray[indexCount++] = startIdx + (uint)i + 1;
-            }            
+            }
 
             DrawCount++;
         }
@@ -505,13 +533,24 @@ namespace SummerGUI
         {
             radius = Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f);
             
-            int requiredVertices = (segments + 1) * 4 + 1; // +1 für den Center-Punkt
-            if (vertexCount + requiredVertices >= MAX_VERTICES) Flush();
+            // 1. Platzbedarf exakt berechnen
+            int numOuterVertices = (segments + 1) * 4;
+            int requiredVertices = numOuterVertices + 1; // +1 für Center
+            int requiredIndices = numOuterVertices * 3;  // Ein Dreieck pro Außen-Vertex
+
+            // 2. Kombinierter Batch-Check
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            if (vertexCount + requiredVertices >= MAX_VERTICES || indexCount + requiredIndices >= MAX_INDICES) 
+            {
+                Flush();
+            }
             
             SetWhiteTexture();
             uint startIdx = (uint)vertexCount;
 
-            // 1. Center-Vertex für den Triangle Fan (Durchschnittsfarbe)
+            // 3. Center-Vertex (Index: startIdx)
             Color4 centerColor = AverageColor(colorTL, colorTR, colorBR, colorBL);
             vertexArray[vertexCount++] = new GUIVertex { 
                 Position = new Vector2(rect.X + rect.Width / 2f, rect.Y + rect.Height / 2f), 
@@ -519,22 +558,25 @@ namespace SummerGUI
                 TexCoord = Vector2.Zero 
             };
 
-            // 2. Ecken mit interpolierten Farben hinzufügen
-            // Die Reihenfolge der Aufrufe bestimmt den Linienzug außen
-            AddCornerGradient(new Vector2(rect.Right - radius, rect.Top + radius), radius, 270, 360, segments, rect, colorTL, colorTR, colorBR, colorBL); // TR
-            AddCornerGradient(new Vector2(rect.Right - radius, rect.Bottom - radius), radius, 0, 90, segments, rect, colorTL, colorTR, colorBR, colorBL);   // BR
-            AddCornerGradient(new Vector2(rect.Left + radius, rect.Bottom - radius), radius, 90, 180, segments, rect, colorTL, colorTR, colorBR, colorBL);  // BL
-            AddCornerGradient(new Vector2(rect.Left + radius, rect.Top + radius), radius, 180, 270, segments, rect, colorTL, colorTR, colorBR, colorBL); // TL
+            // 4. Ecken/Ring-Vertices (Indizes: startIdx + 1 bis startIdx + numOuterVertices)
+            AddCornerGradient(new Vector2(rect.Right - radius, rect.Top + radius), radius, 270, 360, segments, rect, colorTL, colorTR, colorBR, colorBL);
+            AddCornerGradient(new Vector2(rect.Right - radius, rect.Bottom - radius), radius, 0, 90, segments, rect, colorTL, colorTR, colorBR, colorBL);
+            AddCornerGradient(new Vector2(rect.Left + radius, rect.Bottom - radius), radius, 90, 180, segments, rect, colorTL, colorTR, colorBR, colorBL);
+            AddCornerGradient(new Vector2(rect.Left + radius, rect.Top + radius), radius, 180, 270, segments, rect, colorTL, colorTR, colorBR, colorBL);
 
-            // 3. Indizes für den Fan
-            uint totalCornerVertices = (uint)((segments + 1) * 4);
-            for (uint i = 1; i <= totalCornerVertices; i++)
+            // 5. Indizes für den Fan befüllen
+            for (uint i = 1; i <= (uint)numOuterVertices; i++)
             {
                 indexArray[indexCount++] = startIdx; // Center
                 indexArray[indexCount++] = startIdx + i;
-                // Beim letzten Vertex zurück zum ersten äußeren Vertex (startIdx + 1)
-                indexArray[indexCount++] = (i == totalCornerVertices) ? startIdx + 1 : startIdx + i + 1;
+                
+                // Letztes Dreieck schließt den Kreis zum ersten Ring-Punkt (startIdx + 1)
+                if (i == (uint)numOuterVertices)
+                    indexArray[indexCount++] = startIdx + 1;
+                else
+                    indexArray[indexCount++] = startIdx + i + 1;
             }
+            
             DrawCount++;
         }
 
@@ -584,72 +626,81 @@ namespace SummerGUI
 
         public void AddRoundedRectangleOutline(RectangleF rect, Color4 color, float thick, float radius, int segments = 8)
         {
-            // 1. Radius validieren
+            // 1. Validierung
             radius = Math.Max(thick / 2f, Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2f));
             float innerRadius = radius - thick;
 
-            // Platzprüfung: Wir brauchen 4 Ecken * (segments + 1) * 2 Vertices
+            // 2. Platzbedarf exakt berechnen
             int totalNewVertices = 4 * (segments + 1) * 2;
-            if (vertexCount + totalNewVertices >= MAX_VERTICES) Flush();
+            // Wir verbinden JEDES Paar mit dem nächsten, auch das letzte mit dem ersten.
+            // Das ergibt exakt so viele Quads wie Paare vorhanden sind.
+            int numPairs = 4 * (segments + 1);
+            int requiredIndices = numPairs * 6;
+
+            // 3. Kombinierter Batch-Check
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            if (vertexCount + totalNewVertices >= MAX_VERTICES || indexCount + requiredIndices >= MAX_INDICES) 
+            {
+                Flush();
+            }
             
             SetWhiteTexture();
             uint firstVertexIdx = (uint)vertexCount;
 
-            // Definition der vier Ecken: Zentrum und Winkelbereich
             var corners = new[]
             {
-                new { Center = new Vector2(rect.Right - radius, rect.Top + radius),    Start = 270f, End = 360f }, // Top-Right
-                new { Center = new Vector2(rect.Right - radius, rect.Bottom - radius), Start = 0f,   End = 90f  }, // Bottom-Right
-                new { Center = new Vector2(rect.Left + radius,  rect.Bottom - radius), Start = 90f,  End = 180f }, // Bottom-Left
-                new { Center = new Vector2(rect.Left + radius,  rect.Top + radius),    Start = 180f, End = 270f }  // Top-Left
+                new { Center = new Vector2(rect.Right - radius, rect.Top + radius),    Start = 270f, End = 360f }, 
+                new { Center = new Vector2(rect.Right - radius, rect.Bottom - radius), Start = 0f,   End = 90f  }, 
+                new { Center = new Vector2(rect.Left + radius,  rect.Bottom - radius), Start = 90f,  End = 180f }, 
+                new { Center = new Vector2(rect.Left + radius,  rect.Top + radius),    Start = 180f, End = 270f }  
             };
 
+            // 4. Vertices generieren
             foreach (var corner in corners)
             {
                 for (int i = 0; i <= segments; i++)
                 {
                     float theta = MathHelper.DegreesToRadians(corner.Start + (corner.End - corner.Start) * i / segments);
-                    float cos = (float)Math.Cos(theta);
-                    float sin = (float)Math.Sin(theta);
+                    float cos = MathF.Cos(theta);
+                    float sin = MathF.Sin(theta);
 
-                    // Vertices für diesen Schritt hinzufügen
+                    // Außen-Vertex
                     vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(corner.Center.X + cos * radius, corner.Center.Y + sin * radius), Color = color, TexCoord = Vector2.Zero };
+                    // Innen-Vertex
                     vertexArray[vertexCount++] = new GUIVertex { Position = new Vector2(corner.Center.X + cos * innerRadius, corner.Center.Y + sin * innerRadius), Color = color, TexCoord = Vector2.Zero };
-
-                    // Indizes setzen, um das aktuelle Paar mit dem vorherigen zu verbinden
-                    // (Überspringen beim allerersten Paar des gesamten Rechtecks)
-                    uint currentIdx = (uint)vertexCount - 2;
-                    if (currentIdx > firstVertexIdx)
-                    {
-                        uint pOuter = currentIdx - 2;
-                        uint pInner = currentIdx - 1;
-                        uint cOuter = currentIdx;
-                        uint cInner = currentIdx + 1;
-
-                        indexArray[indexCount++] = pOuter;
-                        indexArray[indexCount++] = pInner;
-                        indexArray[indexCount++] = cInner;
-
-                        indexArray[indexCount++] = cInner;
-                        indexArray[indexCount++] = cOuter;
-                        indexArray[indexCount++] = pOuter;
-                    }
                 }
             }
 
-            // 2. Letzte Lücke schließen (Verbindung vom letzten zum ersten Paar)
-            uint lastOuter = (uint)vertexCount - 2;
-            uint lastInner = (uint)vertexCount - 1;
-            uint firstOuter = firstVertexIdx;
-            uint firstInner = firstVertexIdx + 1;
+            // 5. Indizes generieren (Alle Paare verbinden)
+            for (int i = 0; i < numPairs; i++)
+            {
+                uint currentOuter = firstVertexIdx + (uint)(i * 2);
+                uint currentInner = firstVertexIdx + (uint)(i * 2) + 1;
+                
+                // Nächstes Paar (mit Wrap-around am Ende)
+                uint nextOuter, nextInner;
+                if (i == numPairs - 1)
+                {
+                    nextOuter = firstVertexIdx;
+                    nextInner = firstVertexIdx + 1;
+                }
+                else
+                {
+                    nextOuter = currentOuter + 2;
+                    nextInner = currentInner + 2;
+                }
 
-            indexArray[indexCount++] = lastOuter;
-            indexArray[indexCount++] = lastInner;
-            indexArray[indexCount++] = firstInner;
+                // Quad aus 2 Dreiecken
+                indexArray[indexCount++] = currentOuter;
+                indexArray[indexCount++] = currentInner;
+                indexArray[indexCount++] = nextInner;
 
-            indexArray[indexCount++] = firstInner;
-            indexArray[indexCount++] = firstOuter;
-            indexArray[indexCount++] = lastOuter;
+                indexArray[indexCount++] = nextInner;
+                indexArray[indexCount++] = nextOuter;
+                indexArray[indexCount++] = currentOuter;
+            }
 
             DrawCount++;
         }
@@ -657,18 +708,24 @@ namespace SummerGUI
         public void AddTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Color4 color)
         {   
             DrawCount++;                                 
-            if (vertexCount + 3 >= MAX_VERTICES) Flush();
+            
+            // Typ-Check (Sicherheit geht vor)
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            // >= nutzen, um den exakten Grenzfall (indexCount + 3 == 15000) abzufangen
+            if (vertexCount + 3 >= MAX_VERTICES || indexCount + 3 >= MAX_INDICES) Flush();
+            
             SetWhiteTexture();            
 
             uint startVertex = (uint)vertexCount;
 
-            // 3. Drei Vertices hinzufügen
-            // UV (0,0) zeigt auf den weißen Pixel, Type 0.0f für Solid-Modus im Shader
-            AddVertex(p1, new Vector2(0, 0), color, 0f);
-            AddVertex(p2, new Vector2(0, 0), color, 0f);
-            AddVertex(p3, new Vector2(0, 0), color, 0f);
+            // Vertices hinzufügen
+            AddVertex(p1, Vector2.Zero, color, 0f);
+            AddVertex(p2, Vector2.Zero, color, 0f);
+            AddVertex(p3, Vector2.Zero, color, 0f);
 
-            // FALLS du einen Index-Buffer (EBO) nutzt, musst du hier die Indizes addieren:
+            // Indizes hinzufügen
             indexArray[indexCount++] = startVertex;
             indexArray[indexCount++] = startVertex + 1;
             indexArray[indexCount++] = startVertex + 2;
@@ -702,7 +759,10 @@ namespace SummerGUI
             if (_currentType != PrimitiveType.Triangles) Flush();
             _currentType = PrimitiveType.Triangles;
 
-            if (vertexCount + 4 >= MAX_VERTICES) Flush();
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES) 
+            {
+                Flush();
+            }
 
             SetWhiteTexture();            
 
@@ -775,6 +835,17 @@ namespace SummerGUI
             if (_currentType != PrimitiveType.Triangles) Flush();
             _currentType = PrimitiveType.Triangles;
 
+            // Ein Kreis benötigt:
+            // Vertices: 1 (Zentrum) + (segments + 1) (Umfang)
+            // Indizes: segments * 3
+            int requiredVertices = segments + 2;
+            int requiredIndices = segments * 3;
+
+            if (vertexCount + requiredVertices >= MAX_VERTICES || indexCount + requiredIndices >= MAX_INDICES)
+            {
+                Flush();
+            }
+
             SetWhiteTexture();
 
             uint centerIdx = (uint)vertexCount;
@@ -783,9 +854,10 @@ namespace SummerGUI
             for (int i = 0; i <= segments; i++)
             {
                 float angle = i * MathHelper.TwoPi / segments;
-                Vector2 pos = new Vector2(center.X + (float)Math.Cos(angle) * radius, center.Y + (float)Math.Sin(angle) * radius);
-
-                if (vertexCount >= MAX_VERTICES) Flush();
+                Vector2 pos = new Vector2(
+                    center.X + MathF.Cos(angle) * radius, 
+                    center.Y + MathF.Sin(angle) * radius
+                );
 
                 uint currentIdx = (uint)vertexCount;
                 vertexArray[vertexCount++] = new GUIVertex { Position = pos, Color = color, TexCoord = Vector2.Zero };
@@ -804,19 +876,33 @@ namespace SummerGUI
             float r = (Math.Abs(radiusX) + Math.Abs(radiusY)) / 2f;
             if (r < float.Epsilon) return;
 
+            // Berechnung der Segmente
             float da = (float)(MathF.Acos(r / (r + 0.125f)) * 2f / scale);
             int numSteps = (int)MathF.Round(MathF.PI * 2 / da);
             if (numSteps < 3) numSteps = 12;
 
-            // Wir brauchen numSteps + 2 Vertices (Center + Ringpunkte)
-            if (this.vertexCount + numSteps + 1 >= MAX_VERTICES) Flush();            
+            // Platzbedarf berechnen:
+            // Vertices: 1 (Zentrum) + numSteps (Punkte auf dem Ring)
+            // Indizes: numSteps * 3 (für jedes Segment ein Dreieck)
+            int reqVertices = numSteps + 1;
+            int reqIndices = numSteps * 3;
+
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            // Vorher prüfen, damit kein Flush mitten in der Schleife passiert!
+            if (this.vertexCount + reqVertices >= MAX_VERTICES || this.indexCount + reqIndices >= MAX_INDICES) 
+            {
+                Flush();
+            }            
+            
             SetWhiteTexture();
 
             uint centerIdx = (uint)this.vertexCount;
             AddVertex(new Vector2(cx, cy), color); // Das Zentrum
 
             uint firstOnRingIdx = (uint)this.vertexCount;
-            AddVertex(new Vector2(cx + radiusX, cy), color); // Startpunkt bei 3 Uhr
+            AddVertex(new Vector2(cx + radiusX, cy), color); // Startpunkt
 
             uint lastIdx = firstOnRingIdx;
 
@@ -826,21 +912,22 @@ namespace SummerGUI
                 
                 if (i == numSteps) 
                 {
-                    // DAS FINALE STÜCK: Wir nutzen wieder den allerersten Punkt auf dem Ring
                     currentIdx = firstOnRingIdx;
                 }
                 else 
                 {
-                    float angle = i * da;
-                    float x = (float)(Math.Cos(angle) * radiusX) + cx;
-                    float y = (float)(Math.Sin(angle) * radiusY) + cy;
+                    float angle = i * (MathF.PI * 2f / numSteps); // Präziser über numSteps verteilt
+                    float x = MathF.Cos(angle) * radiusX + cx;
+                    float y = MathF.Sin(angle) * radiusY + cy;
                     currentIdx = (uint)this.vertexCount;
                     AddVertex(new Vector2(x, y), color);
                 }
 
-                AddIndex(centerIdx);
-                AddIndex(lastIdx);
-                AddIndex(currentIdx);
+                // Wir schreiben die Indizes direkt ins Array, um den AddIndex-Check zu umgehen,
+                // da wir den Platz oben bereits garantiert haben.
+                indexArray[indexCount++] = centerIdx;
+                indexArray[indexCount++] = lastIdx;
+                indexArray[indexCount++] = currentIdx;
                 
                 lastIdx = currentIdx;
             }
@@ -848,35 +935,42 @@ namespace SummerGUI
 
         public void AddImage(int textureId, RectangleF dest, Color4 color, RectangleF uv = default)
         {
+            // 1. Textur-Check
             if (this.currentTexture != textureId)
             {
                 if (vertexCount > 0) Flush();
                 this.currentTexture = textureId;
             }
 
+            // Default UVs setzen
             if (uv == RectangleF.Empty) uv = new RectangleF(0, 0, 1, 1);
 
-            // Hilfsvariablen für die Ecken
-            Vector2 p1 = new Vector2(dest.X, dest.Y);
-            Vector2 p2 = new Vector2(dest.Right, dest.Y);
-            Vector2 p3 = new Vector2(dest.Right, dest.Bottom);
-            Vector2 p4 = new Vector2(dest.X, dest.Bottom);
+            // 2. Kapazität prüfen (4 Vertices, 6 Indizes für ein indiziertes Quad)
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES)
+            {
+                Flush();
+            }
 
-            Vector2 uv1 = new Vector2(uv.X, uv.Y);
-            Vector2 uv2 = new Vector2(uv.Right, uv.Y);
-            Vector2 uv3 = new Vector2(uv.Right, uv.Bottom);
-            Vector2 uv4 = new Vector2(uv.X, uv.Bottom);            
+            // 3. Typ sicherstellen
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
 
-            // Dreieck 1
-            AddVertex(p1, uv1, color);
-            AddVertex(p2, uv2, color);
-            AddVertex(p3, uv3, color);
+            uint startIdx = (uint)vertexCount;
 
-            // Dreieck 2
-            AddVertex(p1, uv1, color);
-            AddVertex(p3, uv3, color);
-            AddVertex(p4, uv4, color);
-        }
+            // 4. Nur 4 Vertices hinzufügen (statt 6)
+            AddVertex(new Vector2(dest.X, dest.Y),       new Vector2(uv.X, uv.Y),      color); // TL
+            AddVertex(new Vector2(dest.Right, dest.Y),  new Vector2(uv.Right, uv.Y),  color); // TR
+            AddVertex(new Vector2(dest.Right, dest.Bottom), new Vector2(uv.Right, uv.Bottom), color); // BR
+            AddVertex(new Vector2(dest.X, dest.Bottom),  new Vector2(uv.X, uv.Bottom), color); // BL
+
+            // 5. Indizes setzen (indiziertes Zeichnen spart 33% Vertex-Daten)
+            indexArray[indexCount++] = startIdx + 0;
+            indexArray[indexCount++] = startIdx + 1;
+            indexArray[indexCount++] = startIdx + 2;
+            indexArray[indexCount++] = startIdx + 2;
+            indexArray[indexCount++] = startIdx + 3;
+            indexArray[indexCount++] = startIdx + 0;
+        }        
 
         public void AddTiledImage(int textureId, RectangleF bounds, Color4 color, RectangleF uv = default)
         {
@@ -976,60 +1070,70 @@ namespace SummerGUI
 
         public void Flush()
         {                        
-            // nichts zu tun?
-            if (vertexCount == 0 && indexCount == 0) return;            
+            // 1. Früher Ausstieg: Wenn nichts da ist, sofort zurück.
+            if (vertexCount == 0) return;            
             
             FlushCount++;
             
+            // Shader aktivieren
             _uiShader.Use();
+            
+            // TIPP: Nur setzen, wenn sie sich geändert hat, oder einmalig pro Frame außerhalb
             _uiShader.SetMatrix4("projection", _projectionMatrix);
 
-            // Texturhandling
+            // 2. Texturhandling
             if (currentTexture != -1)            
             {
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, currentTexture);                
-
                 _uiShader.SetInt("uTexture", 0);
                 _uiShader.SetBool("uUseTexture", true);
             }
             else
             {
                 _uiShader.SetBool("uUseTexture", false);
-                GL.BindTexture(TextureTarget.Texture2D, 0);
+                // Nicht unbedingt nötig, wenn uUseTexture im Shader beachtet wird, aber sicher:
+                GL.BindTexture(TextureTarget.Texture2D, 0); 
             }
 
+            // 3. VAO und Daten-Upload
             GL.BindVertexArray(_currentVAO);
 
-            // VBO-Upload (immer nötig, auch wenn DrawArrays)
+            // VBO Update: Wir laden nur den Teil hoch, den wir wirklich gefüllt haben
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, new IntPtr(vertexCount * _vertexStride), vertexArray);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, 
+                            (IntPtr)(vertexCount * _vertexStride), vertexArray);
 
+            // 4. Drawing
             if (indexCount > 0)
             {
+                // IBO Update
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
-                GL.BufferSubData(BufferTarget.ElementArrayBuffer, IntPtr.Zero, new IntPtr(indexCount * sizeof(uint)), indexArray);
+                GL.BufferSubData(BufferTarget.ElementArrayBuffer, IntPtr.Zero, 
+                                (IntPtr)(indexCount * sizeof(uint)), indexArray);
 
-                // Zeichnen indiziert
-                GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, 0);
+                // Indiziertes Zeichnen (Quads, Kreise, abgerundete Ecken)
+                GL.DrawElements(_currentType, indexCount, DrawElementsType.UnsignedInt, 0);
             }
             else
             {
-                // Zeichnen nicht-indiziert (z. B. Linien mittels DrawArrays)
+                // Nicht-indiziertes Zeichnen (z.B. einfache Linien)
                 GL.DrawArrays(_currentType, 0, vertexCount);
             }
 
-            // cleanup
+            // 5. Cleanup (Optional: Kann weggelassen werden, wenn der nächste Batch sowieso binden muss)
             GL.BindVertexArray(0);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            GL.UseProgram(0);
+            // GL.BindTexture(TextureTarget.Texture2D, 0); // Performance: Oft besser wegzulassen
+            // GL.UseProgram(0);
 
-            // reset counters
+            // 6. Reset der Counter für den nächsten Batch
             vertexCount = 0;
             indexCount = 0;
             
-            //_currentType = PrimitiveType.Triangles;            
-            //currentTexture = -1;            
+            // WICHTIG: Den Textur-State behalten wir bei! 
+            // Wenn der nächste Batch dieselbe Textur nutzt, müssen wir NICHT flashen.
+            // Falls du aber sichergehen willst, dass der Batcher "sauber" ist,
+            // kannst du currentTexture auf -1 setzen – das erzwingt aber beim nächsten Element einen Flush.
         }
 
         protected override void CleanupUnmanagedResources()

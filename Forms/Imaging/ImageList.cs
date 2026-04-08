@@ -79,7 +79,6 @@ namespace SummerGUI
 			}
 		}
 
-
 		public static async Task<ImageList> FromFolderAsync(IGUIContext ctx, string folderPath, string name = null, bool includeSubFolders = false, Size imageSize = default(Size))
 		{
 			return await Task<ImageList>.Run(() => FromFolder (ctx, folderPath, name, includeSubFolders, imageSize));
