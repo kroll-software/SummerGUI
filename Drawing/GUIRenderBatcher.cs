@@ -1136,6 +1136,64 @@ namespace SummerGUI
             // kannst du currentTexture auf -1 setzen – das erzwingt aber beim nächsten Element einen Flush.
         }
 
+        public void Flush_alt()
+        {                        
+            // nichts zu tun?
+            if (vertexCount == 0 && indexCount == 0) return;            
+            
+            FlushCount++;
+            
+            _uiShader.Use();
+            _uiShader.SetMatrix4("projection", _projectionMatrix);
+
+            // Texturhandling
+            if (currentTexture != -1)            
+            {
+                GL.ActiveTexture(TextureUnit.Texture0);
+                GL.BindTexture(TextureTarget.Texture2D, currentTexture);                
+
+                _uiShader.SetInt("uTexture", 0);
+                _uiShader.SetBool("uUseTexture", true);
+            }
+            else
+            {
+                _uiShader.SetBool("uUseTexture", false);
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+            }
+
+            GL.BindVertexArray(_currentVAO);
+
+            // VBO-Upload (immer nötig, auch wenn DrawArrays)
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, new IntPtr(vertexCount * _vertexStride), vertexArray);
+
+            if (indexCount > 0)
+            {
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
+                GL.BufferSubData(BufferTarget.ElementArrayBuffer, IntPtr.Zero, new IntPtr(indexCount * sizeof(uint)), indexArray);
+
+                // Zeichnen indiziert
+                GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, 0);
+            }
+            else
+            {
+                // Zeichnen nicht-indiziert (z. B. Linien mittels DrawArrays)
+                GL.DrawArrays(_currentType, 0, vertexCount);
+            }
+
+            // cleanup
+            GL.BindVertexArray(0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.UseProgram(0);
+
+            // reset counters
+            vertexCount = 0;
+            indexCount = 0;
+            
+            //_currentType = PrimitiveType.Triangles;            
+            //currentTexture = -1;            
+        }
+
         protected override void CleanupUnmanagedResources()
         {
             // DisposableObject: override, um GL-Resourcen zu löschen

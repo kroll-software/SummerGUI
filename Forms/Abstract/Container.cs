@@ -437,11 +437,20 @@ namespace SummerGUI
 			float border = Style.Border;
 			float borderX2 = border * 2f;
 
+			/***
 			RectangleF canvas = new RectangleF (
 				bounds.Left + Padding.Left + BackgroundImage.Padding.Left + border, 
 				bounds.Top + Padding.Top + BackgroundImage.Padding.Top + border, 
 				bounds.Width - Padding.Width - BackgroundImage.Padding.Width - borderX2, 
 				bounds.Height - Padding.Height - BackgroundImage.Padding.Height - borderX2
+			);
+			***/
+
+			RectangleF canvas = new RectangleF (
+				bounds.Left + BackgroundImage.Padding.Left + border, 
+				bounds.Top + BackgroundImage.Padding.Top + border, 
+				bounds.Width - BackgroundImage.Padding.Width - borderX2, 
+				bounds.Height - BackgroundImage.Padding.Height - borderX2
 			);
 
 			if (canvas.Width <= 0 || canvas.Height <= 0)
