@@ -310,9 +310,8 @@ namespace SummerGUI
 			}
 			
 			if (!String.IsNullOrEmpty(Text) && DisplayStyle != ButtonDisplayStyles.Image) {
-
 				if (iconWidth > 0) {			
-					float delta = iconWidth * 1.65f;
+					float delta = iconWidth * 1.42f;
 					bounds.Width -= delta;
 					bounds.X += delta;
 				}
@@ -321,10 +320,14 @@ namespace SummerGUI
 
 				float tw = Font.MeasureMnemonicString(Text).Width;				
 				
-				if (tw < bounds.Width)				
-					ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, FontFormat.DefaultMnemonicLineCentered);
+				if (tw < bounds.Width)
+				{					
+					ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, FontFormat.DefaultMnemonicLineCentered);					
+				}
 				else
+				{					
 					ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, FontFormat.DefaultSingleLine);
+				}
 			}
 		}
 
