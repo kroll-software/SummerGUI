@@ -253,9 +253,11 @@ namespace SummerGUI
 			}
 
 			if (i < len)
+			{				
 				return new SizeF (width + 1f, font.Height);	// +1 signals callers it was elipsis
-			else
-				return new SizeF (adv, font.Height);
+			}
+			
+			return new SizeF (adv, font.Height);
 		}
 
 		private static SizeF PrintMnemonicString(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds, bool showMnemonics)

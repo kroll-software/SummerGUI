@@ -340,7 +340,7 @@ namespace SummerGUI
             }            
             
             return handled || base.OnKeyDown(e);
-        }
+        }        
 
         public override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -354,14 +354,14 @@ namespace SummerGUI
 				return;
 			
 			if (ItemHeight > 0) {
-				SelectedIndex = (int)((e.Y - Bounds.Top + VScrollBar.Value) / ItemHeight);
-				Invalidate ();
+				int index = (int)((e.Y - Bounds.Top + VScrollBar.Value) / ItemHeight);
+				if (index >= 0 && index < Items.Count && index != SelectedIndex)
+				{
+					SelectedIndex = index;
+					Invalidate();
+					OnSelectionChanged();			
+				}
 			}
-
-			if (SelectedIndex < 0 || SelectedIndex >= Items.Count)
-				return;
-
-			OnSelectionChanged();
         }
 
         protected override void CleanupManagedResources ()
