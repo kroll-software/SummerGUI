@@ -171,9 +171,9 @@ namespace SummerGUI
 			}
 		}			
 
-		public override void OnResize ()
+		public override void OnResize (IGUIContext ctx)
 		{			
-			base.OnResize ();
+			base.OnResize (ctx);
 			if (!IsOverflow || Children.Count == 0)
 				ScrollOffsetX = 0;
 			else {

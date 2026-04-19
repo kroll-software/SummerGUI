@@ -41,9 +41,9 @@ namespace SummerGUI
 			ButtonContainer.Padding =  new Padding(16);			
 		}
 
-        public override void OnResize()
+        public override void OnResize(IGUIContext ctx)
         {			
-            base.OnResize();
+            base.OnResize(ctx);
 
 			SizeF sz = ContentPanel.PreferredSize(CTX, Bounds.Size);
 			float rest = (Bounds.Height - sz.Height) / 2;

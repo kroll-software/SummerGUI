@@ -411,9 +411,9 @@ namespace SummerGUI
 			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, documentWidth, ScrollBar.ScrollBarWidth);
 		}
 
-		public override void OnResize ()
+		public override void OnResize (IGUIContext ctx)
 		{
-			base.OnResize ();
+			base.OnResize (ctx);
 			SetupScrollBars ();
 
 			// after rescaling

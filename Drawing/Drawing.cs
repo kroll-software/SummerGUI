@@ -178,11 +178,11 @@ namespace SummerGUI
 
 		public static void FillRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r)
 		{
-			if (r.Width < 0 || r.Height < 0 || brush.Color.A == 0)
+			if (r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRectangle(r, brush.Color);
-		}		
+		}
 			
 		public static void FillRectangle(this IGUIContext ctx, Brush brush, float x, float y, float width, float height)
 		{			
@@ -203,7 +203,7 @@ namespace SummerGUI
 
 		public static void FillRoundedRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r, float radius)
 		{						
-			if (r.Width < 0 || r.Height < 0 || brush.Color.A == 0)
+			if (r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRoundedRectangle(r, brush.Color, radius);
@@ -211,7 +211,7 @@ namespace SummerGUI
 
 		public static void FillRoundedRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
 		{
-			if (r.Width < 0 || r.Height < 0)
+			if (r.Width <= 0 || r.Height <= 0)
 				return;
 
 			switch (brush.Direction) 
@@ -299,7 +299,7 @@ namespace SummerGUI
 			
 		public static void DrawRectangle(this IGUIContext ctx, Pen pen, RectangleF r)
 		{	
-			if (r.Width < 0 || r.Height < 0 || pen.Color.A == 0)
+			if (r.Width <= 0 || r.Height <= 0 || pen.Color.A == 0)
 				return;
 
 			float w = pen.Width;
@@ -316,7 +316,7 @@ namespace SummerGUI
 
 		public static void DrawRoundedRectangle(this IGUIContext ctx, Pen pen, RectangleF r, float radius)
 		{
-			if (r.Width < 0 || r.Height < 0 || pen.Color.A == 0)
+			if (r.Width <= 0 || r.Height <= 0 || pen.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRoundedRectangleOutline(r, pen.Color, pen.Width, radius);

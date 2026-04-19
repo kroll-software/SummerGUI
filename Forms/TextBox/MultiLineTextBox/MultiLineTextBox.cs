@@ -628,10 +628,10 @@ namespace SummerGUI
 			}
 		}
 
-		public override void OnResize ()
+		public override void OnResize (IGUIContext ctx)
 		{			
 			RowManager.OnResize (BreakWidth);
-			base.OnResize ();
+			base.OnResize (ctx);
 		}
 
         protected override void OnVScrollbarVisibleChanged()

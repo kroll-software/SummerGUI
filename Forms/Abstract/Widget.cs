@@ -1079,11 +1079,11 @@ namespace SummerGUI
 
 			//if (Bounds.Size != oldBounds.Size) {				
 			if (Bounds != oldBounds) {
-				OnResize ();
+				OnResize (ctx);
 			}
 		}
 
-		public virtual void OnResize()
+		public virtual void OnResize(IGUIContext ctx)
 		{						
 			ResetCachedLayout ();
 			//if (Parent != null)

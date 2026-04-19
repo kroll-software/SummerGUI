@@ -140,6 +140,7 @@ namespace SummerGUI
 								docSize.Height += cmb.Height;
 							break;
 						case Docking.Fill:
+						case Docking.None:
 							docSize.Width += cmb.Width;
 							docSize.Height += cmb.Height;
 							break;

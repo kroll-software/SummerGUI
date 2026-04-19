@@ -119,9 +119,9 @@ namespace SummerGUI
 			IsAnimationRunning = false;
 		}
 
-		public override void OnResize ()
+		public override void OnResize (IGUIContext ctx)
 		{
-			base.OnResize ();
+			base.OnResize (ctx);
 			RecalculateItems();
 			this.Invalidate();
 		}

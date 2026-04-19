@@ -317,13 +317,13 @@ namespace SummerGUI
 			OnAfterLayout (ctx, bounds);
 		}
 
-        public override void OnResize()
+        public override void OnResize(IGUIContext ctx)
         {
-            base.OnResize();
+            base.OnResize(ctx);
 			foreach (Widget child in Children)
 			{
 				if (child != null && child.Visible)
-					child.OnResize();
+					child.OnResize(ctx);
 			}
 		}
 			
