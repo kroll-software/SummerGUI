@@ -109,6 +109,23 @@ namespace SummerGUI
 			SetButtonStyles (DownButton);
 		}
 
+		public override bool Enabled 
+		{ 
+			get => base.Enabled; 
+			set
+			{
+				base.Enabled = value;
+				if (UpButton != null)
+				{
+					UpButton.Enabled = value;
+				}
+				if (DownButton != null)
+				{
+					DownButton.Enabled = value;
+				}
+			}
+		}
+
 		private void SetButtonStyles(Button button)
 		{
 			button.Styles.ForEach (style => {				

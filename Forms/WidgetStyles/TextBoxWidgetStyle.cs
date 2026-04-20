@@ -27,7 +27,7 @@ namespace SummerGUI
 	{
 		public override void InitStyle ()
 		{
-			SetBackColor (Theme.Colors.White);
+			SetBackColor (Color.LightGray);
 			SetForeColor (Theme.Colors.Base0);
 			SetBorderColor (Theme.Colors.Base0);
 		}

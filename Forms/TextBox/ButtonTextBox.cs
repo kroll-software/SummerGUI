@@ -64,7 +64,20 @@ namespace SummerGUI
 		{
 			if (AutoEnableButton)
 				Button.Enabled = !String.IsNullOrEmpty (Text);
-		}						
+		}
+
+        public override bool Enabled 
+		{ 
+			get => base.Enabled; 
+			set
+			{
+				base.Enabled = value;
+				if (Button != null)
+				{
+					Button.Enabled = value;
+				}
+			}
+		}
 
 		public override void Focus ()
 		{

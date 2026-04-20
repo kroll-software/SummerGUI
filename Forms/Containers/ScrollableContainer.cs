@@ -101,7 +101,7 @@ namespace SummerGUI
 
 		protected override void LayoutChildren(IGUIContext ctx, RectangleF bounds)
 		{			
-			SizeF docSize = new SizeF();
+			SizeF docSize = new SizeF(Padding.Width, Padding.Height);
 
 			if (this.Children.Count > 0) {				
 				RectangleF r = bounds;				
