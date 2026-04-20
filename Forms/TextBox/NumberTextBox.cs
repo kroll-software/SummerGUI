@@ -94,12 +94,14 @@ namespace SummerGUI
 			UpButton.MinSize = new SizeF (UpButton.MinSize.Width, (TB.MaxSize.Height - Border) / 2f);
 			DownButton.MinSize = new SizeF (UpButton.MinSize.Width, (TB.MaxSize.Height - Border) / 2f);
 
+			TB.TextChanged += (s, e) => UpdateValueFromText();
+
 			Increment = 1m;
 			MinValue = 0;
 			MaxValue = Decimal.MaxValue;
 			UpdateText ();
 
-				CanFocus = true;
+			CanFocus = true;			
 		}
 
 		public override void OnUpdateTheme (IGUIContext ctx)
@@ -166,6 +168,22 @@ namespace SummerGUI
 			DecrementValue ();
 		}
 
+		private void UpdateValueFromText()
+		{
+			decimal val;
+			if (Decimal.TryParse(TB.Text, out val))
+			{
+				decimal oldVal = m_Value;
+				m_Value = Math.Max(MinValue, Math.Min(MaxValue, val));
+				
+				// Wichtig: Nur feuern, wenn sich der numerische Wert wirklich geändert hat
+				if (m_Value != oldVal)
+				{
+					OnValueChanged();
+				}
+			}
+		}
+
 		bool IsInputChar(char c) 
 		{
 			string decimalSeparator = Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator;
@@ -227,9 +245,6 @@ namespace SummerGUI
 
 			return false;
 		}
-
-
-
 	}
 }
 
