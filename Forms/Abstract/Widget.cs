@@ -932,14 +932,20 @@ namespace SummerGUI
 				Click (this, e);
 		}
 
+		public event EventHandler<MouseButtonEventArgs> DoubleClick;
+		public virtual void OnDoubleClick(MouseButtonEventArgs e)
+		{
+			if (DoubleClick	!= null)
+				DoubleClick(this, e);
+		}
+
 		// These are designed empty, so that you can't do anything wrong when overriding
 		protected bool IsMouseOrKeyDown { get; private set; }
 		public virtual void OnMouseDown (MouseButtonEventArgs e) 
 		{
 			UpdateMenus ();
 			IsMouseOrKeyDown = true;
-		}
-		public virtual void OnDoubleClick(MouseButtonEventArgs e) {}
+		}		
 
 		public virtual void OnMouseMove (MouseMoveEventArgs e) {}
 		public virtual bool OnMouseWheel (MouseWheelEventArgs e) {	return false; }
