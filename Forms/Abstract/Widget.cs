@@ -1055,7 +1055,7 @@ namespace SummerGUI
 				// NEU: Sanitize MinSize / MaxSize
 				pref = ClampMinMax(pref);				
 
-				pref.Intersect (rBounds);				
+				//pref.Intersect (rBounds);
 							
 				// ToDo:
 				// Layout this box

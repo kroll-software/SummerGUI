@@ -25,13 +25,14 @@ namespace SummerGUI
 		
 	}
 
-	public class GroupBox : Container
+	//public class GroupBox : Container
+	public class GroupBox : Panel
 	{
 		public string Caption { get; set; }
 		public GroupBoxBorderStyles BorderStyle { get; set; }
 
 		public IGUIFont Font {get; set; }
-
+		
 		public GroupBox (string name, string caption = null)
 			: base (name)
 		{
@@ -41,9 +42,8 @@ namespace SummerGUI
 			this.SetFontByTag(CommonFontTags.Small);
 
 			//this.BorderColor = Theme.Colors.Base1;
-			this.BorderColor = Theme.Colors.Silver;
-
-			this.Padding = new Padding(12, 16, 12, 12);			
+			this.BorderColor = Theme.Colors.Silver;			
+			this.Padding = new Padding(12, 16, 12, 12);
 		}
 
 		public virtual void DrawBorder(IGUIContext ctx, System.Drawing.RectangleF bounds)
@@ -101,7 +101,7 @@ namespace SummerGUI
 			base.OnPaintBackground (ctx, bounds);
 			DrawBorder (ctx, bounds);
 			DrawCaption (ctx, bounds);
-		}			
+		}		
 	}
 }
 

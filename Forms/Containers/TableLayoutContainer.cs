@@ -410,7 +410,7 @@ namespace SummerGUI
 			}
 
 			Width = Table.Columns.Sum(col => col.Width) + ((Table.Columns.Count - 1) * CellPadding.Width);
-
+			
 			//DumpColumns ();
 		}			
 			
@@ -468,8 +468,8 @@ namespace SummerGUI
 		// *** Calculate Size / PreferredSize ***
 		protected virtual void ResetCachedLayout()
 		{
+			CachedPreferredSize = SizeF.Empty;
 			CachedProposedSize = SizeF.Empty;
-			//CachedPreferredSize = SizeF.Empty;
 		}
 		public void Update()
 		{
@@ -479,7 +479,7 @@ namespace SummerGUI
 		SizeF CachedProposedSize;
 		SizeF CachedPreferredSize;
 		public SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
-		{
+		{			
 			//if (CachedPreferredSize == SizeF.Empty) {
 			if (proposedSize != CachedProposedSize) {
 				CachedProposedSize = proposedSize;
@@ -490,7 +490,7 @@ namespace SummerGUI
 				} else {
 					UpdateColumnWidthsNormal (ctx, proposedSize);
 					UpdateRowHeightsNormal (ctx, proposedSize);
-				}					
+				}
 
 				CachedPreferredSize = new SizeF (Width, Height);
 			} else {
@@ -705,19 +705,28 @@ namespace SummerGUI
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{			
 			// ToDo: Optimieren/Cachen
-			if (CachedPreferredSize == SizeF.Empty)
+
+			if (Layout == null)
+				return base.PreferredSize (ctx, proposedSize);
+
+			//if (CachedPreferredSize == SizeF.Empty || true)
+			if (lastProposedSize != proposedSize)
 			{
-				if (Layout == null)
-					return base.PreferredSize (ctx, proposedSize);				
+				lastProposedSize = proposedSize;
 				
 				SizeF sz = Layout.PreferredSize(ctx, new SizeF(proposedSize.Width - Padding.Width, proposedSize.Height - Padding.Height));
-				CachedPreferredSize = new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height);
-			}		
-
-			lastProposedSize = proposedSize;	
+				CachedPreferredSize = ClampMinMax(new SizeF (sz.Width + Padding.Width, sz.Height + Padding.Height));				
+			}			
 		
 			return CachedPreferredSize;
 		}
+
+        public override void OnResize(IGUIContext ctx)
+        {
+            base.OnResize(ctx);
+			lastProposedSize = SizeF.Empty;	// ToDo: Check this!
+			Layout?.Update();
+        }
 
 		/*** ***/
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
@@ -726,8 +735,8 @@ namespace SummerGUI
 				return;			
 
 			SizeF size = PreferredSize (ctx, bounds.Size);		
-			bounds = new RectangleF (bounds.Location, size);
-			base.OnLayout (ctx, bounds);
+			RectangleF newBounds = new RectangleF (bounds.Location, size);
+			base.OnLayout (ctx, newBounds);
 		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)

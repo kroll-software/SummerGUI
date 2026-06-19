@@ -168,7 +168,7 @@ namespace SummerGUI
 					SizeF sz = DestRect (new RectangleF (PointF.Empty, proposedSize)).Size;
 					float borderX2 = Style.Border * 2f;
 					//borderX2 = 0;
-					CachedPreferredSize = new SizeF (sz.Width + Padding.Width + borderX2, sz.Height + Padding.Height + borderX2);
+					CachedPreferredSize = ClampMinMax(new SizeF (sz.Width + Padding.Width + borderX2, sz.Height + Padding.Height + borderX2));
 				}
 			}
 			return CachedPreferredSize;

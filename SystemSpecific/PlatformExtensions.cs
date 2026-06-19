@@ -102,6 +102,30 @@ namespace SummerGUI
 			return path;
 		}
 
+		public static string GetUserName()
+		{
+			switch (CurrentOS) 
+			{
+				case OS.Windows:
+					// Gibt den Windows-Anmeldenamen zurück (z.B. "detlef")
+					return Environment.UserName;
+
+				case OS.Linux:
+				case OS.Mac:
+					// Unter Unix-Systemen ist Environment.UserName ebenfalls der Standardweg
+					return Environment.UserName;
+
+				case OS.Android:
+					// Auf Android gibt es keinen "Benutzernamen" im klassischen Sinne.
+					// Man kann jedoch den Namen des Geräts oder das Konto abfragen (erfordert Permissions).
+					// Ein gängiger Fallback ist:
+					return "Android-User";
+
+				default:
+					return "Unknown";
+			}
+		}
+
 		public static void HideMouseCursor(NativeWindow window)
 		{
 			switch (CurrentOS) {

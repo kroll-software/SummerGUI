@@ -333,7 +333,7 @@ namespace SummerGUI
 		/// <param name="ctx">Context.</param>
 		/// <param name="bounds">Bounds.</param>		
 		protected virtual void LayoutChildren(IGUIContext ctx, RectangleF bounds)
-		{			
+		{						
 			if (this.Children.Count > 0) {				
 				RectangleF r = bounds;				
 				// iterate forward by ZIndex
@@ -342,9 +342,9 @@ namespace SummerGUI
 					Widget child = Children [i];
 
 					if (child.Visible) {						
+						
 						LayoutChild(ctx, child, r);
-						//if (child.IsOverlay || child.Bounds.IsEmpty)
-						//if (child.Bounds.IsEmpty || child.ZIndex >= 10000)
+
 						if (child.Bounds.IsEmpty)
 							continue;
 

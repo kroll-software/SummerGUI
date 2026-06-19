@@ -20,7 +20,8 @@ namespace SummerGUI
 	{
 		public override void InitStyle ()
 		{
-			SetBackColor (Theme.Colors.Base3);
+			//SetBackColor (Theme.Colors.Base3);
+			SetBackColor (Color.WhiteSmoke);
 			SetForeColor (Theme.Colors.Base02);
 			SetBorderColor (Theme.Colors.Base01);
 		}

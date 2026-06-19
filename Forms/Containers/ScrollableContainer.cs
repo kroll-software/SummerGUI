@@ -104,13 +104,13 @@ namespace SummerGUI
 			SizeF docSize = new SizeF(Padding.Width, Padding.Height);
 
 			if (this.Children.Count > 0) {				
-				RectangleF r = bounds;				
+				RectangleF r = bounds;
 				// iterate forward by ZIndex
 				for (int i = 0; i < Children.Count; i++)
 				{
 					Widget child = Children [i];
 
-					if (child.Visible) {						
+					if (child != null && child.Visible) {						
 						LayoutChild(ctx, child, r);
 
 						if (child.Bounds.IsEmpty)
