@@ -14,7 +14,7 @@
     <!-- Für GUI-Libs sinnvoll -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <Version>2.0.0</Version>
+    <Version>3.0.0</Version>
 
     <!-- Ressourcen automatisch einbetten -->
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
