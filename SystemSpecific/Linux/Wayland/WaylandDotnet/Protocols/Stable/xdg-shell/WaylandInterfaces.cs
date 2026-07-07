@@ -1,0 +1,435 @@
+namespace WaylandDotnet.Internal;
+
+#nullable enable
+#pragma warning disable CA2255
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+/// <summary> Native Wayland interface descriptors for this protocol. </summary>
+public static unsafe partial class WaylandInterfaces
+{
+    /// <summary> Native interface descriptor for xdg_wm_base. </summary>
+    public static WlInterface* XdgWmBase = AllocateInterface();
+    /// <summary> Native interface descriptor for xdg_positioner. </summary>
+    public static WlInterface* XdgPositioner = AllocateInterface();
+    /// <summary> Native interface descriptor for xdg_surface. </summary>
+    public static WlInterface* XdgSurface = AllocateInterface();
+    /// <summary> Native interface descriptor for xdg_toplevel. </summary>
+    public static WlInterface* XdgToplevel = AllocateInterface();
+    /// <summary> Native interface descriptor for xdg_popup. </summary>
+    public static WlInterface* XdgPopup = AllocateInterface();
+
+
+    /// <summary>
+    /// Interface: xdg_wm_base
+    /// Version: 7
+    /// Requests: 4, Events: 1
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateXdgWmBaseInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 4);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_positioner"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([XdgPositioner])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_xdg_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([XdgSurface, WlSurface])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pong"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("ping"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("xdg_wm_base"),
+            Version = 7,
+            MethodCount = 4,
+            Methods = requests,
+            EventCount = 1,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)XdgWmBase, false);
+        Interfaces.Add("xdg_wm_base", (IntPtr)XdgWmBase);
+    }
+
+
+    /// <summary>
+    /// Interface: xdg_positioner
+    /// Version: 7
+    /// Requests: 10, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateXdgPositionerInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 10);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_size"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_anchor_rect"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_anchor"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_gravity"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_constraint_adjustment"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_offset"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_reactive"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_parent_size"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_parent_configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("xdg_positioner"),
+            Version = 7,
+            MethodCount = 10,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)XdgPositioner, false);
+        Interfaces.Add("xdg_positioner", (IntPtr)XdgPositioner);
+    }
+
+
+    /// <summary>
+    /// Interface: xdg_surface
+    /// Version: 7
+    /// Requests: 5, Events: 1
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateXdgSurfaceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 5);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_toplevel"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([XdgToplevel])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_popup"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n?oo"),
+            Types = (WlInterface**)CreateTypesArray([XdgPopup, (WlInterface*)IntPtr.Zero, XdgPositioner])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_window_geometry"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("ack_configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("xdg_surface"),
+            Version = 7,
+            MethodCount = 5,
+            Methods = requests,
+            EventCount = 1,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)XdgSurface, false);
+        Interfaces.Add("xdg_surface", (IntPtr)XdgSurface);
+    }
+
+
+    /// <summary>
+    /// Interface: xdg_toplevel
+    /// Version: 7
+    /// Requests: 14, Events: 4
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateXdgToplevelInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 14);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_parent"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_title"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_app_id"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("show_window_menu"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ouii"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("move"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("resize"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ouu"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_max_size"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_min_size"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_maximized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[10] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("unset_maximized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[11] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([WlOutput])
+        };
+        requests[12] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("unset_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[13] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_minimized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 4);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iia"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("close"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure_bounds"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wm_capabilities"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("a"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("xdg_toplevel"),
+            Version = 7,
+            MethodCount = 14,
+            Methods = requests,
+            EventCount = 4,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)XdgToplevel, false);
+        Interfaces.Add("xdg_toplevel", (IntPtr)XdgToplevel);
+    }
+
+
+    /// <summary>
+    /// Interface: xdg_popup
+    /// Version: 7
+    /// Requests: 3, Events: 3
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateXdgPopupInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("grab"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("reposition"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([XdgPositioner, (WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("popup_done"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("repositioned"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("xdg_popup"),
+            Version = 7,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 3,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)XdgPopup, false);
+        Interfaces.Add("xdg_popup", (IntPtr)XdgPopup);
+    }
+
+}

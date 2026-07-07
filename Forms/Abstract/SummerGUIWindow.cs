@@ -92,14 +92,14 @@ namespace SummerGUI
 		public int Width => this.Size.X; // NativeWindow.Size ist ein Vector2i
 		public int Height => this.Size.Y; // NativeWindow.Size ist ein Vector2i
 		
-		// Beispiel: Falls Sie eine eigene Rectangle-Struktur verwenden, muss sie gemappt werden.
+		// Beispiel: Falls Sie eine eigene Rectangle-Struktur verwenden, muss sie gemappt werden.		
 		public new Rectangle Bounds
 		{
 			get
-			{
+			{				
 				return ((Rectangle)base.Bounds);				
 			}
-		}
+		}		
 		
 		// Da Sie IGUIContext implementieren, müssen Sie die GlWindow-Eigenschaft selbst liefern:
 		public NativeWindow GlWindow => this;		
@@ -173,7 +173,7 @@ namespace SummerGUI
 		public int DeltaTicks { get => _frameTimer.Delta; }
 
 		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
-        {
+        {			
 			Interlocked.Increment(ref _instanceCount);
 			_mainThreadId = Environment.CurrentManagedThreadId;
 
@@ -379,6 +379,9 @@ namespace SummerGUI
 
 		public unsafe void SetOpacity(float value)
 		{
+			if (GLFW.GetPlatform() == Platform.Wayland)
+				return; // Wayland does not support window opacity	
+
     		// 0.0f ist unsichtbar, 1.0f ist voll da
     		GLFW.SetWindowOpacity(this.WindowPtr, MathF.Max(0, MathF.Min(1, value))); 
 		}
@@ -439,7 +442,7 @@ namespace SummerGUI
 			ConfigurationService.Instance.ConfigFile.Do (cfg => {
 				if (!String.IsNullOrEmpty (Name) && this.WindowBorder == WindowBorder.Resizable) {				
 					WindowState winState = (WindowState)cfg.GetSetting (this.Name, "WindowState", this.WindowState).SafeString ().ToEnum (this.WindowState);
-					if (winState != WindowState.Minimized) {						
+					if (winState != WindowState.Minimized) {
 						int left = Math.Max(0, cfg.GetSetting (this.Name, "Left", this.Location.X).SafeInt ());
 						int top = Math.Max(0, cfg.GetSetting (this.Name, "Top", this.Location.Y).SafeInt ());
 						DefaultLocation = new Vector2i (left, top);
@@ -450,7 +453,7 @@ namespace SummerGUI
 						if (winState != WindowState.Normal) {
 							this.WindowState = winState;
 							//this.Context.Update (this.WindowInfo);
-						} else {
+						} else {							
 							this.Location = DefaultLocation;
 							this.Size = DefaultSize;
 						}
@@ -1001,9 +1004,10 @@ namespace SummerGUI
 			
 			_frameTimer.Update();
 			
-			if (iDirtyLayout > 0) {				
+			if (iDirtyLayout > 0) {			
 				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
-				this.Controls.OnLayout (this, rec);
+				this.Controls.OnLayout(this, rec);
+				
 				OnAfterLayout();
 				iDirtyLayout--;
 			}
@@ -1067,7 +1071,7 @@ namespace SummerGUI
 				return;
 			}
 						
-			DoPaint ((Rectangle)ClientRectangle);			
+			DoPaint ((Rectangle)ClientRectangle);
 			iDirtyPaint--;			
 		}
 

@@ -1,0 +1,4 @@
+﻿- [ZxdgExporterV2](#zxdgexporterv2 ':class=interface')
+- [ZxdgImporterV2](#zxdgimporterv2 ':class=interface')
+- [ZxdgExportedV2](#zxdgexportedv2 ':class=interface')
+- [ZxdgImportedV2](#zxdgimportedv2 ':class=interface')

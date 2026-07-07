@@ -228,7 +228,7 @@ namespace SummerGUI
 			if (PlatformExtensions.CurrentOS != PlatformExtensions.OS.Windows)
 				IsVisible = true;
 
-			PlatformExtensions.MakeWindowModal(this, ParentWindow);
+			PlatformExtensions.MakeWindowModal(this, ParentWindow);			
 
 			_oldParentWindowsBorder = ParentWindow.WindowBorder;
 			ParentWindow.WindowBorder = WindowBorder.Fixed;
@@ -237,7 +237,7 @@ namespace SummerGUI
 			
 			Batcher.BindContext(this);			
 
-			this.Run ();
+			this.Run ();			
 
 			if (ParentWindow != null) 
 			{

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Diagnostics;
 using OpenTK;
 using OpenTK.Platform;
 using OpenTK.Core.Native;
@@ -15,6 +16,7 @@ namespace SummerGUI.SystemSpecific.Linux
     {
         const string GtkLib = "libgtk-3.so.0";
         const string GdkLib = "libgdk-3.so.0";
+        const string GObjectLib = "libgobject-2.0.so.0"; // Wird für das Signal-Management benötigt
 
         [DllImport(GtkLib)]
         public static extern void gtk_init(int argc, IntPtr argv);
@@ -85,6 +87,39 @@ namespace SummerGUI.SystemSpecific.Linux
         // Wichtig für die Speicherfreigabe von Strings, die GTK erstellt hat
         [DllImport("libglib-2.0.so.0")]
         public static extern void g_free(IntPtr mem);
+
+        // *** NEU
+        // 1. Das Delegate für den GTK-Response-Callback
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void GCallback(IntPtr instance, int responseId, IntPtr data);
+
+        // 2. Signal verbinden (GObject-Bibliothek)
+        [DllImport(GObjectLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong g_signal_connect_data(
+            IntPtr instance, 
+            string detailed_signal, 
+            GCallback c_handler, 
+            IntPtr data, 
+            IntPtr destroy_data, 
+            int connect_flags
+        );
+
+        // 3. Signal wieder trennen (GObject-Bibliothek)
+        [DllImport(GObjectLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void g_signal_handler_disconnect(IntPtr instance, ulong handler_id);
+
+        // 4. Das Widget und alle seine Child-Elemente sichtbar machen (GTK-Bibliothek)
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void gtk_widget_show_all(IntPtr widget);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void gtk_window_set_modal(IntPtr window, int modal);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void gtk_window_set_keep_above(IntPtr window, int setting);
+
+        [DllImport(GtkLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void gtk_window_set_destroy_with_parent(IntPtr window, int setting);
     }    
 
     public enum GtkResponseType
@@ -110,6 +145,8 @@ namespace SummerGUI.SystemSpecific.Linux
         {
             if (!IsInitialized)
             {
+                System.Environment.SetEnvironmentVariable("GDK_BACKEND", "wayland,x11");
+
                 // GTK initialisieren (0 Argumente)
                 GtkNative.gtk_init(0, IntPtr.Zero);
                 IsInitialized = true;
@@ -123,6 +160,7 @@ namespace SummerGUI.SystemSpecific.Linux
         private static string GTK_RESPONSE_OPEN = "_Open";
         private static string GTK_RESPONSE_SAVE = "_Save";
         private static string GTK_RESPONSE_SELECT = "_Select";        
+
         
         public string OpenFileDialog(
             IGUIContext ctx, 
@@ -193,9 +231,9 @@ namespace SummerGUI.SystemSpecific.Linux
             );
             
             return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory);
-        }
+        }        
 
-        private unsafe string ShowDialog(
+        private unsafe string ShowDialogGTK(
             IGUIContext ctx,             
             IntPtr dialog, 
             int action,
@@ -204,6 +242,11 @@ namespace SummerGUI.SystemSpecific.Linux
             string initialDirectory = "",
             string defaultFileName = "")
         {
+
+            //var test1 = GLFW.GetVersionString();
+            //var test2 = GLFW.GetWaylandDisplay();
+            //var test3 = GLFW.GetWaylandWindow(ctx.GlWindow.WindowPtr);
+
             // --- Verzeichnis setzen ---
             if (!string.IsNullOrEmpty(initialDirectory))
             {
@@ -280,6 +323,11 @@ namespace SummerGUI.SystemSpecific.Linux
             IntPtr gdkWin = GtkNative.gtk_widget_get_window(dialog);
             IntPtr dialogXid = GtkNative.gdk_x11_window_get_xid(gdkWin);
 
+            if (GLFW.GetPlatform() == Platform.Wayland)
+            {
+                Console.WriteLine("GLFW läuft auf Wayland");
+            }
+
             // 4. Parent-Fenster XID holen (aus deinem NativeWindow)
             var parentWindow = ctx.GlWindow;
             IntPtr parentXid = (IntPtr)GLFW.GetX11Window((Window*)parentWindow.WindowPtr);
@@ -321,6 +369,27 @@ namespace SummerGUI.SystemSpecific.Linux
                 GtkNative.gtk_main_iteration_do(false);
 
             return resultPath;
+        }
+
+        private unsafe string ShowDialog(
+            IGUIContext ctx,             
+            IntPtr dialog, 
+            int action,
+            string filter = "", 
+            int filterIndex = 1, 
+            string initialDirectory = "",
+            string defaultFileName = "")
+        {
+            if (GLFW.GetPlatform() == Platform.Wayland)
+            {
+                Console.WriteLine("GLFW läuft auf Wayland, nutze Portal");
+                return Wayland.ShowDialogPortal(ctx, action, filter, filterIndex, initialDirectory, defaultFileName);
+            }
+            else
+            {
+                Console.WriteLine("GLFW läuft auf X11, nutze GTK-Dialog");
+                return ShowDialogGTK(ctx, dialog, action, filter, filterIndex, initialDirectory, defaultFileName);
+            }
         }
 
         private string AppendExtensionIfMissing(IntPtr dialog, string path, List<IntPtr> filterPointers, string filter)

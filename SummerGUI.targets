@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="CopyCustomGlfw"
+          AfterTargets="CopyFilesToOutputDirectory">
+
+    <Message Importance="high"
+             Text="Copy GLFW $(TargetDir)"/>
+
+    <Copy
+        SourceFiles="$(MSBuildThisFileDirectory)NativeLibs/linux-x64/libglfw.so.3"
+        DestinationFiles="$(TargetDir)libglfw.so.3"
+        OverwriteReadOnlyFiles="true"/>
+
+  </Target>
+
+</Project>

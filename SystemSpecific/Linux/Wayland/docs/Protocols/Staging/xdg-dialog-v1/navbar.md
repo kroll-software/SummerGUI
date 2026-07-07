@@ -1,0 +1,2 @@
+﻿- [XdgWmDialogV1](#xdgwmdialogv1 ':class=interface')
+- [XdgDialogV1](#xdgdialogv1 ':class=interface')

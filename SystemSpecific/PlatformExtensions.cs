@@ -167,7 +167,10 @@ namespace SummerGUI
 			switch (CurrentOS) {
 			case OS.Android:
 			case OS.Linux:
-				SystemSpecific.Linux.Common.MakeWindowModal (child, parent);
+				if (GLFW.GetPlatform() == Platform.Wayland)
+					SystemSpecific.Linux.Wayland.MakeWindowModal (child, parent);
+				else
+					SystemSpecific.Linux.Common.MakeWindowModal (child, parent);
 				break;			
 
 			case OS.Windows:

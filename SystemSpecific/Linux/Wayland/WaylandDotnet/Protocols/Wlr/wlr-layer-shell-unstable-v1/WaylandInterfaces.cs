@@ -1,0 +1,156 @@
+namespace WaylandDotnet.Internal;
+
+#nullable enable
+#pragma warning disable CA2255
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+/// <summary> Native Wayland interface descriptors for this protocol. </summary>
+public static unsafe partial class WaylandInterfaces
+{
+    /// <summary> Native interface descriptor for zwlr_layer_shell_v1. </summary>
+    public static WlInterface* ZwlrLayerShellV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for zwlr_layer_surface_v1. </summary>
+    public static WlInterface* ZwlrLayerSurfaceV1 = AllocateInterface();
+
+
+    /// <summary>
+    /// Interface: zwlr_layer_shell_v1
+    /// Version: 5
+    /// Requests: 2, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateZwlrLayerShellV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_layer_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no?ous"),
+            Types = (WlInterface**)CreateTypesArray([ZwlrLayerSurfaceV1, WlSurface, WlOutput, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("zwlr_layer_shell_v1"),
+            Version = 5,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)ZwlrLayerShellV1, false);
+        Interfaces.Add("zwlr_layer_shell_v1", (IntPtr)ZwlrLayerShellV1);
+    }
+
+
+    /// <summary>
+    /// Interface: zwlr_layer_surface_v1
+    /// Version: 5
+    /// Requests: 10, Events: 2
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateZwlrLayerSurfaceV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 10);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_size"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_anchor"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_exclusive_zone"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_margin"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_keyboard_interactivity"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_popup"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([XdgPopup])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("ack_configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_layer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_exclusive_edge"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("closed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("zwlr_layer_surface_v1"),
+            Version = 5,
+            MethodCount = 10,
+            Methods = requests,
+            EventCount = 2,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)ZwlrLayerSurfaceV1, false);
+        Interfaces.Add("zwlr_layer_surface_v1", (IntPtr)ZwlrLayerSurfaceV1);
+    }
+
+}

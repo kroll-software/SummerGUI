@@ -1,0 +1,1503 @@
+namespace WaylandDotnet.Internal;
+
+#nullable enable
+#pragma warning disable CA2255
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+/// <summary> Native Wayland interface descriptors for this protocol. </summary>
+public static unsafe partial class WaylandInterfaces
+{
+    /// <summary> Native interface descriptor for wl_display. </summary>
+    public static WlInterface* WlDisplay = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_registry. </summary>
+    public static WlInterface* WlRegistry = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_callback. </summary>
+    public static WlInterface* WlCallback = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_compositor. </summary>
+    public static WlInterface* WlCompositor = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_shm_pool. </summary>
+    public static WlInterface* WlShmPool = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_shm. </summary>
+    public static WlInterface* WlShm = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_buffer. </summary>
+    public static WlInterface* WlBuffer = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_data_offer. </summary>
+    public static WlInterface* WlDataOffer = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_data_source. </summary>
+    public static WlInterface* WlDataSource = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_data_device. </summary>
+    public static WlInterface* WlDataDevice = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_data_device_manager. </summary>
+    public static WlInterface* WlDataDeviceManager = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_shell. </summary>
+    public static WlInterface* WlShell = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_shell_surface. </summary>
+    public static WlInterface* WlShellSurface = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_surface. </summary>
+    public static WlInterface* WlSurface = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_seat. </summary>
+    public static WlInterface* WlSeat = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_pointer. </summary>
+    public static WlInterface* WlPointer = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_keyboard. </summary>
+    public static WlInterface* WlKeyboard = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_touch. </summary>
+    public static WlInterface* WlTouch = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_output. </summary>
+    public static WlInterface* WlOutput = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_region. </summary>
+    public static WlInterface* WlRegion = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_subcompositor. </summary>
+    public static WlInterface* WlSubcompositor = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_subsurface. </summary>
+    public static WlInterface* WlSubsurface = AllocateInterface();
+    /// <summary> Native interface descriptor for wl_fixes. </summary>
+    public static WlInterface* WlFixes = AllocateInterface();
+
+
+    /// <summary>
+    /// Interface: wl_display
+    /// Version: 1
+    /// Requests: 2, Events: 2
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlDisplayInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("sync"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlCallback])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_registry"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlRegistry])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("error"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ous"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("delete_id"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_display"),
+            Version = 1,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 2,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlDisplay, false);
+        Interfaces.Add("wl_display", (IntPtr)WlDisplay);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_registry
+    /// Version: 1
+    /// Requests: 1, Events: 2
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlRegistryInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("bind"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("usun"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("global"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("usu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("global_remove"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_registry"),
+            Version = 1,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 2,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlRegistry, false);
+        Interfaces.Add("wl_registry", (IntPtr)WlRegistry);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_callback
+    /// Version: 1
+    /// Requests: 0, Events: 1
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlCallbackInterface()
+    {
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("done"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_callback"),
+            Version = 1,
+            MethodCount = 0,
+            Methods = (WlMessage*)IntPtr.Zero,
+            EventCount = 1,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlCallback, false);
+        Interfaces.Add("wl_callback", (IntPtr)WlCallback);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_compositor
+    /// Version: 7
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlCompositorInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlSurface])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_region"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlRegion])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_compositor"),
+            Version = 7,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlCompositor, false);
+        Interfaces.Add("wl_compositor", (IntPtr)WlCompositor);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_shm_pool
+    /// Version: 2
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlShmPoolInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_buffer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("niiiiu"),
+            Types = (WlInterface**)CreateTypesArray([WlBuffer, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("resize"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_shm_pool"),
+            Version = 2,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlShmPool, false);
+        Interfaces.Add("wl_shm_pool", (IntPtr)WlShmPool);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_shm
+    /// Version: 2
+    /// Requests: 2, Events: 1
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlShmInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_pool"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("nhi"),
+            Types = (WlInterface**)CreateTypesArray([WlShmPool, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("format"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_shm"),
+            Version = 2,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 1,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlShm, false);
+        Interfaces.Add("wl_shm", (IntPtr)WlShm);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_buffer
+    /// Version: 1
+    /// Requests: 1, Events: 1
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlBufferInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_buffer"),
+            Version = 1,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 1,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlBuffer, false);
+        Interfaces.Add("wl_buffer", (IntPtr)WlBuffer);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_data_offer
+    /// Version: 4
+    /// Requests: 5, Events: 3
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlDataOfferInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 5);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("accept"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u?s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("receive"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("sh"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("finish"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_actions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("offer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("source_actions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("action"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_data_offer"),
+            Version = 4,
+            MethodCount = 5,
+            Methods = requests,
+            EventCount = 3,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlDataOffer, false);
+        Interfaces.Add("wl_data_offer", (IntPtr)WlDataOffer);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_data_source
+    /// Version: 4
+    /// Requests: 3, Events: 6
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlDataSourceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("offer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_actions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("target"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("send"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("sh"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("cancelled"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("dnd_drop_performed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("dnd_finished"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("action"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_data_source"),
+            Version = 4,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 6,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlDataSource, false);
+        Interfaces.Add("wl_data_source", (IntPtr)WlDataSource);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_data_device
+    /// Version: 4
+    /// Requests: 3, Events: 6
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlDataDeviceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("start_drag"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?oo?ou"),
+            Types = (WlInterface**)CreateTypesArray([WlDataSource, WlSurface, WlSurface, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_selection"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?ou"),
+            Types = (WlInterface**)CreateTypesArray([WlDataSource, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("data_offer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlDataOffer])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("enter"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uoff?o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, WlDataOffer])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("leave"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("motion"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("drop"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("selection"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([WlDataOffer])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_data_device"),
+            Version = 4,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 6,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlDataDevice, false);
+        Interfaces.Add("wl_data_device", (IntPtr)WlDataDevice);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_data_device_manager
+    /// Version: 4
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlDataDeviceManagerInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("create_data_source"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlDataSource])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_data_device"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([WlDataDevice, WlSeat])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_data_device_manager"),
+            Version = 4,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlDataDeviceManager, false);
+        Interfaces.Add("wl_data_device_manager", (IntPtr)WlDataDeviceManager);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_shell
+    /// Version: 1
+    /// Requests: 1, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlShellInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_shell_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([WlShellSurface, WlSurface])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_shell"),
+            Version = 1,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlShell, false);
+        Interfaces.Add("wl_shell", (IntPtr)WlShell);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_shell_surface
+    /// Version: 1
+    /// Requests: 10, Events: 3
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlShellSurfaceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 10);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pong"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("move"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("resize"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ouu"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_toplevel"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_transient"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("oiiu"),
+            Types = (WlInterface**)CreateTypesArray([WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uu?o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, WlOutput])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_popup"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ouoiiu"),
+            Types = (WlInterface**)CreateTypesArray([WlSeat, (WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_maximized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([WlOutput])
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_title"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_class"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("ping"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("configure"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("popup_done"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_shell_surface"),
+            Version = 1,
+            MethodCount = 10,
+            Methods = requests,
+            EventCount = 3,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlShellSurface, false);
+        Interfaces.Add("wl_shell_surface", (IntPtr)WlShellSurface);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_surface
+    /// Version: 7
+    /// Requests: 12, Events: 4
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlSurfaceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 12);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("attach"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?oii"),
+            Types = (WlInterface**)CreateTypesArray([WlBuffer, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("damage"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("frame"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlCallback])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_opaque_region"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([WlRegion])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_input_region"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([WlRegion])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("commit"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_buffer_transform"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_buffer_scale"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("damage_buffer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[10] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("offset"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[11] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlCallback])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 4);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("enter"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([WlOutput])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("leave"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([WlOutput])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("preferred_buffer_scale"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("preferred_buffer_transform"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_surface"),
+            Version = 7,
+            MethodCount = 12,
+            Methods = requests,
+            EventCount = 4,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlSurface, false);
+        Interfaces.Add("wl_surface", (IntPtr)WlSurface);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_seat
+    /// Version: 11
+    /// Requests: 4, Events: 2
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlSeatInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 4);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_pointer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlPointer])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_keyboard"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlKeyboard])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_touch"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([WlTouch])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("capabilities"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("name"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_seat"),
+            Version = 11,
+            MethodCount = 4,
+            Methods = requests,
+            EventCount = 2,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlSeat, false);
+        Interfaces.Add("wl_seat", (IntPtr)WlSeat);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_pointer
+    /// Version: 11
+    /// Requests: 2, Events: 12
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlPointerInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_cursor"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u?oii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 12);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("enter"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uoff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("leave"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uo"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("motion"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("button"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuuu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuf"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("frame"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis_source"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis_stop"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis_discrete"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ui"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis_value120"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ui"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[10] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("axis_relative_direction"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[11] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("warp"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_pointer"),
+            Version = 11,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 12,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlPointer, false);
+        Interfaces.Add("wl_pointer", (IntPtr)WlPointer);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_keyboard
+    /// Version: 11
+    /// Requests: 1, Events: 6
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlKeyboardInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("keymap"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uhu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("enter"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uoa"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("leave"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uo"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, WlSurface])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("key"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuuu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("modifiers"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuuuu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("repeat_info"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_keyboard"),
+            Version = 11,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 6,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlKeyboard, false);
+        Interfaces.Add("wl_keyboard", (IntPtr)WlKeyboard);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_touch
+    /// Version: 11
+    /// Requests: 1, Events: 7
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlTouchInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 7);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("down"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uuoiff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, WlSurface, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("up"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uui"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("motion"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uiff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("frame"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("cancel"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("shape"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iff"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("orientation"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("if"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_touch"),
+            Version = 11,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 7,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlTouch, false);
+        Interfaces.Add("wl_touch", (IntPtr)WlTouch);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_output
+    /// Version: 4
+    /// Requests: 1, Events: 6
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlOutputInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 1);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("geometry"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiiiissi"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("mode"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("done"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("scale"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("name"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("description"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_output"),
+            Version = 4,
+            MethodCount = 1,
+            Methods = requests,
+            EventCount = 6,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlOutput, false);
+        Interfaces.Add("wl_output", (IntPtr)WlOutput);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_region
+    /// Version: 7
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlRegionInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("add"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("subtract"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_region"),
+            Version = 7,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlRegion, false);
+        Interfaces.Add("wl_region", (IntPtr)WlRegion);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_subcompositor
+    /// Version: 1
+    /// Requests: 2, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlSubcompositorInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_subsurface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("noo"),
+            Types = (WlInterface**)CreateTypesArray([WlSubsurface, WlSurface, WlSurface])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_subcompositor"),
+            Version = 1,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlSubcompositor, false);
+        Interfaces.Add("wl_subcompositor", (IntPtr)WlSubcompositor);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_subsurface
+    /// Version: 1
+    /// Requests: 6, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlSubsurfaceInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_position"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_above"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([WlSurface])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_below"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([WlSurface])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_sync"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_desync"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_subsurface"),
+            Version = 1,
+            MethodCount = 6,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlSubsurface, false);
+        Interfaces.Add("wl_subsurface", (IntPtr)WlSubsurface);
+    }
+
+
+    /// <summary>
+    /// Interface: wl_fixes
+    /// Version: 2
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateWlFixesInterface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy_registry"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([WlRegistry])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("ack_global_remove"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([WlRegistry, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_fixes"),
+            Version = 2,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)WlFixes, false);
+        Interfaces.Add("wl_fixes", (IntPtr)WlFixes);
+    }
+
+}

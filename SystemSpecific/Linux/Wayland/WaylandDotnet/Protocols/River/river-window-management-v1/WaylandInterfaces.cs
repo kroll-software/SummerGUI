@@ -1,0 +1,858 @@
+namespace WaylandDotnet.Internal;
+
+#nullable enable
+#pragma warning disable CA2255
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+/// <summary> Native Wayland interface descriptors for this protocol. </summary>
+public static unsafe partial class WaylandInterfaces
+{
+    /// <summary> Native interface descriptor for river_window_manager_v1. </summary>
+    public static WlInterface* RiverWindowManagerV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_window_v1. </summary>
+    public static WlInterface* RiverWindowV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_decoration_v1. </summary>
+    public static WlInterface* RiverDecorationV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_shell_surface_v1. </summary>
+    public static WlInterface* RiverShellSurfaceV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_node_v1. </summary>
+    public static WlInterface* RiverNodeV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_output_v1. </summary>
+    public static WlInterface* RiverOutputV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_seat_v1. </summary>
+    public static WlInterface* RiverSeatV1 = AllocateInterface();
+    /// <summary> Native interface descriptor for river_pointer_binding_v1. </summary>
+    public static WlInterface* RiverPointerBindingV1 = AllocateInterface();
+
+
+    /// <summary>
+    /// Interface: river_window_manager_v1
+    /// Version: 5
+    /// Requests: 7, Events: 9
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverWindowManagerV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 7);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("stop"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("manage_finish"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("manage_dirty"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("render_finish"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_shell_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([RiverShellSurfaceV1, WlSurface])
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("exit_session"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 9);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("unavailable"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("finished"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("manage_start"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("render_start"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("session_locked"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("session_unlocked"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("window"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([RiverWindowV1])
+        };
+        events[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("output"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([RiverOutputV1])
+        };
+        events[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("seat"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([RiverSeatV1])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_window_manager_v1"),
+            Version = 5,
+            MethodCount = 7,
+            Methods = requests,
+            EventCount = 9,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverWindowManagerV1, false);
+        Interfaces.Add("river_window_manager_v1", (IntPtr)RiverWindowManagerV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_window_v1
+    /// Version: 5
+    /// Requests: 24, Events: 19
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverWindowV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 24);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("close"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_node"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([RiverNodeV1])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("propose_dimensions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("hide"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("show"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("use_csd"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("use_ssd"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_borders"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("uiuuuu"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_tiled"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[10] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_decoration_above"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([RiverDecorationV1, WlSurface])
+        };
+        requests[11] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_decoration_below"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("no"),
+            Types = (WlInterface**)CreateTypesArray([RiverDecorationV1, WlSurface])
+        };
+        requests[12] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_resize_start"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[13] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_resize_end"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[14] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_capabilities"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[15] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_maximized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[16] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_unmaximized"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[17] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[18] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("inform_not_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[19] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverOutputV1])
+        };
+        requests[20] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("exit_fullscreen"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[21] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_clip_box"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[22] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_content_clip_box"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[23] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_dimension_bounds"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 19);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("closed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("dimensions_hint"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("iiii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("dimensions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("app_id"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("title"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("parent"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("decoration_hint"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_move_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverSeatV1])
+        };
+        events[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_resize_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ou"),
+            Types = (WlInterface**)CreateTypesArray([RiverSeatV1, (WlInterface*)IntPtr.Zero])
+        };
+        events[9] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("show_window_menu_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[10] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("maximize_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[11] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("unmaximize_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[12] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("fullscreen_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("?o"),
+            Types = (WlInterface**)CreateTypesArray([RiverOutputV1])
+        };
+        events[13] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("exit_fullscreen_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[14] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("minimize_requested"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[15] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("unreliable_pid"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("i"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[16] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("presentation_hint"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[17] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("identifier"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("s"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[18] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("capture_sessions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_window_v1"),
+            Version = 5,
+            MethodCount = 24,
+            Methods = requests,
+            EventCount = 19,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverWindowV1, false);
+        Interfaces.Add("river_window_v1", (IntPtr)RiverWindowV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_decoration_v1
+    /// Version: 5
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverDecorationV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_offset"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("sync_next_commit"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_decoration_v1"),
+            Version = 5,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverDecorationV1, false);
+        Interfaces.Add("river_decoration_v1", (IntPtr)RiverDecorationV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_shell_surface_v1
+    /// Version: 5
+    /// Requests: 3, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverShellSurfaceV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_node"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("n"),
+            Types = (WlInterface**)CreateTypesArray([RiverNodeV1])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("sync_next_commit"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_shell_surface_v1"),
+            Version = 5,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverShellSurfaceV1, false);
+        Interfaces.Add("river_shell_surface_v1", (IntPtr)RiverShellSurfaceV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_node_v1
+    /// Version: 5
+    /// Requests: 6, Events: 0
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverNodeV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 6);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_position"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_top"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_bottom"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_above"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("place_below"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_node_v1"),
+            Version = 5,
+            MethodCount = 6,
+            Methods = requests,
+            EventCount = 0,
+            Events = (WlMessage*)IntPtr.Zero
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverNodeV1, false);
+        Interfaces.Add("river_node_v1", (IntPtr)RiverNodeV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_output_v1
+    /// Version: 5
+    /// Requests: 2, Events: 5
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverOutputV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_presentation_mode"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 5);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("removed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_output"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("position"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("dimensions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("capture_sessions"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_output_v1"),
+            Version = 5,
+            MethodCount = 2,
+            Methods = requests,
+            EventCount = 5,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverOutputV1, false);
+        Interfaces.Add("river_output_v1", (IntPtr)RiverOutputV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_seat_v1
+    /// Version: 5
+    /// Requests: 9, Events: 9
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverSeatV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 9);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("focus_window"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverWindowV1])
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("focus_shell_surface"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverShellSurfaceV1])
+        };
+        requests[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("clear_focus"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("op_start_pointer"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("op_end"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("get_pointer_binding"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("nuu"),
+            Types = (WlInterface**)CreateTypesArray([RiverPointerBindingV1, (WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("set_xcursor_theme"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("su"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        requests[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_warp"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 9);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("removed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("wl_seat"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("u"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero])
+        };
+        events[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_enter"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverWindowV1])
+        };
+        events[3] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_leave"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[4] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("window_interaction"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverWindowV1])
+        };
+        events[5] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("shell_surface_interaction"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("o"),
+            Types = (WlInterface**)CreateTypesArray([RiverShellSurfaceV1])
+        };
+        events[6] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("op_delta"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+        events[7] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("op_release"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[8] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pointer_position"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged("ii"),
+            Types = (WlInterface**)CreateTypesArray([(WlInterface*)IntPtr.Zero, (WlInterface*)IntPtr.Zero])
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_seat_v1"),
+            Version = 5,
+            MethodCount = 9,
+            Methods = requests,
+            EventCount = 9,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverSeatV1, false);
+        Interfaces.Add("river_seat_v1", (IntPtr)RiverSeatV1);
+    }
+
+
+    /// <summary>
+    /// Interface: river_pointer_binding_v1
+    /// Version: 5
+    /// Requests: 3, Events: 2
+    /// </summary>
+    [ModuleInitializer]
+    public static void CreateRiverPointerBindingV1Interface()
+    {
+        // Request signatures
+        var requests = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 3);
+        requests[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("destroy"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("enable"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        requests[2] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("disable"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        // Event signatures
+        var events = (WlMessage*)Marshal.AllocHGlobal(sizeof(WlMessage) * 2);
+        events[0] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("pressed"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+        events[1] = new WlMessage
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("released"),
+            Signature = Utf8StringMarshaller.ConvertToUnmanaged(""),
+            Types = (WlInterface**)IntPtr.Zero
+        };
+
+        var iface = new WlInterface
+        {
+            Name = Utf8StringMarshaller.ConvertToUnmanaged("river_pointer_binding_v1"),
+            Version = 5,
+            MethodCount = 3,
+            Methods = requests,
+            EventCount = 2,
+            Events = events
+        };
+
+        Marshal.StructureToPtr(iface, (IntPtr)RiverPointerBindingV1, false);
+        Interfaces.Add("river_pointer_binding_v1", (IntPtr)RiverPointerBindingV1);
+    }
+
+}

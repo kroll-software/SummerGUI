@@ -1,0 +1,16 @@
+{
+  "OutputRoot": "./Generated",
+  "DocsDir": "./docs",
+  "Protocols": [    
+    {
+      "Name": "XDG Foreign V2",
+      "XmlFile": "Protocols/xdg-foreign-unstable-v2.xml",
+      "Namespace": "Unstable"
+    },
+    {
+    "Name": "XDG Dialog",
+    "XmlFile": "Protocols/xdg-dialog-v1.xml",
+    "Namespace": "Staging"
+    }
+  ]
+}
