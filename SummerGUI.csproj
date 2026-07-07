@@ -37,14 +37,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FreeTypeSharp" Version="3.1.0" />
+    <PackageReference Include="FreeTypeSharp" Version="3.0.1" />
     <PackageReference Include="HarfBuzzSharp" Version="2.8.2.3" />    
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="2.8.2.3" />    
     <PackageReference Include="HarfBuzzSharp.NativeAssets.macOS" Version="2.8.2.3" />    
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Win32" Version="2.8.2.3" />        
     <PackageReference Include="OpenTK" Version="4.9.4" />
-    <PackageReference Include="StbImageSharp" Version="2.30.15" />
-    <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
+    <PackageReference Include="StbImageSharp" Version="2.30.15" />    
     <PackageReference Include="Tmds.DBus" Version="0.94.2" />    
   </ItemGroup>
 

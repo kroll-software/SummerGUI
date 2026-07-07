@@ -20,13 +20,13 @@ namespace SummerGUI.SystemSpecific.Linux
 
         [DllImport(GtkLib)]
         public static extern void gtk_init(int argc, IntPtr argv);
-
+        
         [DllImport(GtkLib)]
         public static extern IntPtr gtk_file_chooser_dialog_new(string title, IntPtr parent, int action, 
             string button1, int response1, string button2, int response2, IntPtr terminator);
 
         [DllImport(GtkLib)]
-        public static extern int gtk_dialog_run(IntPtr dialog);
+        public static extern int gtk_dialog_run(IntPtr dialog);        
 
         [DllImport(GtkLib)]
         public static extern IntPtr gtk_file_chooser_get_filename(IntPtr dialog);
@@ -145,7 +145,7 @@ namespace SummerGUI.SystemSpecific.Linux
         {
             if (!IsInitialized)
             {
-                System.Environment.SetEnvironmentVariable("GDK_BACKEND", "wayland,x11");
+                //System.Environment.SetEnvironmentVariable("GDK_BACKEND", "wayland,x11");
 
                 // GTK initialisieren (0 Argumente)
                 GtkNative.gtk_init(0, IntPtr.Zero);
@@ -170,10 +170,10 @@ namespace SummerGUI.SystemSpecific.Linux
             string initialDirectory = "",
             bool restoreDirectory = false)
         {
-            EnsureGtkInit();
+            EnsureGtkInit();            
 
             // Wir erstellen den Dialog ohne explizites Parent-Handle, 
-            // da GLFW-Handles (X11) nicht ohne weiteres als GtkWindow-Pointer akzeptiert werden.
+            // da GLFW-Handles (X11) nicht ohne weiteres als GtkWindow-Pointer akzeptiert werden.            
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
                 caption, 
                 IntPtr.Zero, 
@@ -181,7 +181,7 @@ namespace SummerGUI.SystemSpecific.Linux
                 GTK_RESPONSE_CANCEL, -6, // GTK_RESPONSE_CANCEL
                 GTK_RESPONSE_OPEN, -5,    // GTK_RESPONSE_OK
                 IntPtr.Zero
-            );
+            );            
             
             return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory);
         }
@@ -242,11 +242,6 @@ namespace SummerGUI.SystemSpecific.Linux
             string initialDirectory = "",
             string defaultFileName = "")
         {
-
-            //var test1 = GLFW.GetVersionString();
-            //var test2 = GLFW.GetWaylandDisplay();
-            //var test3 = GLFW.GetWaylandWindow(ctx.GlWindow.WindowPtr);
-
             // --- Verzeichnis setzen ---
             if (!string.IsNullOrEmpty(initialDirectory))
             {
@@ -323,11 +318,6 @@ namespace SummerGUI.SystemSpecific.Linux
             IntPtr gdkWin = GtkNative.gtk_widget_get_window(dialog);
             IntPtr dialogXid = GtkNative.gdk_x11_window_get_xid(gdkWin);
 
-            if (GLFW.GetPlatform() == Platform.Wayland)
-            {
-                Console.WriteLine("GLFW läuft auf Wayland");
-            }
-
             // 4. Parent-Fenster XID holen (aus deinem NativeWindow)
             var parentWindow = ctx.GlWindow;
             IntPtr parentXid = (IntPtr)GLFW.GetX11Window((Window*)parentWindow.WindowPtr);
@@ -343,7 +333,7 @@ namespace SummerGUI.SystemSpecific.Linux
                 
                 // In der Taskleiste verstecken
                 ApplyHideFromTaskbarDirect(display, dialogXid);
-            }
+            }            
 
             string resultPath = null;
             int result = GtkNative.gtk_dialog_run(dialog);
