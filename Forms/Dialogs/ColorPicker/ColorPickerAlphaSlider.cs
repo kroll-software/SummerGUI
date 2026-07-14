@@ -63,13 +63,12 @@ namespace SummerGUI.ColorPicker
         {
             // 1. Zuerst zeichnet die Basisklasse das Schachbrettmuster im Hintergrund
             base.OnPaintBackground(ctx, bounds);
-
-            float actualGripperAreaWidth = GripperSize * this.ScaleFactor;
-            float barWidth = bounds.Width - actualGripperAreaWidth;
+            
+            float barWidth = bounds.Width - GripperSize;
 
             // 2. Den Gripper-Bereich rechts mit der Standard-Hintergrundfarbe überdecken,
             // damit dort kein Schachbrett oder Alpha-Balken durchscheint.
-            RectangleF gripperBackgroundRect = new RectangleF(bounds.Left + barWidth, bounds.Top, actualGripperAreaWidth, bounds.Height);
+            RectangleF gripperBackgroundRect = new RectangleF(bounds.Left + barWidth, bounds.Top, GripperSize, bounds.Height);
             ctx.FillRectangle(Style.BackColorBrush, gripperBackgroundRect);
 
             // 3. Den Alpha-Verlauf (links) zeichnen.

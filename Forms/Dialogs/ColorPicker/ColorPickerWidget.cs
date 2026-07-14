@@ -92,6 +92,15 @@ namespace SummerGUI.ColorPicker
             PreviewBox.NewColor = Color.FromArgb(255, Color.Blue);
 
             int rowIndex = 1;
+            
+            TextLabel lblAlpha = tableLayout.AddChild(new TextLabel("lblAlpha", "Alpha"), rowIndex, 0);
+            lblAlpha.Dock = Docking.Right;
+            lblAlpha.OffsetY = -1;
+            txtAlpha = tableLayout.AddChild(new NumberTextBox("txtAlpha"), rowIndex, 1);
+            txtAlpha.MinSize = new SizeF(60, 0);
+            txtAlpha.MaxValue = 255;
+
+            rowIndex++;
             TextLabel lblRed = tableLayout.AddChild(new TextLabel("lblRed", "Red"), rowIndex, 0);
             lblRed.Dock = Docking.Right;
             lblRed.OffsetY = -1;
@@ -113,15 +122,7 @@ namespace SummerGUI.ColorPicker
             lblBlue.OffsetY = -1;
             txtBlue = tableLayout.AddChild(new NumberTextBox("txtBlue"), rowIndex, 1);
             txtBlue.MinSize = new SizeF(60, 0);
-            txtBlue.MaxValue = 255;
-
-            rowIndex++;
-            TextLabel lblAlpha = tableLayout.AddChild(new TextLabel("lblAlpha", "Alpha"), rowIndex, 0);
-            lblAlpha.Dock = Docking.Right;
-            lblAlpha.OffsetY = -1;
-            txtAlpha = tableLayout.AddChild(new NumberTextBox("txtAlpha"), rowIndex, 1);
-            txtAlpha.MinSize = new SizeF(60, 0);
-            txtAlpha.MaxValue = 255;
+            txtBlue.MaxValue = 255;            
 
             rowIndex++;
             TextLabel lblHexColor = tableLayout.AddChild(new TextLabel("lblHexColor", "Hex #"), rowIndex, 0);
@@ -187,7 +188,7 @@ namespace SummerGUI.ColorPicker
             };
 
             // 4. RGB & Alpha Textboxen (Benutzer tippt Zahlen ein)
-            EventHandler<EventArgs> textRGBChanged = (s, e) =>
+            EventHandler<EventArgs> valueARGBChanged = (s, e) =>
             {
                 if (isUpdating) return;
 
@@ -201,18 +202,11 @@ namespace SummerGUI.ColorPicker
                 
                 UpdateAllControls(source: s);
             };
-
-            /***
-            txtRed.TextChanged += textRGBChanged;
-            txtGreen.TextChanged += textRGBChanged;
-            txtBlue.TextChanged += textRGBChanged;
-            txtAlpha.TextChanged += textRGBChanged;
-            ***/
-
-            txtRed.ValueChanged += textRGBChanged;
-            txtGreen.ValueChanged += textRGBChanged;
-            txtBlue.ValueChanged += textRGBChanged;
-            txtAlpha.ValueChanged += textRGBChanged;
+            
+            txtRed.ValueChanged += valueARGBChanged;
+            txtGreen.ValueChanged += valueARGBChanged;
+            txtBlue.ValueChanged += valueARGBChanged;
+            txtAlpha.ValueChanged += valueARGBChanged;
 
             // 5. Hex-Textbox (Benutzer gibt Text ein)
             txtHexColor.TextChanged += (s, e) =>
@@ -304,19 +298,21 @@ namespace SummerGUI.ColorPicker
         {
             //base.LayoutChildren(ctx, bounds);
 
+            float distance =  8 * ScaleFactor;
+
             RectangleF recGamut = new RectangleF(bounds.Left, bounds.Top, bounds.Height, bounds.Height);
             GamutBox.SetBounds(recGamut);
 
-            float sliderWidth = 24;
-            RectangleF recSlider = new RectangleF(GamutBox.Bounds.Right + 8, bounds.Top, sliderWidth, bounds.Height);
+            float sliderWidth = 24 * ScaleFactor;
+            RectangleF recSlider = new RectangleF(GamutBox.Bounds.Right + (distance * 1.5f), bounds.Top, sliderWidth, bounds.Height);
             
             LightnessSlider.SetBounds(recSlider);
 
-            recSlider.Offset(recSlider.Width + 8, 0);
+            recSlider.Offset(recSlider.Width + distance, 0);
             AlphaSlider.SetBounds(recSlider);
 
-            float restWidth = bounds.Width - GamutBox.Width - (sliderWidth * 2) - 28;
-            RectangleF recTable = new RectangleF(AlphaSlider.Bounds.Right + 8, bounds.Top, restWidth, bounds.Height);            
+            float restWidth = bounds.Width - GamutBox.Width - (sliderWidth * 2) - (distance * 4);
+            RectangleF recTable = new RectangleF(AlphaSlider.Bounds.Right + distance, bounds.Top, restWidth, bounds.Height);
             tableLayout.OnLayout(ctx, recTable);
             tableLayout.SetBounds(recTable);            
         }

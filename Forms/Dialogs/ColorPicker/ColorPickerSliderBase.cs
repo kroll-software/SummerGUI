@@ -41,7 +41,7 @@ namespace SummerGUI.ColorPicker
         public override SizeF PreferredSize(IGUIContext ctx, SizeF proposedSize)
         {
             // Breite von 18 Pixeln (inkl. Platz für den Gripper rechts)
-            return this.ClampMinMax(new SizeF(18, proposedSize.Height));
+            return this.ClampMinMax(new SizeF(24 * ScaleFactor, proposedSize.Height));
         }
 
         private void UpdateValueFromMouse(float mouseY)
@@ -107,7 +107,7 @@ namespace SummerGUI.ColorPicker
 
             // 2. Berechne das Y-Zentrum des Grippers
             float yCenter = bounds.Top + (GripperSize / 2f) + (pct * trackHeight);
-            float size = GripperSize * this.ScaleFactor;
+            float size = GripperSize;
 
             // 3. Dreieckspunkte berechnen (Spitze zeigt nach links)
             // Die Spitze (p1) zeigt nach links ins Widget hinein. 

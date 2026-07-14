@@ -27,7 +27,7 @@ namespace SummerGUI
 		}
 
         public ColorPickerDialog (string name, SummerGUIWindow parent)
-			: base(name, "Color Picker", 460, 305, parent, true)
+			: base(name, "Color Picker", 464, 305, parent, true)
 		{						
 			ShowInTaskBar = false;
             InitButtons();

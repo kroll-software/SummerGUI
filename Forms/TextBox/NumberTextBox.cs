@@ -93,9 +93,6 @@ namespace SummerGUI
 			DownButton.CanSelect = false;
 			AddChild (DownButton);
 
-			UpButton.MinSize = new SizeF (UpButton.MinSize.Width, (TB.MaxSize.Height - Border) / 2f);
-			DownButton.MinSize = new SizeF (UpButton.MinSize.Width, (TB.MaxSize.Height - Border) / 2f);
-
 			TB.TextChanged += (s, e) => UpdateValueFromText();
 
 			Increment = 1m;
@@ -206,10 +203,10 @@ namespace SummerGUI
 
 			float buttonWidth = UpButton.PreferredSize (ctx).Width;
 			float halfHeight = bounds.Height / 2f;
-			float buttonLeft = bounds.Right - buttonWidth;
+			float buttonLeft = bounds.Right - buttonWidth;			
 
 			UpButton.SetBounds (new RectangleF (buttonLeft, bounds.Top, buttonWidth, halfHeight));
-			DownButton.SetBounds (new RectangleF (buttonLeft, bounds.Top + halfHeight - 1, buttonWidth, bounds.Height - halfHeight));
+			DownButton.SetBounds (new RectangleF (buttonLeft, bounds.Top + halfHeight - 1, buttonWidth, halfHeight));			
 
 			TB.OnLayout(ctx, new RectangleF(bounds.Left, bounds.Top, bounds.Width - buttonWidth, bounds.Height));
 		}

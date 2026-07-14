@@ -56,11 +56,10 @@ namespace SummerGUI.ColorPicker
         {
             base.OnPaintBackground(ctx, bounds);
 
-            // 1. Hintergrund für den Gripper-Bereich (rechts) zeichnen
-            float actualGripperAreaWidth = GripperSize * this.ScaleFactor;
-            float barWidth = bounds.Width - actualGripperAreaWidth;
+            // 1. Hintergrund für den Gripper-Bereich (rechts) zeichnen            
+            float barWidth = bounds.Width - GripperSize;
 
-            RectangleF gripperBackgroundRect = new RectangleF(bounds.Left + barWidth, bounds.Top, actualGripperAreaWidth, bounds.Height);
+            RectangleF gripperBackgroundRect = new RectangleF(bounds.Left + barWidth, bounds.Top, GripperSize, bounds.Height);
             ctx.FillRectangle(Style.BackColorBrush, gripperBackgroundRect);
 
             // 2. Den eigentlichen Farbbalken (links) in zwei Hälften zeichnen
