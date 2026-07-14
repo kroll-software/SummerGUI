@@ -26,18 +26,20 @@ namespace SummerGUI
 
 		public static Color ToColor(this Color4 color4)
 		{
-			// Schnelle Absicherung der Floats vor der Multiplikation (falls sie minimal ausbrechen)
-			float a = color4.A < 0f ? 0f : (color4.A > 1f ? 1f : color4.A);
-			float r = color4.R < 0f ? 0f : (color4.R > 1f ? 1f : color4.R);
-			float g = color4.G < 0f ? 0f : (color4.G > 1f ? 1f : color4.G);
-			float b = color4.B < 0f ? 0f : (color4.B > 1f ? 1f : color4.B);
+			// 1. Clamping & Skalierung auf 0-255
+			// Math.Clamp wird vom JIT-Compiler direkt in SIMD-CPU-Befehle (minss/maxss) übersetzt.
+			float a = Math.Clamp(color4.A, 0f, 1f) * 255f;
+			float r = Math.Clamp(color4.R, 0f, 1f) * 255f;
+			float g = Math.Clamp(color4.G, 0f, 1f) * 255f;
+			float b = Math.Clamp(color4.B, 0f, 1f) * 255f;
 
-			return Color.FromArgb(
-				(int)Math.Round(a * 255f),
-				(int)Math.Round(r * 255f),
-				(int)Math.Round(g * 255f),
-				(int)Math.Round(b * 255f)
-			);
+			// 2. Schnelles Runden via Cast & Bit-Shifting direkt in ein ARGB-Int
+			int argb = ((int)(a + 0.5f) << 24) |
+					((int)(r + 0.5f) << 16) |
+					((int)(g + 0.5f) << 8)  |
+						(int)(b + 0.5f);
+
+			return Color.FromArgb(argb);
 		}
 
 		public static Color4 ToColor4(this Color color)
