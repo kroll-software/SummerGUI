@@ -65,7 +65,7 @@ namespace SummerGUI
 					Task.Run(() => {
 						TextureImage oldImage = MissingImage;
 						try {
-							MissingImage = TextureImage.FromFile(MissingImagePath, Context, null, ImageSize);	
+							MissingImage = TextureImage.FromFile(MissingImagePath, null, ImageSize);	
 						} catch (Exception ex) {
 							ex.LogError();
 						} finally {
@@ -126,7 +126,7 @@ namespace SummerGUI
 		public bool AddImage(string key, string filePath)
 		{					
 			try {				
-				TextureImage image = TextureImage.FromFile (filePath, Context, key, ImageSize);	
+				TextureImage image = TextureImage.FromFile (filePath, key, ImageSize);	
 				return m_Images.TryAdd (key, image);
 			} catch (Exception ex) {
 				ex.LogError ();

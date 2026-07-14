@@ -44,6 +44,8 @@ namespace SummerGUI
 			Styles.SetStyle (new TextBoxWidgetStyle (), WidgetStates.Default);
 			Styles.SetStyle (new TextBoxActiveWidgetStyle (), WidgetStates.Active);
 			Styles.SetStyle(new TextBoxDisabledWidgetStyle(), WidgetStates.Disabled);
+
+			//TB.TextChanged += (s, e) => OnTextChanged();
 		}			
 
 		public bool ReadOnly { 

@@ -23,6 +23,8 @@ namespace SummerGUI
 		{
 			if (ValueChanged != null)
 				ValueChanged (this, EventArgs.Empty);
+
+			OnTextChanged();
 		}
 
 		public Button UpButton { get; private set; }

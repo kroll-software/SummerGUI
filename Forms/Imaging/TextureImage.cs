@@ -63,7 +63,7 @@ namespace SummerGUI
 		// System.Drawing.Imaging.PixelFormat PixFormat wird nicht mehr benötigt
 
 		// FromFile lädt das Bild und ruft dann die interne Ladefunktion auf
-		public static TextureImage FromFile(string filePath, IGUIContext ctx = null, string key = null, Size size = default(Size))
+		public static TextureImage FromFile(string filePath, string key = null, Size size = default(Size))
 		{
 			if (String.IsNullOrEmpty (filePath))
 				throw new ArgumentException ("filePath must not be null.");
@@ -91,7 +91,7 @@ namespace SummerGUI
 
 			try {
 				// Verwenden Sie StbImageSharp direkt, keine Bitmap(filePath) Instanziierung
-				return LoadTextureFromFile(filePath, ctx, key, size);
+				return LoadTextureFromFile(filePath, key, size);
 			} catch (Exception ex) {
 				ex.LogError ();
 				throw;
@@ -99,7 +99,7 @@ namespace SummerGUI
 		}
 		
 		// FromBitmap und LoadTexture(Bitmap bmp...) werden durch eine einzige, neue Methode ersetzt:
-		public static TextureImage LoadTextureFromFile(string filePath, IGUIContext ctx, string key, Size size = default(Size))
+		public static TextureImage LoadTextureFromFile(string filePath, string key, Size size = default(Size))
 		{
 			try
 			{
@@ -132,7 +132,7 @@ namespace SummerGUI
 			}
 		}
 
-		public static TextureImage FromBytes(byte[] data, IGUIContext ctx, string key, Size size = default(Size))
+		public static TextureImage FromBytes(byte[] data, string key, Size size = default(Size))
 		{
 			if (data == null || data.Length == 0)
 				return null;
@@ -161,6 +161,37 @@ namespace SummerGUI
 
 					return retVal;
 				}
+			}
+			catch (Exception ex)
+			{
+				ex.LogError();
+				return null;
+			}
+		}
+
+		public static TextureImage FromRawBytes(byte[] rawRgbaData, string key, Size size)
+		{
+			if (rawRgbaData == null || rawRgbaData.Length == 0)
+				return null;
+
+			try
+			{
+				// Wir umgehen StbImageSharp's Parser komplett und befüllen das Result direkt
+				ImageResult image = new ImageResult
+				{
+					Data = rawRgbaData,
+					Width = size.Width,
+					Height = size.Height,
+					SourceComp = ColorComponents.RedGreenBlueAlpha,
+					Comp = ColorComponents.RedGreenBlueAlpha
+				};
+
+				TextureImage retVal = new TextureImage(key);
+				retVal.TextureID = UploadTextureToOpenGL(image); // Nutzt deine bestehende GL-Logik
+				retVal.Size = size;
+				retVal.URI = "memory://raw_" + key;
+
+				return retVal;
 			}
 			catch (Exception ex)
 			{

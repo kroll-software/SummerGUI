@@ -1035,6 +1035,41 @@ namespace SummerGUI
             if (s.DepthTest) GL.Enable(EnableCap.DepthTest); else GL.Disable(EnableCap.DepthTest);
         }
 
+        public void AddQuad(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, Color4 c1, Color4 c2, Color4 c3, Color4 c4)
+        {
+            DrawCount++;
+
+            // 1. Typ-Sicherheit garantieren
+            if (_currentType != PrimitiveType.Triangles) Flush();
+            _currentType = PrimitiveType.Triangles;
+
+            // 2. Platz für 4 Vertices UND 6 Indizes prüfen
+            if (vertexCount + 4 >= MAX_VERTICES || indexCount + 6 >= MAX_INDICES)
+            {
+                Flush();
+            }
+
+            // Da wir reine Vertex-Farben ohne Textur nutzen
+            SetWhiteTexture();
+
+            uint startIdx = (uint)vertexCount;
+
+            // Vertices füllen (Reihenfolge analog zu deinem Rectangle: TL, TR, BR, BL)
+            vertexArray[vertexCount++] = new GUIVertex { Position = p1, Color = c1, TexCoord = Vector2.Zero }; // Oben links
+            vertexArray[vertexCount++] = new GUIVertex { Position = p2, Color = c2, TexCoord = Vector2.Zero }; // Oben rechts
+            vertexArray[vertexCount++] = new GUIVertex { Position = p3, Color = c3, TexCoord = Vector2.Zero }; // Unten rechts
+            vertexArray[vertexCount++] = new GUIVertex { Position = p4, Color = c4, TexCoord = Vector2.Zero }; // Unten links
+
+            // Indizes füllen (Zwei Dreiecke, die das Quad bilden)
+            indexArray[indexCount++] = startIdx + 0;
+            indexArray[indexCount++] = startIdx + 1;
+            indexArray[indexCount++] = startIdx + 2;
+            
+            indexArray[indexCount++] = startIdx + 2;
+            indexArray[indexCount++] = startIdx + 3;
+            indexArray[indexCount++] = startIdx + 0;
+        }
+
         private int m_ClipOffset = 0;
 
         public void SetClip(IGUIContext ctx, RectangleF bounds)

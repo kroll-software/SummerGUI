@@ -148,7 +148,7 @@ namespace SummerGUI
 			try {
 				if (Image != null && ShouldDisposeImage)
 					Image.Dispose ();
-				Image = TextureImage.FromFile (filePath.FixedExpandedPath(), ctx);
+				Image = TextureImage.FromFile (filePath.FixedExpandedPath());
 				//Image.Opacity = 0.999f;
 			} catch (Exception ex) {
 				ex.LogError ();

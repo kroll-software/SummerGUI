@@ -14,6 +14,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
 using KS.Foundation;
 using SummerGUI.Editor;
+using SummerGUI.DataGrid;
 
 namespace SummerGUI
 {		
@@ -566,8 +567,8 @@ namespace SummerGUI
 				return false;
 			default:
 				//this.LogDebug ("OnKeyDown not handled: {0}", e.Key.ToString ());
-				//return false;
-				break;
+				// Das muss sein, sonst funktioniert NumberTextbox nicht!
+				return false;				
 			}
 						
 			EnsureCursorVisible ();
@@ -613,7 +614,7 @@ namespace SummerGUI
 				if (MaxLength > 0)
 				{
 					int textLen = Text == null ? 0 : Text.Length;
-					if (textLen >= MaxLength)
+					if (textLen - SelLength >= MaxLength)
 						return false;					
 				}
 

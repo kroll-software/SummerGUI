@@ -60,7 +60,7 @@ namespace SummerGUI
 					return;
 
 				try {					
-					Image = TextureImage.FromFile(filepath, ctx);				
+					Image = TextureImage.FromFile(filepath);				
 					Image.Opacity = opacity;
 				} catch (Exception ex) {
 					ex.LogError ();

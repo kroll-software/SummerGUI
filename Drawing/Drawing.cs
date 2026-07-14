@@ -26,12 +26,29 @@ namespace SummerGUI
 
 		public static Color ToColor(this Color4 color4)
 		{
-			return Color.FromArgb ((int)color4.A * 255, (int)color4.R * 255, (int)color4.G * 255, (int)color4.B * 255);
+			// Schnelle Absicherung der Floats vor der Multiplikation (falls sie minimal ausbrechen)
+			float a = color4.A < 0f ? 0f : (color4.A > 1f ? 1f : color4.A);
+			float r = color4.R < 0f ? 0f : (color4.R > 1f ? 1f : color4.R);
+			float g = color4.G < 0f ? 0f : (color4.G > 1f ? 1f : color4.G);
+			float b = color4.B < 0f ? 0f : (color4.B > 1f ? 1f : color4.B);
+
+			return Color.FromArgb(
+				(int)Math.Round(a * 255f),
+				(int)Math.Round(r * 255f),
+				(int)Math.Round(g * 255f),
+				(int)Math.Round(b * 255f)
+			);
 		}
 
 		public static Color4 ToColor4(this Color color)
 		{
-			return new Color4 (color.R / 255, color.G / 255, color.B / 255, color.A / 255);
+			// Division durch 255f (Float), um Werte zwischen 0.0f und 1.0f zu erhalten
+			return new Color4(
+				color.R / 255f, 
+				color.G / 255f, 
+				color.B / 255f, 
+				color.A / 255f
+			);
 		}
 
 		// ******************************************
