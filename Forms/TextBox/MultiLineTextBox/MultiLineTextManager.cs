@@ -331,7 +331,7 @@ namespace SummerGUI.Editor
 			get{
 				return CursorPosition + CurrentParagraph.PositionOffset;
 			}
-		}
+		}		
 
 		public Paragraph CurrentParagraph 
 		{ 
@@ -978,6 +978,7 @@ namespace SummerGUI.Editor
 			return sb.ToString ();
 		}
 
+		/***
 		public void SetCursorAbsPosition(int pos)
 		{
 			int idx = FindParagraphIndexByPosition (pos);
@@ -987,6 +988,27 @@ namespace SummerGUI.Editor
 				CursorPosition = pos - para.PositionOffset;
 			}
 			ResetCursorColoumns ();
+		}
+		***/
+
+		public void SetCursorAbsPosition(int pos)
+		{
+			if (Paragraphs == null || Paragraphs.Count == 0)
+				return;
+
+			// Position im gültigen Gesamtraum absichern
+			pos = Math.Max(0, pos);
+
+			int idx = FindParagraphIndexByPosition(pos);
+			idx = idx.Clamp(0, Paragraphs.Count - 1);
+			
+			Paragraph para = Paragraphs[idx];
+			
+			CurrentParagraphIndex = idx;
+			// Relative Cursorposition im Paragraph setzen
+			CursorPosition = Math.Max(0, pos - para.PositionOffset);
+			
+			ResetCursorColoumns();
 		}
 
 		public SpecialCharacterFlags Flags { get; set; }

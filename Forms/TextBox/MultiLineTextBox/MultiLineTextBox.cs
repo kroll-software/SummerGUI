@@ -16,6 +16,7 @@ using KS.Foundation;
 using SummerGUI.Editor;
 using SummerGUI.Scrolling;
 using System.Security.Cryptography.X509Certificates;
+using SummerGUI.DataGrid;
 
 namespace SummerGUI
 {
@@ -123,8 +124,8 @@ namespace SummerGUI
 			}
 			set {
 				if (value == null)
-					value = String.Empty;				
-                if (MaxLength > 0 && value.Length > MaxLength)
+					value = String.Empty;                
+				if (MaxLength > 0 && value.Length  > MaxLength)
 					value = value.StrLeft(MaxLength);				
 				IsLoading = true;
 				OnEnabledChanged ();
@@ -382,13 +383,7 @@ namespace SummerGUI
 					return null;
 				return RowManager.GetCharRange (SelStart, SelLength);
 			}
-		}			
-
-		void StartSelection()
-		{				
-			if (SelLength == 0)
-				m_SelStart = RowManager.AbsCursorPosition;
-		}
+		}		
 
 		void SetSelection()
 		{		
@@ -451,18 +446,30 @@ namespace SummerGUI
 				return true;
 
 			case Keys.Left:
-				if (e.Control)
-					RowManager.MovePrevWord ();
-				else
-					RowManager.MovePrevChar ();
-				SetSelection (e.Shift);
+				if (!e.Shift && SelLength > 0) {
+					// Bei 'Left' ohne Shift an den ANFANG der Selektion springen
+					RowManager.SetCursorAbsPosition(SelStart);
+					ResetSelection();
+				} else {
+					if (e.Control)
+						RowManager.MovePrevWord();
+					else
+						RowManager.MovePrevChar();
+					SetSelection(e.Shift);
+				}
 				break;
 			case Keys.Right:
-				if (e.Control)
-					RowManager.MoveNextWord ();
-				else
-					RowManager.MoveNextChar ();
-				SetSelection (e.Shift);
+				if (!e.Shift && SelLength > 0) {
+					// Bei 'Right' ohne Shift an das ENDE der Selektion springen
+					RowManager.SetCursorAbsPosition(SelStart + SelLength);
+					ResetSelection();
+				} else {
+					if (e.Control)
+						RowManager.MoveNextWord();
+					else
+						RowManager.MoveNextChar();
+					SetSelection(e.Shift);
+				}
 				break;
 			case Keys.Up:
 				if (e.Control) {
@@ -544,6 +551,7 @@ namespace SummerGUI
                     SelLength = 0;
                 }
 				RowManager.InsertLineBreak ();
+				ResetSelection();
 				SetupDocumentSize ();
                 break;
 			case Keys.C:
