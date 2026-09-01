@@ -12,7 +12,7 @@ Are you a C# developer used to the comfort of Windows development but want to br
 ## ✨ What’s New? (The 2026 Evolution)
 We have completely rebuilt the engine to meet modern standards. No more legacy code—just pure performance.
 
-- 🎯 **.NET 8 Framework:** Built on the latest LTS release for maximum speed, security, and modern C# language features.
+- 🎯 **.NET 10 Framework:** Built on the latest LTS release for maximum speed, security, and modern C# language features.
 
 - 💎 **OpenGL Core Profile:** We’ve ditched the old Compatibility Profile. SummerGUI now talks directly to modern GPUs, ensuring compatibility with the latest drivers and hardware.
 
