@@ -10,6 +10,7 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
+using OpenTK.Windowing.Common;
 
 namespace SummerGUI
 {
@@ -21,7 +22,7 @@ namespace SummerGUI
 			Format = FontFormat.DefaultSingleLine;
 			Margin = Padding.Empty;
 			InvalidateOnHeartBeat = true;
-		}
+		}		
 
 		public override void OnResize (IGUIContext ctx)
 		{

@@ -450,30 +450,54 @@ namespace SummerGUI
 
 		readonly DelayedAction TooltipDelayAction;
 		void TooltipAction()
-		{			
-			try {				
+		{           
+			try {               
 				if (IsDisposed || !TooltipDelayAction.Enabled)
-					return;				
-				TooltipDelayAction.Stop ();
+					return;             
+				TooltipDelayAction.Stop();
 				m_Tooltip.Visible = false;
 				if (String.IsNullOrEmpty(m_Tooltip.Text)) {
 					return;
 				}
-				SizeF sz = m_Tooltip.PreferredSize (CTX);
+				SizeF sz = m_Tooltip.PreferredSize(CTX);
 				if (sz != SizeF.Empty) {
-					RectangleF ttBounds = new RectangleF (m_Tooltip.Locos, sz);
+					RectangleF ttBounds = new RectangleF(m_Tooltip.Locos, sz);
+
+					// 1. Textumbruch anwenden, falls die maximale Breite überschritten wird
 					if (ttBounds.Width > m_Tooltip.MaxSize.Width) {
 						m_Tooltip.Text = m_Tooltip.Text.WrapText((int)m_Tooltip.MaxSize.Width);
+						// Größe nach dem Wrap neu berechnen
+						sz = m_Tooltip.PreferredSize(CTX);
+						ttBounds.Size = sz;
 					}
-					if (ttBounds.Right > Width)
-						ttBounds.X -= ttBounds.Right - Width + 4;
+
+					// 2. Horizontale Begrenzung (Rechter Rand)
+					if (ttBounds.Right > Width) {
+						ttBounds.X -= (ttBounds.Right - Width + 4);
+					}
+					if (ttBounds.X < 0) {
+						ttBounds.X = 4; // Schutz gegen Abdrift nach links
+					}
+
+					// 3. Vertikale Begrenzung (Unterer Rand)
+					if (ttBounds.Bottom > Height) {
+						// Verschiebt den Tooltip nach oben, so dass er oberhalb der Ursprungsposition/Statusbar liegt
+						ttBounds.Y -= (ttBounds.Height + 4); 
+						
+						// Alternative (falls er strikt an die Unterkante gepresst werden soll):
+						// ttBounds.Y -= (ttBounds.Bottom - Height + 4);
+					}
+					if (ttBounds.Y < 0) {
+						ttBounds.Y = 4; // Schutz gegen Abdrift nach oben
+					}
+
 					m_Tooltip.SetBounds(ttBounds);
 					m_Tooltip.Visible = true;
 					m_Tooltip.OnShow();
 					Invalidate(1);
 				}
 			} catch (Exception ex) {
-				ex.LogError ();
+				ex.LogError();
 			}
 		}
 			
