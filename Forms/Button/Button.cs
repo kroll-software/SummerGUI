@@ -271,7 +271,7 @@ namespace SummerGUI
 		{
 			float distance = 3f * ScaleFactor;
 			bounds.Inflate (-distance, -distance);
-			using (var pen = new Pen(Color.FromArgb(180, Style.ForeColorPen.Color), 1f * ScaleFactor, LineStyles.Dotted)) {
+			using (var pen = new Pen(Color.FromArgb(180, Style.ForeColorPen.Color), 1f * ScaleFactor, DashStyle.Dot)) { 
 				ctx.DrawRectangle (pen, bounds);
 			}
 		}

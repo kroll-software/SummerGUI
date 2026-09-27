@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Diagnostics;
+using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -35,9 +34,9 @@ namespace SummerGUI
 
 			// 2. Schnelles Runden via Cast & Bit-Shifting direkt in ein ARGB-Int
 			int argb = ((int)(a + 0.5f) << 24) |
-					((int)(r + 0.5f) << 16) |
-					((int)(g + 0.5f) << 8)  |
-						(int)(b + 0.5f);
+						((int)(r + 0.5f) << 16) |
+						((int)(g + 0.5f) << 8)  |
+									(int)(b + 0.5f);
 
 			return Color.FromArgb(argb);
 		}
@@ -54,30 +53,61 @@ namespace SummerGUI
 		}
 
 		// ******************************************
-		// LINES
-
-		public static void DrawLine(this IGUIContext ctx, Pen pen, float x1, float y1, float x2, float y2)
-		{					
-			ctx.Batcher.AddLine(x1, y1, x2, y2, pen.Color, pen.Width, pen.LineStyle);			
-		}				
-
 		// ******************************************
+		// LINES
+		// Dash wird CPU-seitig entlang der Strecke gesteppt (DashStyle inkl. Custom-Pattern;
+		// Musterlängen in Einheiten der Pen-Breite — identische Semantik wie WinForms/GDI+).
+		// WinForms: Graphics.DrawLine(Pen pen, float x1, float y1, float x2, float y2)
 
-		public static void DrawPolygon(this IGUIContext ctx, Pen pen, PointF[] points)
+		public static void DrawLine (this IGUIContext ctx, Pen pen, float x1, float y1, float x2, float y2)
 		{
-			if (points == null || points.Length < 2)
+			if (pen == null) return;
+			DashPen (ctx, pen, x1, y1, x2, y2);
+		}
+
+		// WinForms: Graphics.DrawLine(Pen pen, Point pt1, Point pt2)
+		public static void DrawLine (this IGUIContext ctx, Pen pen, System.Drawing.Point pt1, System.Drawing.Point pt2)
+			=> DrawLine (ctx, pen, pt1.X, pt1.Y, pt2.X, pt2.Y);
+
+		// WinForms: Graphics.DrawLine(Pen pen, PointF pt1, PointF pt2)
+		public static void DrawLine (this IGUIContext ctx, Pen pen, PointF pt1, PointF pt2)
+			=> DrawLine (ctx, pen, pt1.X, pt1.Y, pt2.X, pt2.Y);
+
+		// WinForms: Graphics.DrawLines(Pen pen, PointF[] points)
+		public static void DrawLines (this IGUIContext ctx, Pen pen, PointF[] points)
+		{
+			if (pen == null || points == null || points.Length < 2)
+				return;
+			EmitDashedSegments (ctx, pen, DashEngine.TessellatePolyline (points, false, pen.Width, DashEngine.GetPattern (pen.DashStyle, pen.DashPattern)));
+		}
+
+		// WinForms: Graphics.DrawPolygon(Pen pen, PointF[] points) — offene Polyline (letzter→erster wird NICHT verbunden)
+		public static void DrawPolygon (this IGUIContext ctx, Pen pen, PointF[] points)
+		{
+			if (pen == null || points == null || points.Length < 2)
+				return;
+			EmitDashedSegments (ctx, pen, DashEngine.TessellatePolyline (points, false, pen.Width, DashEngine.GetPattern (pen.DashStyle, pen.DashPattern)));
+		}
+
+		// Interne Hilfe: dash-teyllierte Segmente als dicke Lintie-Linien in den Batcher.
+		static void EmitDashedSegments (IGUIContext ctx, Pen pen, List<DashEngine.Segment> segs)
+		{
+			if (segs == null || segs.Count == 0)
 				return;
 
-			// Wir zeichnen jede Kante als Linie über den Batcher
-			for (int i = 0; i < points.Length; i++)
+			float w = pen.Width > 0f ? pen.Width : 1f;
+			Color4 c = pen.Color.ToColor4 ();
+			for (int i = 0; i < segs.Count; i++)
 			{
-				PointF pStart = points[i];
-				// Wenn wir am Ende sind, verbinden wir zum ersten Punkt (LineLoop-Ersatz)
-				PointF pEnd = points[(i + 1) % points.Length];
+				DashEngine.Segment s = segs[i];
+				ctx.Batcher.AddLine (s.x1, s.y1, s.x2, s.y2, c, w);
+			}
+		}
 
-				// Hier nutzen wir eine Batcher.DrawLine Methode
-				ctx.Batcher.AddLine(pStart.X, pStart.Y, pEnd.X, pEnd.Y,pen.Color,pen.Width);
-			}			
+		// Interne Hilfe: ein gerades Segment mit dash-Pattern.
+		static void DashPen (IGUIContext ctx, Pen pen, float x1, float y1, float x2, float y2)
+		{
+			EmitDashedSegments (ctx, pen, DashEngine.Tessellate (x1, y1, x2, y2, pen.Width, DashEngine.GetPattern (pen.DashStyle, pen.DashPattern)));
 		}
 
 		public static void FillPolygon(this IGUIContext ctx, Brush brush, PointF[] points)
@@ -99,13 +129,16 @@ namespace SummerGUI
 		}
 
 		public static void FillRectangle(this IGUIContext ctx, Brush brush, RectangleF r)
-		{						
-			if (brush as SolidBrush != null)
-				FillRectangle (ctx, brush as SolidBrush, r);
-			else if (brush as LinearGradientBrush != null)
-				FillRectangle (ctx, brush as LinearGradientBrush, r);
-			else if (brush as HatchBrush != null)
-				FillRectangle (ctx, brush as HatchBrush, r);			
+		{
+			if (brush == null)
+				return;
+
+			if (brush is SolidBrush solid)
+				FillRectangle (ctx, solid, r);
+			else if (brush is LinearGradientBrush grad)
+				FillRectangle (ctx, grad, r);
+			else if (brush is HatchBrush hatch)
+				FillRectangle (ctx, hatch, r);
 		}
 		
 		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, float x, float y, float width, float height)
@@ -115,7 +148,7 @@ namespace SummerGUI
 
 		public static void FillRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
-			if (r.Width < 0 || r.Height < 0)
+			if (brush == null || r.Width < 0 || r.Height < 0)
 				return;
 
 			switch (brush.Direction) 
@@ -138,7 +171,8 @@ namespace SummerGUI
 
 			case GradientDirections.BackwardDiagonal:
 				FillRectangleBackwardDiagonal (ctx, brush, r);
-				break;							
+				break;				
+			
 			}
 		}
 		
@@ -156,7 +190,7 @@ namespace SummerGUI
 				brush.Color           // Bottom-Left
 			);
 		}
-			
+		
 		private static void FillRectangleVertical(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
 		{
 			ctx.Batcher.AddRectangle(r, 
@@ -185,44 +219,61 @@ namespace SummerGUI
 		}
 
 		private static void FillRectangleBackwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r)
-		{	
+		{
 			ctx.Batcher.AddRectangle(r, 
 				brush.Color,          // TL (Anders)
 				brush.GradientColor,  // TR
 				brush.GradientColor,  // BR
 				brush.GradientColor); // BL
 		}		
-
+		
 		// *** FillRectangle		
 
 		public static void FillRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r)
 		{
-			if (r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
+			if (brush == null || r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRectangle(r, brush.Color);
 		}
-			
+		
 		public static void FillRectangle(this IGUIContext ctx, Brush brush, float x, float y, float width, float height)
-		{			
+		{	
 			FillRectangle(ctx, brush, new RectangleF(x, y, width, height));
+		}
+
+		// *** HatchBrush (WinForms: Graphics.FillRectangle (Brush brush, Rectangle rect)) ***
+		// Der Hintergrund (brush.Color) wird erst gefüllt, dann das Motiv (brush.HatchColor).
+
+		public static void FillRectangle(this IGUIContext ctx, HatchBrush brush, RectangleF r)
+		{
+			if (brush == null || r.Width <= 0 || r.Height <= 0)
+				return;
+
+			HatchRenderer.Render (ctx, brush.HatchStyle, r, brush.Color, brush.HatchColor);
+		}
+
+		public static void FillRectangle(this IGUIContext ctx, HatchBrush brush, float x, float y, float width, float height)
+		{
+			FillRectangle (ctx, brush, new RectangleF (x, y, width, height));
 		}
 
 		// *** Rounded Rectangles ***
 
 		public static void FillRoundedRectangle(this IGUIContext ctx, Brush brush, RectangleF r, float radius)
 		{						
-			if (brush as SolidBrush != null)
-				FillRoundedRectangle (ctx, brush as SolidBrush, r, radius);
-			else if (brush as LinearGradientBrush != null)
-				FillRoundedRectangle (ctx, brush as LinearGradientBrush, r, radius);
-			//else if (brush as HatchBrush != null)
-			//	FillRoundedRectangle (ctx, brush as HatchBrush, r);			
+			if (brush == null)
+				return;
+
+			SolidBrush solid = brush as SolidBrush;
+			if (solid != null)
+				FillRoundedRectangle (ctx, solid, r, radius);
+			return;
 		}
 
 		public static void FillRoundedRectangle(this IGUIContext ctx, SolidBrush brush, RectangleF r, float radius)
 		{						
-			if (r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
+			if (brush == null || r.Width <= 0 || r.Height <= 0 || brush.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRoundedRectangle(r, brush.Color, radius);
@@ -230,7 +281,7 @@ namespace SummerGUI
 
 		public static void FillRoundedRectangle(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
 		{
-			if (r.Width <= 0 || r.Height <= 0)
+			if (brush == null || r.Width <= 0 || r.Height <= 0)
 				return;
 
 			switch (brush.Direction) 
@@ -253,7 +304,8 @@ namespace SummerGUI
 
 			case GradientDirections.BackwardDiagonal:
 				FillRoundedRectangleBackwardDiagonal (ctx, brush, r, radius);
-				break;							
+				break;				
+			
 			}
 		}
 		
@@ -272,7 +324,7 @@ namespace SummerGUI
 				radius
 			);
 		}
-			
+		
 		private static void FillRoundedRectangleVertical(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
 		{
 			ctx.Batcher.AddRoundedRectangleGradient(r, 
@@ -301,7 +353,7 @@ namespace SummerGUI
 		}
 
 		private static void FillRoundedRectangleBackwardDiagonal(this IGUIContext ctx, LinearGradientBrush brush, RectangleF r, float radius)
-		{	
+		{
 			ctx.Batcher.AddRoundedRectangleGradient(r, 
 				brush.Color,          // TL (Anders)
 				brush.GradientColor,  // TR
@@ -309,33 +361,34 @@ namespace SummerGUI
 				brush.GradientColor, radius); // BL
 		}
 
-		// *** DrawRectangle
+		// *** DrawRectangle (WinForms: Graphics.DrawRectangle (Pen pen, ...)) ***
 
 		public static void DrawRectangle(this IGUIContext ctx, Pen pen, float x, float y, float width, float height)
-		{			
+		{	
 			DrawRectangle (ctx, pen, new RectangleF (x, y, width, height));
 		}
-			
+		
 		public static void DrawRectangle(this IGUIContext ctx, Pen pen, RectangleF r)
-		{	
-			if (r.Width <= 0 || r.Height <= 0 || pen.Color.A == 0)
+		{
+			if (pen == null || r.Width <= 0 || r.Height <= 0)
 				return;
 
-			float w = pen.Width;
-    
-			// Oben
-			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Y, r.Width, w), pen.Color);
-			// Unten
-			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Bottom - w, r.Width, w), pen.Color);
-			// Links
-			ctx.Batcher.AddRectangle(new RectangleF(r.X, r.Y, w, r.Height), pen.Color);
-			// Rechts
-			ctx.Batcher.AddRectangle(new RectangleF(r.Right - w, r.Y, w, r.Height), pen.Color);		
+			// Vier Kanten als offene, geschlossene Polyline — das Dash-Muster läuft
+			// nahtlos um die Ecke (WinForms-Verhalten).
+			PointF[] pts =
+			{
+				new PointF (r.Left, r.Top),
+				new PointF (r.Right, r.Top),
+				new PointF (r.Right, r.Bottom),
+				new PointF (r.Left, r.Bottom),
+				new PointF (r.Left, r.Top)
+			};
+			EmitDashedSegments (ctx, pen, DashEngine.TessellatePolyline (pts, false, pen.Width, DashEngine.GetPattern (pen.DashStyle, pen.DashPattern)));
 		}
 
 		public static void DrawRoundedRectangle(this IGUIContext ctx, Pen pen, RectangleF r, float radius)
 		{
-			if (r.Width <= 0 || r.Height <= 0 || pen.Color.A == 0)
+			if (pen == null || r.Width <= 0 || r.Height <= 0 || pen.Color.A == 0)
 				return;
 
 			ctx.Batcher.AddRoundedRectangleOutline(r, pen.Color, pen.Width, radius);
@@ -346,7 +399,7 @@ namespace SummerGUI
 		// CIRCLE
 
 		public static void DrawCircle(this IGUIContext ctx, Pen pen, float cx, float cy, float radius, float scale = 1)
-		{			
+		{	
 			ctx.DrawEllipse (pen, cx, cy, radius, radius, scale);
 		}
 
@@ -360,6 +413,7 @@ namespace SummerGUI
 
 		public static void DrawEllipse(this IGUIContext ctx, Pen pen, float cx, float cy, float radiusX, float radiusY, float scale = 1)
 		{
+			if (pen == null) return;
 			float r = (MathF.Abs(radiusX) + MathF.Abs(radiusY)) / 2f;
 			if (r < float.Epsilon) return;
 
@@ -368,31 +422,31 @@ namespace SummerGUI
 
 			if (numSteps < 3) numSteps = 12; // Sicherheitshalber Minimum
 
-			Vector2 firstPoint = Vector2.Zero;
-			Vector2 lastPoint = Vector2.Zero;
+			PointF firstPoint = PointF.Empty;
+			PointF lastPoint = PointF.Empty;
 
 			for (int i = 0; i <= numSteps; i++)
 			{                   
 				float angle = i * da;
 				float x = (MathF.Cos(angle) * radiusX) + cx;
 				float y = (MathF.Sin(angle) * radiusY) + cy;
-				Vector2 currentPoint = new Vector2(x, y);
+				PointF currentPoint = new PointF(x, y);
 
 				if (i == 0) {
 					firstPoint = currentPoint;
 				} else {
-					// Hier nutzen wir deine neue AddLine Methode aus dem Batcher!
-					ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, currentPoint.X, currentPoint.Y, pen.Color, pen.Width);
+					DashPen (ctx, pen, lastPoint.X, lastPoint.Y, currentPoint.X, currentPoint.Y);
 				}
 				lastPoint = currentPoint;
 			}
 			
 			// Den Kreis schließen
-			ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, firstPoint.X, firstPoint.Y, pen.Color, pen.Width);
+			DashPen (ctx, pen, lastPoint.X, lastPoint.Y, firstPoint.X, firstPoint.Y);
 		}
 
 		public static void FillEllipse(this IGUIContext ctx, Brush brush, float cx, float cy, float radiusX, float radiusY, float scale = 1)
 		{
+			if (brush == null) return;
 			ctx.Batcher.FillEllipse(brush.Color, cx, cy, radiusX, radiusY, scale);			
 		}
 
@@ -403,6 +457,7 @@ namespace SummerGUI
 
 		public static void DrawPie(this IGUIContext ctx, Pen pen, float x, float y, float radiusX, float radiusY, float startAngle, float sweepAngle)
 		{
+			if (pen == null) return;
 			float r = (MathF.Abs(radiusX) + MathF.Abs(radiusY)) / 2f;
 			float segratio = MathF.Abs(sweepAngle) / 360f;
 			
@@ -424,8 +479,9 @@ namespace SummerGUI
 				
 				if (i == 0) firstPoint = nextPoint;
 
-				if (i > 0)					
-					ctx.Batcher.AddLine(lastPoint.X, lastPoint.Y, nextPoint.X, nextPoint.Y, pen.Color, pen.Width);
+				if (i > 0)				
+				
+					DashPen (ctx, pen, lastPoint.X, lastPoint.Y, nextPoint.X, nextPoint.Y);
 				
 				lastPoint = nextPoint;
 				currentAngle += da;
@@ -434,18 +490,19 @@ namespace SummerGUI
 			// Die "Kuchenstücke"-Seitenlinien zeichnen, wenn es kein voller Kreis ist
 			if (sweepAngle < 360f)
 			{
-				ctx.Batcher.AddLine(center.X, center.Y, firstPoint.X, firstPoint.Y, pen.Color, pen.Width);
-				ctx.Batcher.AddLine(center.X, center.Y, lastPoint.X, lastPoint.Y, pen.Color, pen.Width);
+				DashPen (ctx, pen, center.X, center.Y, firstPoint.X, firstPoint.Y);
+				DashPen (ctx, pen, center.X, center.Y, lastPoint.X, lastPoint.Y);
 			}
 		}		
 
 		public static void FillPie(this IGUIContext ctx, Brush brush, RectangleF rec, float startAngle, float sweepAngle)
 		{
 			FillPie (ctx, brush, rec.X + (rec.Width / 2f), rec.Y + (rec.Height / 2f), rec.Width / 2f, rec.Height / 2f, startAngle, sweepAngle);
-		}			
+		}		
 
 		public static void FillPie(this IGUIContext ctx, Brush brush, float x, float y, float radiusX, float radiusY, float startAngle, float sweepAngle)
 		{                                   
+			if (brush == null) return;
 			if (MathF.Abs(sweepAngle) < 0.01f) 
 				return;
 
@@ -457,7 +514,7 @@ namespace SummerGUI
 			float da = (sweepAngle * (Tau / 360f)) / numSteps;
 
 			float angle = (startAngle - 90f) * (Tau / 360f);
-    		Vector2 center = new Vector2(x, y);
+    			Vector2 center = new Vector2(x, y);
 
 			for (int i = 0; i < numSteps; i++)
 			{
@@ -472,7 +529,7 @@ namespace SummerGUI
 		}
 
 		public static void DrawGrayButton(this IGUIContext ctx, RectangleF rect, byte alpha = 255)
-		{			
+		{	
 			DrawButton(ctx, rect, Color.FromArgb(alpha, Theme.Colors.LightGrayButton), Color.FromArgb(alpha, Theme.Colors.GrayButton), Theme.Colors.Base1);
 		}
 
@@ -482,7 +539,7 @@ namespace SummerGUI
 		}
 
 		public static void DrawButton(this IGUIContext ctx, RectangleF rect, Color TopColor, Color BottomColor, Color LineColor)
-		{			
+		{	
 			RectangleF topPart = new RectangleF(rect.Left, rect.Top, rect.Width, (rect.Height * 3f / 5f) - 2f);
 			RectangleF lowPart = new RectangleF(topPart.Left, topPart.Bottom, topPart.Width, rect.Height - topPart.Height);
 
@@ -516,7 +573,6 @@ namespace SummerGUI
 					ctx.DrawRectangle (aPen, rect.Left, rect.Top, rect.Width, rect.Height);
 				}
 			}
-		}			
+		}		
 	}
 }
-

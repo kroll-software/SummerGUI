@@ -21,7 +21,7 @@ namespace SummerGUI
 			SetBackColor (Color.Empty);
 			SetForeColor (Theme.Colors.Base02);
 			SetBorderColor (Theme.Colors.Base0);
-			BorderColorPen.LineStyle = LineStyles.Dotted;
+			BorderColorPen.DashStyle = DashStyle.Dot;
 		}
 	}
 

@@ -751,7 +751,7 @@ namespace SummerGUI
             // kein Index; wird später über DrawArrays gezeichnet
         }        
 
-        public void AddLine(float x1, float y1, float x2, float y2, Color4 color, float width = 1f, LineStyles style = LineStyles.Solid)
+        public void AddLine(float x1, float y1, float x2, float y2, Color4 color, float width = 1f, DashStyle style = DashStyle.Solid)
         {
             DrawCount++;            
 
@@ -774,13 +774,13 @@ namespace SummerGUI
             float type;
             switch (style)
             {
-                case LineStyles.Dotted:
+                case DashStyle.Dot:
                     type = 2f;
                     break;
-                case LineStyles.Dashed:
+                case DashStyle.Dash:
                     type = 3f;
                     break;
-                case LineStyles.DashDot:
+                case DashStyle.DashDot:
                     type = 4f;
                     break;
                 default:

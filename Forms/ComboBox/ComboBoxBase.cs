@@ -197,7 +197,9 @@ namespace SummerGUI
 		}
 			
 		protected ComboBoxButton Button { get; private set; }
-		protected ComboBoxDropDownOverlay DropDownWindow { get; private set; }
+		// Typed Container so both the classic ComboBoxDropDownOverlay (a
+		// ScrollableContainer) and ColorComboBoxDropDown (a plain Container) can be hosted.
+		protected Container DropDownWindow { get; private set; }
 
 		protected ComboBoxBase (string name)
 			: base (name)
@@ -248,40 +250,52 @@ namespace SummerGUI
 				DropDown ();
 		}        
 
-		public void DropDown()
+		public virtual void DropDown()
 		{
 			if (IsDropedDown)
-				return;			
+				return;
 
 			if (DropDownWindow == null) {
-				DropDownWindow = new ComboBoxDropDownOverlay ();				
-
-				DropDownWindow.SelectedIndex = SelectedIndex;
-				
+				DropDownWindow = CreateDropDownWindow ();
 				AddChild (DropDownWindow);
 				Root?.RegisterOverlay(DropDownWindow);
 				DropDownWindow.Focus ();
-
-				DropDownWindow.ItemSelected += delegate {
-					SelectedIndex = DropDownWindow.SelectedIndex;	
-				};					
-
-				DropDownWindow.Closing += delegate {
-					if (!Button.IsFocused) {
-						DropUp ();
-						Root?.UnregisterOverlay(DropDownWindow);
-						this.Focus ();
-					}	
-				};
-			}				
+				ConfigureDropDownWindow (DropDownWindow);
+				if (DropDownWindow is IComboBoxDropDown dd)
+					dd.SelectedIndex = SelectedIndex;
+			}
 
 			OnDropDownChanged ();
 		}
 
-		public void DropUp()
+		protected virtual Container CreateDropDownWindow()
+		{
+			return new ComboBoxDropDownOverlay ();
+		}
+
+		protected virtual void ConfigureDropDownWindow(Container window)
+		{
+			var dd = window as IComboBoxDropDown;
+			if (dd == null)
+				return;
+
+			dd.ItemSelected += delegate {
+				SelectedIndex = dd.SelectedIndex;
+			};
+
+			dd.Closing += delegate {
+				if (Button == null || !Button.IsFocused) {
+					DropUp ();
+					Root?.UnregisterOverlay(window);
+					this.Focus ();
+				}
+			};
+		}
+
+		public virtual void DropUp()
 		{
 			if (!IsDropedDown)
-				return;			
+				return;
 
 			if (DropDownWindow != null) {
 				DropDownWindow.Visible = false;
@@ -289,7 +303,7 @@ namespace SummerGUI
 				DropDownWindow.Dispose();
 				DropDownWindow = null;
 			}
-				
+
 			Invalidate ();
 			OnDropDownChanged ();
 		}

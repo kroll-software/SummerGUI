@@ -24,6 +24,21 @@ namespace SummerGUI
 		void OnClose();
 	}
 
+	/// <summary>
+	/// Common contract every combo-box drop-down widget implements (the plain
+	/// <see cref="ComboBoxDropDownOverlay"/> and the colour-aware
+	/// <see cref="ColorComboBoxDropDown"/> alike), so that <see cref="ComboBoxBase"/>
+	/// can drive them through a single code path.
+	/// </summary>
+	public interface IComboBoxDropDown : IOverlayWidget
+	{
+		/// <summary>Index of the item currently highlighted inside the drop-down.</summary>
+		int SelectedIndex { get; set; }
+
+		/// <summary>Raised when the user commits an item (click / Enter). The owner selects this index.</summary>
+		event EventHandler<EventArgs> ItemSelected;
+	}
+
 	public class OverlayWidget : Widget, IOverlayWidget
 	{
 		public OverlayModes OverlayMode { get; protected set; }

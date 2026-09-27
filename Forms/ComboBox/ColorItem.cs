@@ -13,15 +13,35 @@ namespace SummerGUI
         public int Alpha { get; private set; }
         
         public ColorItem(Color color, int alpha = 255)
-            : base(color.ToString(), color)
+            : base(FormatName(color), color)
         {
             Color = color;
             Alpha = Math.Max(0, Math.Min(255, alpha));
         }
+
+        /// <summary>
+        /// Re-points this item at a different color (keeps it in place inside
+        /// its ComboBoxItemCollection, used after a "More ..." colour pick).
+        /// </summary>
+        public void ResetColor(Color color)
+        {
+            Color = color;
+            Value = color;
+            Text = FormatName(color);
+        }
+
+        public static string FormatName(Color color)
+        {
+            // Named system colours report their name; custom ones render as hex.
+            string name = color.Name;
+            if (string.IsNullOrEmpty(name) || name == "Empty")
+                return "#" + color.ToArgb().ToString("X8");
+            return name;
+        }
         
         public override string ToString()
         {
-            return Color.Name;
+            return FormatName(Color);
         }
     }
 }

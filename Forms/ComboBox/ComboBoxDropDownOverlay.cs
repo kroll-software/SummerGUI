@@ -37,7 +37,7 @@ namespace SummerGUI
 		}
 	}
 
-	public class ComboBoxDropDownOverlay : OverlayContainer
+	public class ComboBoxDropDownOverlay : OverlayContainer, IComboBoxDropDown
 	{		
 		public event EventHandler<EventArgs> ItemSelected;
 		public void OnItemSelected()
@@ -64,7 +64,62 @@ namespace SummerGUI
 			DocumentSize = new SizeF (bounds.Width, parent.Count * parent.ItemHeight);			
 		}
 
-		public int SelectedIndex { get; set; }
+		public int SelectedIndex
+	{
+		get { return m_SelectedIndex; }
+		set
+		{
+			m_SelectedIndex = value;
+			// Force a layout pass so OnLayout can scroll the selected item
+			// into view once the scroll range is valid.
+			Invalidate ();
+		}
+	}
+	private int m_SelectedIndex = 0;
+
+	/// <summary>
+	/// Scrolls the vertical bar (if any) so the given item is visible.
+	/// No-op when the item already fits into the viewport.
+	/// </summary>
+	public void EnsureIndexVisible(int idx)
+	{
+		ComboBoxBase pb = Parent as ComboBoxBase;
+		if (pb == null || pb.Count == 0)
+			return;
+		if (idx < 0)
+			return;
+		if (idx >= pb.Count)
+			idx = pb.Count - 1;
+
+		VerticalScrollBar vsb = VScrollBar;
+		if (vsb == null || !vsb.IsVisibleEnabled)
+			return;
+
+		float itemHeight = pb.ItemHeight;
+		float viewportHeight = Bounds.Height;
+		if (itemHeight <= 0 || viewportHeight <= 0)
+			return;
+
+		float itemTop = idx * itemHeight;
+		float itemBottom = itemTop + itemHeight;
+		float viewTop = vsb.Value;
+		float viewBottom = viewTop + viewportHeight;
+
+		if (itemTop < viewTop)
+			vsb.Value = itemTop;
+		else if (itemBottom > viewBottom)
+			vsb.Value = itemBottom - viewportHeight;
+	}
+
+	// The scroll bar range (Maximum) is established in base.OnLayout's
+	// SetUpScrollbars — so we may scroll to the selected item AFTER that.
+	// Doing it on every layout pass is deterministic, regardless of whether
+	// the index was set before or after the first layout.
+	public override void OnLayout (IGUIContext ctx, RectangleF bounds)
+	{
+		base.OnLayout (ctx, bounds);
+		EnsureIndexVisible (SelectedIndex);
+	}
 
 		public override void OnMouseMove (MouseMoveEventArgs e)
 		{
@@ -151,10 +206,6 @@ namespace SummerGUI
 			}
 		}        
 			
-		public void EnsureIndexVisible(int idx)
-		{
-			this.Invalidate ();
-		}
 
 		public void SeekIndex(int newIndex)
 		{

@@ -116,16 +116,23 @@ namespace SummerGUI
 		}
 
 		public void ResetClip()
-		{						
+		{				
 			if (m_Stack.Count > 0) {
-				m_Stack.Pop ();
+			m_Stack.Pop ();
 				ClipCount--;
-			}			
-
+			}
+			
 			if (m_Stack.Count > 0)
 				SetClip (m_Stack.Peek (), true);
 			else
-				SetClip (RectangleF.Empty, true);
+			{
+				// Stack ist leer → kein Clip mehr: GPU-Scissor explizit auf das
+				// Vollfenster zurücksetzen (Empty → Fullscreen) und RecentClip löschen.
+				// Sonst bleibt der Scissor beim zuletzt gepushten Bound hängen und
+				// clippt alles, was danach gezeichnet wird (z.B. Labels unter einer Zelle).
+				RecentClip = RectangleF.Empty;
+				ctx.Batcher.SetClip (this.ctx, RectangleF.Empty);
+			}
 		}
 
 		public void Clear()
