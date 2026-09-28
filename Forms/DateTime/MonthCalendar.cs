@@ -108,9 +108,7 @@ namespace SummerGUI
 
 			m_MonthView = mv;
 			m_CurrentDate = date.Date;
-
-			OnSelectionChanged ();
-		}
+			}
 
 		protected DateTime HoverDate;
 
@@ -241,9 +239,10 @@ namespace SummerGUI
 				DateTime dt = MouseToDate (LastMouseDownMousePosition.X, LastMouseDownMousePosition.Y);
 				if (dt != CurrentDate && dt.IsDefined()) {
 					CurrentDate = dt;
+					OnSelectionChanged ();
 					Invalidate ();
 				}
-			}	
+			}
 			base.OnClick (e);
 		}			
 

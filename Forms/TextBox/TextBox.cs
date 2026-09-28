@@ -171,8 +171,8 @@ namespace SummerGUI
 			return new SizeF(proposedSize.Width, Font.TextBoxHeight);
 		}		
 
-		private float TextOffsetX = 0;
-		bool CursorOn = false;
+		protected float TextOffsetX = 0;
+		protected bool CursorOn = false;
 		bool CursorVisible {
 			get{
 				return IsFocused;
@@ -180,6 +180,17 @@ namespace SummerGUI
 		}
 
 		int CursorPosition = 0;
+
+		/// <summary>
+		/// Read/write accessor for the caret position exposed to derived classes (and callers).
+		/// Backed by the private field <c>CursorPosition</c>; no duplication of state.
+		/// </summary>
+		public int CaretIndex
+		{
+			get { return CursorPosition; }
+			set { CursorPosition = value; }
+		}
+
 		float CursorPosPix {
 			get{				
 				return Font.MeasureGlyphs (DisplayText.StrLeft (CursorPosition)).Width + TextOffsetX;
@@ -742,7 +753,7 @@ namespace SummerGUI
 			Modified = true;
 		}
 
-		public void Paste()
+		public virtual void Paste()
 		{
 			if (!CanPaste)
 				return;				
