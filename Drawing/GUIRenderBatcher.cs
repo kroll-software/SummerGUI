@@ -1086,7 +1086,7 @@ namespace SummerGUI
                 currentScissor = rb;
                                 
                 Flush(); // Zeichne alles bisherige mit dem alten Scissor                
-                                                    
+                
                 int glY = ctx.Height - (rb.Y + rb.Height) - ctx.TitleBarHeight + m_ClipOffset;
                 GL.Scissor(rb.X, glY, rb.Width, rb.Height);
             }

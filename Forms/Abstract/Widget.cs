@@ -872,7 +872,7 @@ namespace SummerGUI
                && ClickDistance (e) < 4;			
 
 			m_LastMouseDownMousePosition = new PointF (e.X, e.Y);
-			m_LastMouseDownUpperLeft = new PointF (TooltipLocation.X, TooltipLocation.Y);
+			m_LastMouseDownUpperLeft = new PointF (Bounds.Left, Bounds.Top);
 			m_LastMouseDownDate = DateTime.Now;
 
 			if (e.Button == MouseButton.Left)

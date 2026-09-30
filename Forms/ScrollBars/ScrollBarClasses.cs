@@ -20,8 +20,8 @@ namespace SummerGUI.Scrolling
 	public abstract class ScrollGripBase : Widget
 	{
 		protected ScrollGripBase () : base("grip", Docking.None, new ScrollGripStyle()) 
-		{				
-			ZIndex = 100;				
+		{
+			ZIndex = 100;			
 			Styles.SetStyle(new ScrollGripHoverStyle(), WidgetStates.Hover);
 			Styles.SetStyle(new ScrollGripMovingStyle(), WidgetStates.Pressed);
 		}
@@ -42,8 +42,7 @@ namespace SummerGUI.Scrolling
 
 	public class VerticalScrollGrip : ScrollGripBase
 	{
-		public VerticalScrollGrip() : base() {}		
-
+		public VerticalScrollGrip() : base() {}	
 		public override void OnLayout(IGUIContext ctx, RectangleF bounds)
 		{
 			ScrollBar sb = ParentScroll;

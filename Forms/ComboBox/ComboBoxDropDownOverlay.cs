@@ -76,13 +76,19 @@ namespace SummerGUI
 		}
 	}
 	private int m_SelectedIndex = 0;
+	private int m_LastEnsuredIndex = -1;  // guard: only re-run EnsureIndexVisible when index actually changes
 
 	/// <summary>
 	/// Scrolls the vertical bar (if any) so the given item is visible.
-	/// No-op when the item already fits into the viewport.
+	/// No-op when the item already fits into the viewport or when the
+	/// index was already ensured since the last call – prevents the
+	/// grip-drag flicker where OnLayout would fight the grip's Value.
 	/// </summary>
 	public void EnsureIndexVisible(int idx)
 	{
+		if (idx == m_LastEnsuredIndex)
+			return;   // already scrolled to this index; don't fight the grip
+
 		ComboBoxBase pb = Parent as ComboBoxBase;
 		if (pb == null || pb.Count == 0)
 			return;
@@ -109,6 +115,8 @@ namespace SummerGUI
 			vsb.Value = itemTop;
 		else if (itemBottom > viewBottom)
 			vsb.Value = itemBottom - viewportHeight;
+
+		m_LastEnsuredIndex = idx;
 	}
 
 	// The scroll bar range (Maximum) is established in base.OnLayout's
@@ -191,8 +199,21 @@ namespace SummerGUI
 			RectangleF clipRect = new RectangleF(bounds.Left, bounds.Top, bounds.Width - scrollWidth, bounds.Height);
 			using (var clip = new ClipBoundClip(ctx, clipRect, false))
 			{
-				for (int i = 0; i < parent.Items.Count; i++) {
-					RectangleF itemBounds = new RectangleF (bounds.Left, (i * itemHeight) + bounds.Top - scrollOffsetY, 
+				// Viewport-cull: skip items entirely outside the visible viewport.
+				int count = parent.Items.Count;
+				int first = 0;
+				int last = count - 1;
+				if (scrollOffsetY > 0) {
+					first = (int)(scrollOffsetY / itemHeight);
+					float rem = scrollOffsetY - first * itemHeight;
+					if (rem > 0.001f) first++;
+				}
+				if (first > last) first = 0;
+				float visibleBottom = scrollOffsetY + bounds.Height;
+				while (last > first && ((float)last * itemHeight) >= visibleBottom) last--;
+
+				for (int i = first; i <= last; i++) {
+					RectangleF itemBounds = new RectangleF (bounds.Left, (i * itemHeight) + bounds.Top - scrollOffsetY,
 						bounds.Width - scrollWidth, itemHeight);
 
 					if (i == SelectedIndex) {
@@ -201,11 +222,10 @@ namespace SummerGUI
 						parent.DrawItem(ctx, itemBounds, parent.Items[i], style);
 					} else {
 						parent.DrawItem(ctx, itemBounds, parent.Items[i], Style);
-					}					
+					}
 				}
 			}
-		}        
-			
+		}
 
 		public void SeekIndex(int newIndex)
 		{
