@@ -241,11 +241,12 @@ namespace SummerGUI
 			base.OnPaintBackground (ctx, bounds);
 
 			if (HScrollBar != null && VScrollBar != null
+				&& HScrollBar.IsVisibleEnabled && VScrollBar.IsVisibleEnabled
 				&& HScrollBar.Right < Right 
 				&& VScrollBar.Bottom < Bottom) {
 				float sbWidth = ScrollBar.ScrollBarWidth;
 				ctx.FillRectangle (VScrollBar.Style.BackColorBrush, new RectangleF (bounds.Right - sbWidth, bounds.Bottom - sbWidth, sbWidth, sbWidth));
-			}	
+			}
 		}
 
 		public override void Update (IGUIContext ctx)
