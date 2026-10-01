@@ -349,7 +349,7 @@ namespace SummerGUI
 		{
 			if (CachedPreferredSize == SizeF.Empty) {
 				if (Children.Count == 0)
-					return proposedSize;
+					return ClampMinMax (proposedSize);
 
 				float w = 0;
 				float h = 0;
@@ -365,7 +365,7 @@ namespace SummerGUI
 				w += Padding.Width;
 				h += rh + Padding.Height;
 
-				CachedPreferredSize = new SizeF (proposedSize.Width, h);
+				CachedPreferredSize = ClampMinMax (new SizeF (proposedSize.Width, h));
 			}
 			return CachedPreferredSize;
 		}

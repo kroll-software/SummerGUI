@@ -55,8 +55,10 @@ namespace SummerGUI
 			float ox = rect.Left, oy = rect.Top, w = rect.Width, h = rect.Height;
 
 			// Clips the motifs to the target rectangle — the bars/dots are
-			// intentionally generated with a bit of overflow.
-			using (var clip = new ClipBoundClip(ctx, rect, combine: false))
+			// intentionally generated with a bit of overflow. combine=true: zusätzlich
+			// mit dem umgebenden Viewport-Clip knüpfen (sonst könnte der Overflow
+			// über eine TabBar hinaus gemalt werden).
+			using (var clip = new ClipBoundClip(ctx, rect, combine: true))
 			{
 				switch (spec.Mode)
 				{

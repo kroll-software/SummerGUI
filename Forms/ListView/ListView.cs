@@ -468,7 +468,11 @@ namespace SummerGUI
 		{
 			if (Body == null || Body.VScrollBar == null || !Body.VScrollBar.IsVisibleEnabled) return;
 			if (index < 0 || index >= Items.Count) return;
+			// Viewport-Höhe: bei sichtbarer H-Scrollbar die nutzbare Vertikale
+			// (sonst bleibt die letzte Zeile unter der H-Scrollbar verdeckt).
 			float vp  = Math.Max (1f, Body.Bounds.Height);
+			if (Body.HScrollBar != null && Body.HScrollBar.IsVisibleEnabled)
+				vp = Math.Max (1f, vp - Body.HScrollBar.Height);
 			float top, bottom;
 			if (View == ListViewView.LargeIcon) {
 				float vw = Math.Max (1f, Body.Bounds.Width);
@@ -1179,7 +1183,7 @@ namespace SummerGUI
 
 			// Clip on body area
 			RectangleF clipRect = new RectangleF (bounds.Left, bounds.Top, bodyWidth, bounds.Height);
-			using (var clip = new ClipBoundClip(ctx, clipRect, false)) {
+			using (var clip = new ClipBoundClip(ctx, clipRect, true)) {
 
 				int n = view.Items.Count;
 				for (int r = 0; r < n; r++) {
@@ -1226,7 +1230,7 @@ namespace SummerGUI
 						string text = item.GetSubItem (c);
 
 						Brush brush = (r == view.SelectedIndex)
-							? new SolidBrush (IsFocused ? Color.White : Theme.Colors.Base03)
+							? new SolidBrush (Color.White)
 							: Style.ForeColorBrush;
 
 						// Zellen-Innenabstand + Icon-Abstand (DataGridView-Parität)
@@ -1310,7 +1314,7 @@ namespace SummerGUI
 			var g = view.LargeIconGeomFor (viewportW);
 
 			// Clip auf den Viewport
-			using (var clip = new ClipBoundClip (ctx, new RectangleF (bounds.Left, bounds.Top, bounds.Width, bounds.Height), false)) {
+			using (var clip = new ClipBoundClip (ctx, new RectangleF (bounds.Left, bounds.Top, bounds.Width, bounds.Height), true)) {
 				LiCellRects.Clear ();
 				LiCellTexts.Clear ();
 
@@ -1336,7 +1340,7 @@ namespace SummerGUI
 						ctx.FillRectangle (sb, cell);
 					}
 
-					Brush brush = selActive ? new SolidBrush (IsFocused ? Color.White : Theme.Colors.Base03) : Style.ForeColorBrush;
+					Brush brush = selActive ? new SolidBrush (Color.White) : Style.ForeColorBrush;
 
 					// Icon: zentriert üben (LargeIconSize) — ImageList oder FontAwesome-Glyph.
 					float iconW = Math.Min (view.LargeIconSize, g.CellW - 4f);
@@ -1507,13 +1511,19 @@ namespace SummerGUI
 			View.SelectedIndex = newIndex;
 
 			// Ensure visible
+			// Viewport-Höhe: bei sichtbarer H-Scrollbar ist die nutzbare
+			// Vertikale um deren Höhe kleiner, sonst wird die letzte Zeile
+			// unter die H-Scrollbar gescrollt (vollständig sichtbar = unter dem Rand).
+			float vp = Bounds.Height;
+			if (HScrollBar != null && HScrollBar.IsVisibleEnabled)
+				vp = Math.Max (1f, vp - HScrollBar.Height);
 			if (VScrollBar != null && VScrollBar.IsVisibleEnabled) {
 				float top    = newIndex * RowHeight;
 				float bottom = top + RowHeight;
 				if (top < VScrollBar.Value)
 					VScrollBar.Value = top;
-				else if (bottom > VScrollBar.Value + Bounds.Height)
-					VScrollBar.Value = bottom - Bounds.Height;
+				else if (bottom > VScrollBar.Value + vp)
+					VScrollBar.Value = bottom - vp;
 			}
 		}
 

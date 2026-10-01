@@ -197,7 +197,7 @@ namespace SummerGUI
 			float itemHeight = parent.ItemHeight;
 
 			RectangleF clipRect = new RectangleF(bounds.Left, bounds.Top, bounds.Width - scrollWidth, bounds.Height);
-			using (var clip = new ClipBoundClip(ctx, clipRect, false))
+			using (var clip = new ClipBoundClip(ctx, clipRect, true))
 			{
 				// Viewport-cull: skip items entirely outside the visible viewport.
 				int count = parent.Items.Count;

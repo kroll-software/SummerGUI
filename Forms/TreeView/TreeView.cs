@@ -995,7 +995,7 @@ namespace SummerGUI
 			if (clipW <= 0 || clipH <= 0)
 				return;
 
-			using (var clip = new ClipBoundClip (ctx, new RectangleF (bounds.Left, bounds.Top, clipW, clipH), false))
+			using (var clip = new ClipBoundClip (ctx, new RectangleF (bounds.Left, bounds.Top, clipW, clipH), true))
 			{
 				float scrollX = (HScrollBar != null) ? HScrollBar.Value : 0;
 				float scrollY = (VScrollBar != null) ? VScrollBar.Value : 0;

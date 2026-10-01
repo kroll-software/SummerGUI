@@ -240,7 +240,7 @@ namespace SummerGUI
 			float itemHeight = ItemHeight;
 
 			RectangleF clipRect = new RectangleF(bounds.Left, bounds.Top, bounds.Width - scrollWidth, bounds.Height);
-			using (var clip = new ClipBoundClip(ctx, clipRect, false))
+			using (var clip = new ClipBoundClip(ctx, clipRect, true))
 			{
 				for (int i = 0; i < Items.Count; i++) {
 					RectangleF itemBounds = new RectangleF (bounds.Left, (i * itemHeight) + bounds.Top - scrollOffsetY, 
