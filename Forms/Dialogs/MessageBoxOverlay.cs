@@ -194,6 +194,11 @@ namespace SummerGUI
 				container.Margin = new Padding(0, 0, 0, 16);
 				container.AddChild (TW);
 			} else {
+				// *** FIX: Text gehört in den vertikalen Stack (zw. Icon und Buttons).
+				// Docking.Fill (=Default) wäre vom Panel.PreferredSize als "max" statt
+				// "summe" behandelt und von Icon(Top)+Buttons(Bottom) mit 0 Höhe belegt,
+				// wodurch der Text unsichtbar bleibt. Top = konsistent mit dem Scroller-Zweig.
+				TW.Dock = Docking.Top;
 				ContentPanel.AddChild (TW);
 			}				
 		}        
@@ -262,16 +267,16 @@ namespace SummerGUI
 				Color.FromArgb(30, Color.DarkSlateGray);
 
 			box.ShowDialog (parent);
-			box.Focus ();			
+			box.Focus ();
 
-            return DialogResults.OK;
+			// *** Modal: Der Caller wartet auf den DialogResult,
+			//     die Render-Loop läuft per RunModal im Hintergrund weiter
+			//     (Nested-Loop — wie ChildFormWindow.Run() beim Desktop).
+			if (parent is SummerGUIWindow win) {
+				win.RunModal (() => !box.IsDisposed);
+			}
 
-			/***
-			var result = box.Result;
-            box?.Dispose ();
-            box = null;
-            return result;			
-			***/
+			return box.Result == DialogResults.None ? DialogResults.OK : box.Result;
 		}			
 			
 		public static DialogResults ShowInfo(string msg, SummerGUIWindow parent)

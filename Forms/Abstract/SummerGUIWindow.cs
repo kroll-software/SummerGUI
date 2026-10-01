@@ -168,6 +168,7 @@ namespace SummerGUI
 		private static int _instanceCount = 0;
 
 		private static int _mainThreadId;
+		private bool _isModalLoopRunning;
 
 		private DeltaTimer _frameTimer;
 		public int DeltaTicks { get => _frameTimer.Delta; }
@@ -1740,6 +1741,33 @@ namespace SummerGUI
 			
 			// ProcessEvents aufrufen
 			ProcessEvents(timeout);
+		}
+
+		/// <summary>
+		/// Nested Event-/Render-Loop für modale Overlays (Tablet/Mobile).
+		/// Blocks the caller while the render loop keeps running in the
+		/// background — same idea as ChildFormWindow.Run() on Desktop, but
+		/// reusing the parent window instead of opening a second window.
+		/// Must be called from the UI thread.
+		/// </summary>
+		public void RunModal (Func<bool> shouldRun)
+		{
+			// Nur im UI-Thread darf eine nested Loop laufen (Events/Render sind UI-Thread-spezifisch).
+			// Sonst (z.B. Threadpool-Aufruf über ShowLoadingErros) sofort zurück,
+			// damit der Caller nicht blockiert — keine Exception, kein Hang.
+			if (Environment.CurrentManagedThreadId != _mainThreadId || _isModalLoopRunning)
+				return;
+
+			_isModalLoopRunning = true;
+			try {
+				while (shouldRun () && Exists && !IsExiting)
+				{
+					OnProcessEvents ();
+					OnDispatchUpdateAndRenderFrame ();
+				}
+			} finally {
+				_isModalLoopRunning = false;
+			}
 		}
 
 		double ClampElapsed(double elapsed)
