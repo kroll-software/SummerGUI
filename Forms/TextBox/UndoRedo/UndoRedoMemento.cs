@@ -34,13 +34,27 @@ namespace SummerGUI.Editor
 		{
 		}
 
+		/// <summary>
+		/// Länge von <see cref="Data"/> in der Zähl-Einheit des Ziel-Widgets.
+		/// Default: <c>Data.Length</c> (UTF-16-Code-Einheiten) — das ist korrekt für
+		/// UTF-16-basierte Textboxen (einzelzeilige <c>TextBox</c>, die <c>string</c>
+		/// hält und über <c>StrLeft/StrMid</c> slicet).  Runen-basierte Widgets
+		/// (MultiLineTextBox: 1 astral Codepoint = 1 Glyph) setzen stattdessen die
+		/// RUNEN-Zahl, damit <c>DeleteRange(pos, DataLength)</c> / Cursor-Offset
+		/// exakt 1 astrales Zeichen betreffen, nicht 2.
+		/// </summary>
+		private int m_DataLengthOverride = -1; // -1 → nicht gesetzt → Data.Length
+
 		public int DataLength
 		{
 			get{
 				if (Data == null)
-					return 0;				
+					return 0;
+				if (m_DataLengthOverride >= 0)
+					return m_DataLengthOverride;
 				return Data.Length;
 			}
+			set { m_DataLengthOverride = value; }
 		}
 
 		public int SelectedTextLength

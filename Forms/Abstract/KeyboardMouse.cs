@@ -6,14 +6,27 @@ namespace SummerGUI;
 
 public class KeyPressEventArgs : System.EventArgs
 {
-    // Die Eigenschaft, die Ihre internen Widgets erwarten
-    public char KeyChar { get; } 
-    
+    public char KeyChar { get; }
+    /// <summary>
+    /// The full text produced by the input event. For BMP characters this is 1 char;
+    /// for astral (BMP-exceeding) emoji / CJK it is a UTF-16 surrogate pair (2 chars).
+    /// Use this for insertion — never <see cref="KeyChar"/> alone.
+    /// </summary>
+    public string Text { get; }
+
     public KeyPressEventArgs(char keyChar)
     {
         KeyChar = keyChar;
+        Text = keyChar.ToString();
     }
-    // ... andere Eigenschaften, falls nötig (z.B. Handled)
+
+    public KeyPressEventArgs(string text)
+    {
+        if (String.IsNullOrEmpty(text))
+            text = "\0";
+        Text = text;
+        KeyChar = text[0];
+    }
 }
 
 public class MouseWheelEventArgs : System.EventArgs

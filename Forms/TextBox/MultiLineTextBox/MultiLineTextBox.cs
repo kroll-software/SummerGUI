@@ -522,14 +522,17 @@ namespace SummerGUI
 					DeleteBack ();
 				} else {
 					int pos = RowManager.AbsCursorPosition;
-					UndoRedoManager.Do (new UndoRedoBackspaceMemento{
+					string bsData = RowManager.GetCharRange (pos - 1, 1);
+					var bsMemento = new UndoRedoBackspaceMemento{
 						ScrollOffset = ScrollOffset,
 						SelStart = SelStart,
 						SelLength = SelLength,
 						SelectedText = SelectedText,
 						Position = pos - 1,
-						Data = RowManager.GetCharRange(pos - 1, 1),
-					});
+						Data = bsData,
+					};
+					bsMemento.DataLength = CountRunes (bsData);
+					UndoRedoManager.Do (bsMemento);
 					RowManager.DeletePrevChar ();
 				}
 				ResetSelection ();
@@ -664,58 +667,87 @@ namespace SummerGUI
 
 		void SetUndoInsert(string data)
 		{
-			UndoRedoManager.Do (new UndoRedoInsertMemento{
+			var memento = new UndoRedoInsertMemento{
 				ScrollOffset = ScrollOffset,
 				SelStart = SelStart,
 				SelLength = SelLength,
 				SelectedText = SelectedText,
 				Position = RowManager.AbsCursorPosition,
 				Data = data,
-			});
+			};
+			memento.DataLength = CountRunes (data);
+			UndoRedoManager.Do (memento);
 		}
 
 		void SetUndoDelete(int pos, int delLen)
 		{
-			UndoRedoManager.Do (new UndoRedoDeleteMemento{
+			string data = RowManager.GetCharRange (pos, delLen);
+			var memento = new UndoRedoDeleteMemento{
 				ScrollOffset = ScrollOffset,
 				SelStart = SelStart,
 				SelLength = SelLength,
 				SelectedText = SelectedText,
 				Position = pos,
-				Data = RowManager.GetCharRange(pos, delLen),
-			});
+				Data = data,
+			};
+			memento.DataLength = CountRunes (data);
+			UndoRedoManager.Do (memento);
+		}
+
+		/// <summary>Bekommt die Anzahl Unicode-Codepoints (Runes) in <paramref name="s"/>.</summary>
+		private static int CountRunes(string s)
+		{
+			if (string.IsNullOrEmpty (s)) return 0;
+			int count = 0;
+			for (int i = 0; i < s.Length; i++) {
+				count++;
+				if (char.IsHighSurrogate (s[i]) && i + 1 < s.Length && char.IsLowSurrogate (s[i + 1]))
+					i++;
+			}
+			return count;
 		}
 
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
-			if (IsFocused && Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
-                //if (e.KeyChar == ' ' || e.KeyChar == '\n')
-				SetUndoInsert (e.KeyChar.ToString ());
+			// e.Text ist der VOLLSTÄNDIGE, vom IME/OS kommittierte Text
+			// (KeyboardMouse.cs: "Use this for insertion — never KeyChar alone").
+			// Ein echter IME-Commit kann aus MEHREREN Codepoints bestehen:
+			//   Pinyin "你好"  ·  komponierte Sequenzen  ·  "a😀b".
+			// Früher wurde hier nur der ERSTE Codepoint gesetzt (e.KeyChar bzw.
+			// ConvertToUtf32(...,0)), der Rest fiel durch.  Jetzt nehmen wir den
+			// kompletten String auf und setzen ihn über denselben rune-sicheren
+			// Pfad ein wie Paste():  RowManager.InsertRange → ParseTextToParagraphs
+			// (EnumerateRunes hält astrale Paare zusammen).  So einfach wie möglich.
+			if (e == null || !IsFocused || !Enabled || ReadOnly)
+				return base.OnKeyPress (e);
 
-				if (SelLength > 0) {
-					DeleteSelection ();
-					SelLength = 0;
-				}
-			
-				if (MaxLength > 0)
-				{
-					if (RowManager.Length >= MaxLength)					
-						return false;
-				}
-				
-				RowManager.InsertChar(e.KeyChar);                
-				SetSelection(false);
+			string input = e.Text;
+			if (String.IsNullOrEmpty (input) || input[0] == '\0')
+				return base.OnKeyPress (e);
 
-                EnsureCurrentRowVisible();
+			// Eingaben-Filter, surrogat-sicher (== Paste): beide Halb Surrogate
+			// passieren, das Paar bleibt intakt.
+			string commit = new string (input.Where (c => IsInputChar (c)).ToArray ());
+			if (String.IsNullOrEmpty (commit))
+				return base.OnKeyPress (e);
 
-				CursorOn = true;
-				Invalidate ();
-				return true;
+			if (MaxLength > 0 && RowManager.Length >= MaxLength)
+				return false;
+
+			SetUndoInsert (commit);
+			if (SelLength > 0) {
+				DeleteSelection ();
+				SelLength = 0;
 			}
-
-			return base.OnKeyPress (e);
+			RowManager.InsertRange (commit);
+			ResetSelection ();
+			SetupDocumentSize ();
+			EnsureCurrentRowVisible ();
+			CursorOn = true;
+			Modified = true;
+			Invalidate ();
+			return true;
 		}
-
 		public override void OnKeyUp (KeyboardKeyEventArgs e)
 		{
 			base.OnKeyUp (e);
@@ -1020,31 +1052,40 @@ namespace SummerGUI
 
 							for (int i = 0; i < line.Length && node != null; i++)
 							{
-								char c = node.Value.Char;
-
-								switch (c)
+								int cp = node.Value.Char;
+								switch (cp)
 								{
 									case ' ':
-										c = SpecialCharacters.SpaceDot;
+										cp = SpecialCharacters.SpaceDot;
 										color = SpecialCharsColor;
 										break;
 
 									case '\n':
-										c = SpecialCharacters.Paragraph;
+										cp = SpecialCharacters.Paragraph;
 										color = SpecialCharsColor;
 										break;
-									default:										
+									default:
+
 										if (idx >= SelStart && idx < SelStart + SelLength)
 											color = SelectionForeColor;
 										else
 											color = Style.ForeColorBrush.Color;
-										break;		
+										break;
 								}
-								
-								GlyphInfo glyphInfo;
-								if (font.GetGlyphInfo(c, out glyphInfo))
+
+								GlyphInfo glyphInfo = default;
+								bool have = false;
+								if (cp > 0xFFFF) {
+									// Astral code point (emoji): framework only knows BMP; route to
+									// the EmojiFont which stores pixel data per code point.
+									EmojiFont efont = EmojiFont.Instance;
+									have = efont != null && efont.TryGetGlyphInfo ((uint)cp, font.Height, out glyphInfo);
+								} else {
+									have = font.GetGlyphInfo((char)cp, out glyphInfo);
+								}
+								if (have)
 								{
-									// Berechne Ziel-Rechteck (Bearing beachten!)
+									// Ziel-Rechteck (Bearing beachten!)
 									RectangleF dest = new RectangleF(
 										font.Snap(currentX + glyphInfo.Bearing.X),
 										font.Snap(baselineY - glyphInfo.Bearing.Y),
@@ -1052,13 +1093,28 @@ namespace SummerGUI
 										glyphInfo.Size.Y
 									);
 
-									ctx.Batcher.AddGlyph(glyphInfo.TextureId, dest, glyphInfo.UV, color);
-								}
+									if (cp > 0xFFFF)
+									{
+										// Astral / emoji glyph: Image-Modus (Type=0) — Textur-Farb
+										// (PNG-RGB) verwenden. AddGlyph (Type=1) würde die Textur nur
+										// als Alpha-Maske mit weißer Vertex-Color malen und die volle
+										// Farbigkeit verlieren.
+										OpenTK.Mathematics.Color4 whiteC
+											= new OpenTK.Mathematics.Color4 (1f, 1f, 1f, color.A);
+										ctx.Batcher.AddTextureRectangle(dest, glyphInfo.UV, whiteC, glyphInfo.TextureId);
+									}
+									else
+									{
+										ctx.Batcher.AddGlyph(glyphInfo.TextureId, dest, glyphInfo.UV, color);
+									}
 
-								currentX += glyphInfo.Advance;
+									currentX += glyphInfo.Advance;
+								}
 								node = node.Next;
 								idx++;
+
 							}
+
 						}
 						else
 						{

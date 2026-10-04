@@ -17,6 +17,9 @@ namespace SummerGUI.SystemSpecific.Linux
 			_ClipboardText = text;
 		}
 
+		/// <summary>Pfad zum systemweiten Color-Emoji-Font (CBDT-17/PNG) für die Emoji-Fallback-Rendering-Pipeline.</summary>
+		public static string EmojiFontPath => "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf";
+
 		public static string GetClipboardText()
 		{
 			return _ClipboardText;

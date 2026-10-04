@@ -144,6 +144,14 @@ namespace SummerGUI
 		//SharpFont.Face Font;
 		FreeTypeSharp.FT_FaceRec_* m_Face;
 		private HarfBuzzSharp.Blob m_Blob;
+		// ROOT CAUSE FIX Windows-Only-AV (bekanntes altes Problem): FT_New_Memory_Face
+		// haelt einen rohen Pointer auf die Font-Byte-Daten fuer das LEBEN des Faces;
+		// der nur-im-fixed-Block-gepinnte Span war danach frei/bewegbar -> dangling
+		// Pointer (z.B. FT_Done_Face in Clear/Rescale, Windows 0xC0000005). Wir besitzen
+		// daher eine eigene, fuer das Face-Leben gepinnte Kopie (wie ColrEmojiRasterizer)
+		// und geben sie erst frei, NACHDEM das Face geschlossen wurde.
+		private byte[] m_FontOwnerCopy;
+		private GCHandle m_FontPin = default(GCHandle);
 		private HarfBuzzSharp.Face m_HbFace;
         private HarfBuzzSharp.Font m_HbFont;	
 		private int[] m_Textures;		
@@ -235,24 +243,39 @@ namespace SummerGUI
 
 				m_HbFont.SetFunctionsOpenType();				
 				
-				// 3. FreeType Setup aus demselben Speicherblock
-				// Zugriff auf die Daten via Span
-				ReadOnlySpan<byte> fontSpan = m_Blob.AsSpan();
-
-				fixed (FT_FaceRec_** fp = &m_Face)
-				fixed (byte* dataPtr = fontSpan)
+				// 3. FreeType Setup aus demselben Font-Buffer.
+				// ROOT CAUSE FIX (Windows-only AV / 0xC0000005): FT_New_Memory_Face
+				// KOPIERT NICHT — es hält den rohen Daten-Pointer für das Leben des
+				// Faces. Die alte `fixed (…)` pinnte den Span nur für den Aufruf und die
+				// Daten wurden danach frei/bewegbar → dangling Pointer, der an
+				// FT_Done_Face (Clear/Rescale) Windows-only crascht. Wir pinnen deshalb
+				// eine eigene Kopie für das ganze Face-Leben (Muster: ColrEmojiRasterizer)
+				// und geben den Pin NACH FT_Done_Face frei.
+				m_FontOwnerCopy = m_Blob.AsSpan().ToArray();
+				m_FontPin = GCHandle.Alloc(m_FontOwnerCopy, GCHandleType.Pinned);
+				try
 				{
-					// Wir nutzen FT_New_Memory_Face statt FT_New_Face
-					var error = FT_New_Memory_Face(
-						FontManager.Library, 
-						dataPtr, 
-						m_Blob.Length, 
-						0, 
-						fp
-					);
-
-					if (error != FT_Error.FT_Err_Ok)
-						throw new Exception($"FreeType Memory Face Error: {error}");
+					fixed (FT_FaceRec_** fp = &m_Face) {
+						// Wir nutzen FT_New_Memory_Face statt FT_New_Face
+						byte* dataPtr = (byte*)m_FontPin.AddrOfPinnedObject();
+						var error = FT_New_Memory_Face(
+							FontManager.Library, 
+							dataPtr, 
+							m_FontOwnerCopy.Length, 
+							0, 
+							fp
+						);
+						if (error != FT_Error.FT_Err_Ok)
+							throw new Exception($"FreeType Memory Face Error: {error}");
+					}
+				} catch
+				{
+					// Face nicht geöffnet → gepinnte Daten sofort wieder freigeben.
+					if (m_FontPin != default(GCHandle))
+						m_FontPin.Free();
+						m_FontPin = default(GCHandle);
+					m_FontOwnerCopy = null;
+					throw;
 				}
 
 				// *** Metriken ***
@@ -404,11 +427,20 @@ namespace SummerGUI
 			} catch (Exception ex) {
 				ex.LogError ();
 			} finally {
-				if (!OnDemand && m_Face != null) {					
-					FT_Done_Face(m_Face);
-					m_Face = null;
+				if (!OnDemand)
+				{
+					if (m_Face != null)
+					{
+						FT_Done_Face(m_Face);
+						m_Face = null;
+					}
+					// Face ist zu Ende → gepinnte Kopie darf ERST JETZT frei (nach Done_Face).
+					if (m_FontPin != default(GCHandle))
+						m_FontPin.Free();
+						m_FontPin = default(GCHandle);
+					m_FontOwnerCopy = null;
 				}
-			}			
+			}
 		}
 
 		public void Rescale (float scaleFactor)
@@ -622,6 +654,18 @@ namespace SummerGUI
 						return i;
 					adv += gi.Advance;
 				}
+				else {
+					// Fallback auf EmojiFont (BMP-Emoji, Surrogate-Paar) als eine Cursor-Einheit.
+					float pairAdv = 0;
+					uint cp = EmojiFont.SafeCodePoint(text, i);
+					var efont = EmojiFont.Instance;
+					if (cp != 0 && efont != null && efont.TryGetGlyphInfo(cp, Height, out var egi))
+						pairAdv = egi.Advance;
+
+					adv += pairAdv;
+					if (char.IsHighSurrogate(text[i]))
+						i++;   // Low-Surrogate überspringen
+				}
 			}
 			return text.Length;
 		}
@@ -629,7 +673,7 @@ namespace SummerGUI
 		public IEnumerable<ShapedGlyph> ShapeText(string text)
 		{
 			using var buffer = new HarfBuzzSharp.Buffer();
-			buffer.AddUtf8(text);
+			buffer.AddUtf16(text);
 			buffer.GuessSegmentProperties();
 			m_HbFont.Shape(buffer);
 
@@ -659,10 +703,13 @@ namespace SummerGUI
 			string measureText;
 			if (len == -1 && start == 0)
 				measureText = text;
-			else			
-				measureText = Strings.StrMid(text, start + 1, len);			
+			else				
+				measureText = Strings.StrMid(text, start + 1, len);
 
-			return new SizeF(ShapeText(measureText).Sum(g => g.XAdvance), Height);
+			float adv = 0;
+			foreach (var si in ShapeText(measureText))
+				adv += ShapedAdvance(si, measureText);
+			return new SizeF(adv, Height);
 		}
 
 		public SizeF MeasureGlyphs(string text, int start = 0, int len = -1)
@@ -678,35 +725,42 @@ namespace SummerGUI
 
 			float adv = 0;
 			GlyphInfo gi;
-			foreach (char c in measureText)
+			for (int i = 0; i < measureText.Length; i++)
 			{
-				if (GetGlyphInfo(c, out gi))
+				if (GetGlyphInfo(measureText[i], out gi))
+				{
 					adv += gi.Advance;
+				}
+				else
+				{
+					// Fallback auf EmojiFont (BMP-Emoji, Surrogate-Paar).
+					uint cp = EmojiFont.SafeCodePoint(measureText, i);
+					var efont = EmojiFont.Instance;
+					if (cp != 0 && efont != null && efont.TryGetGlyphInfo(cp, Height, out var egi))
+					{
+						adv += egi.Advance;
+						if (char.IsHighSurrogate(measureText[i]))
+							i++;
+					}
+				}
 			}
 						
 			return new SizeF(adv, Height);
 		}
 
 		public SizeF MeasureMnemonicString(string text)
-		{                   
-			if (string.IsNullOrEmpty(text))
-				return SizeF.Empty;
+			{                 
+				if (string.IsNullOrEmpty(text))
+					return SizeF.Empty;
 			
-			float adv = 0;
-			foreach (ShapedGlyph si in ShapeText(text))
-			{
-				if (GetGlyphInfo(si.GlyphIndex, out var gi)) 
+				float adv = 0;
+				foreach (ShapedGlyph si in ShapeText(text))
 				{
-					char c = si.Cluster < text.Length ? text[si.Cluster] : (char)0;
-					if (c != '&')
-					{
-						adv += si.XAdvance;						
-					}
+					if (si.Cluster < text.Length && text[si.Cluster] != '&')
+						adv += ShapedAdvance(si, text);
 				}
+				return new SizeF(adv, Height);
 			}
-			
-			return new SizeF(adv, Height);
-		}
 
 		public SizeF Measure(string text, float maxWidth, FontFormat format)
 		{
@@ -809,26 +863,75 @@ namespace SummerGUI
 		private float MeasureSegment(ReadOnlySpan<char> segment)
 		{
 			if (segment.IsEmpty) return 0;
-			return ShapeText(segment.ToString()).Sum(g => g.XAdvance);			
-		}		
-				
+			string seg = segment.ToString();
+			float adv = 0;
+			foreach (var si in ShapeText(seg))
+				adv += ShapedAdvance(si, seg);
+			return adv;
+		}
+		
+		/// <summary>
+		/// Breite eines ShapedGlyph: Advance aus dem Base-Font; fällt nur dann auf die
+		/// EmojiFont-Breite zurück, wenn der Base-Font diese Glyph NICHT abdeckt
+		/// (BMP-Emoji ⚡/☀/…, Surrogate-Paar, Fehlglyph). Für reguläre Schriftzeichen
+		/// bleibt der Wert identisch zum reinen HarfBuzz-Advance — damit bleibt das
+		/// Layout für normalen Text bitgenau unverändert.
+		/// </summary>
+		private float ShapedAdvance(ShapedGlyph si, string text)
+		{
+			// HarfBuzz liefert für fehlende Zeichen eine Glyph, deren Texture leer ist.
+			// Wir orientieren uns am selben Kriterium wie die einzelnen Render-Routen.
+			bool baseHit = GetGlyphInfo(si.GlyphIndex, out var gi) && gi.Size.X > 0 && gi.Size.Y > 0;
+
+			float result;
+			if (baseHit)
+				result = si.XAdvance;
+			else
+			{
+				// Fallback: EmojiFont.
+				int clusterIdx = si.Cluster;
+				result = si.XAdvance;
+				if (clusterIdx < text.Length)
+				{
+					uint cp = EmojiFont.SafeCodePoint(text, clusterIdx);
+					if (cp != 0)
+					{
+						var ef = EmojiFont.Instance;
+						if (ef != null && ef.TryGetGlyphInfo(cp, Height, out var egi))
+							result = egi.Advance;
+					}
+				}
+			}
+
+			return result;
+		}
 		private void Clear()
 		{
 			try {
 				CharMap?.Clear();
 				GlyphMap?.Clear();
 
+				// REIHENFOLGE (Windows-only AV in FT_Done_Face, bekanntes altes Problem):
+				// erst das FreeType-Face schliessen (Daten sind stabil), dann die gepinnte
+				// Kopie freigeben, und erst danach HarfBuzz + Blob (die denselben nativen
+				// Daten-Puffer teilen). Null-/default-Guards machen es idempotent, auch wenn
+				// es ueber Rescale→Clear und/oder den GC-Finalizer mehrfach laeuft.
+				if (m_Face != null) {
+					FT_Done_Face(m_Face);
+					m_Face = null;
+				}
+				if (m_FontPin != default(GCHandle)) {
+					m_FontPin.Free();
+					m_FontPin = default(GCHandle);
+					m_FontOwnerCopy = null;
+				}
+				
 				m_HbFont?.Dispose();
 				m_HbFont = null;
 				
 				m_HbFace?.Dispose();
 				m_HbFace = null;
-
-				if (m_Face != null) {
-					FT_Done_Face(m_Face);
-					m_Face = null;
-				}
-
+				
 				m_Blob?.Dispose();
 				m_Blob = null;
 

@@ -318,8 +318,8 @@ namespace SummerGUI
 				
 				bounds.Offset (0, TextOffsetY);
 
-				float tw = Font.MeasureMnemonicString(Text).Width;				
-				
+				float tw = Font.MeasureMnemonicString(Text).Width;
+
 				if (tw < bounds.Width)
 				{					
 					ctx.DrawString (Text, Font, Style.ForeColorBrush, bounds, FontFormat.DefaultMnemonicLineCentered);					

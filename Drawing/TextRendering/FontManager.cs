@@ -482,16 +482,32 @@ namespace SummerGUI
 			Fonts.Values.OfType<IGUIFont>().ForEach (f => f.Dispose());
 			Fonts.Clear ();
 
-			FT_LibraryRec_* libPtr = (FT_LibraryRec_*)s_lazyLibrary.Value;
-			if (libPtr != null)
-			{
-				FT_Done_FreeType(libPtr);					
-				// Wichtig: Wir können den Lazy-Value nicht auf null setzen, aber wir können ihn ignorieren.
-				// Die Ressourcen sind freigegeben.
-			}
-			
+			// WICHTIGE REIHENFOLGE (Windows: sonst AV 0xc0000005):
+			// Jedes FT-Face gehört zur Library, über die es geöffnet wurde. Ein
+			// Face, dessen Library bereits per FT_Done_FreeType freigegeben
+			// wurde, darf nicht mehr geschlossen werden (use-after-free).
+			// Gemelder Crash: FT_Done_Face in ColrEmojiRasterizer.cs — frühere
+			// Form desselben Problems: GuiFont. Alle Face-Inhaber müssen also
+			// VOR FT_Done_FreeType zu Ende sein. EmojiFont/Colr ist hier der
+			// einzige Face-Eigner außerhalb von GuiFont (oben bereits disposed).
+			var emojiFont = EmojiFont.InstanceOrNull;
+			if (emojiFont != null && !emojiFont.IsDisposed)
+				emojiFont.Dispose();
+
+			// Die FreeType-Library bleibt bewusst AM LEBEN (kein FT_Done_FreeType):
+			// FT_Done_Face auf einem Face, dessen Library bereits zerstört ist, ist ein
+			// deterministischer use-after-destroy (Verifikation: Reproduktions-Probe
+			// SIGSEGV, auch unter Linux — nicht nur Windows). Die Library ist ein
+			// einziger process-lebenslanger static Lazy-Wert; einige GuiFont-Instanzen
+			// (z.B. die Preview-Fonts der FontComboBox, die NICHT in der Fonts-Dictionary
+			// registriert sind) werden erst WÄHREND DES PROCESS-SHUTDOWN disposed
+			// (Widget-Cleanup oder GC-Finalizer) — also genau jetzt. Jede FT_Done_Face
+			// danach crasht. Da der Prozess beim Shutdown ohnehin beendet wird, gibt das
+			// OS die Library-Speicherung zurück; das Leaking einer kleinen process-
+			//lebenslangen Struktur ist der sichere Preis. (Diese Stelle ist auch die
+			// Ursache des bekannten Windows-Crash "FT_Done_Face in GuiFont.cs".)
 			base.CleanupUnmanagedResources ();
 		}
-	}		
+	}
 }
 

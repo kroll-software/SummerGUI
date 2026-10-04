@@ -744,8 +744,7 @@ namespace SummerGUI
 			if (e.AsString == null || e.AsString.Length == 0)
 				return;
 
-			char c = e.AsString[0];
-			KeyPressEventArgs args = new KeyPressEventArgs(c);
+			KeyPressEventArgs args = new KeyPressEventArgs(e.AsString);
 			Controls.OnKeyPress (args);
         }
 

@@ -42,6 +42,7 @@ namespace SummerGUI
 					value = String.Empty;				
                 if (MaxLength > 0 && value.Length > MaxLength)
 					value = value.StrLeft(MaxLength);
+				value = FilterTextAssignment (value);
 				if (m_Text != value) {
 					m_Text = value;					
 					OnTextChanged ();
@@ -297,7 +298,28 @@ namespace SummerGUI
 			
 			if (Text == null || pos < 0 || pos >= Text.Length)
 				return;
-			Text = Text.StrLeft (pos) + Text.StrMid (pos + 2);
+
+			// Delete the whole grapheme that <paramref name="pos"/> belongs to,
+			// so a UTF-16 surrogate pair (astral emoji / CJK) is removed atomically.
+			int start = pos;
+			int len = 1;
+			if (pos + 1 < Text.Length && char.IsHighSurrogate(Text[pos]))
+			{
+				// pair starts at pos (forward delete)
+				len = 2;
+			}
+			else if (pos > 0 && char.IsLowSurrogate(Text[pos]) && char.IsHighSurrogate(Text[pos - 1]))
+			{
+				// pair ends at pos (backspace: cursor sits right after the low half)
+				start = pos - 1;
+				len = 2;
+			}
+
+			// KS.Foundation convention: StrLeft(S, n) = first n chars (0-based, n=0 → empty);
+			// StrMid(S, Start) = substring from (1-based) Start to end, i.e. 0-based Index Start-1.
+			int keepBefore = start;                         // 0-based
+			int keepFrom0  = start + len;                   // 0-based
+			Text = Text.StrLeft(keepBefore) + (keepFrom0 < Text.Length ? Text.StrMid(keepFrom0 + 1) : "");
 			Modified = true;
 		}
 
@@ -608,11 +630,44 @@ namespace SummerGUI
 			return (int)c > 31;
 		}
 
+		/// <summary>
+		/// Hard input-policy hook: return <c>false</c> to reject a character from
+		/// keyboard input, paste, and (via <see cref="FilterTextAssignment"/>) programmatic
+		/// Text assignment.  Subclasses (e.g. <see cref="MaskedTextBox"/>) override this to
+		/// enforce their own rules; default is permissive.
+		/// </summary>
+		protected virtual bool AcceptChar(char c)
+		{
+			return true;
+		}
+
+		/// <summary>
+		/// True when <paramref name="c"/> is (or belongs to) an emoji code point.
+		/// Subclasses that need to reject emoji override <see cref="AcceptChar"/> and/or
+		/// <see cref="FilterTextAssignment"/>; the default <see cref="TextBox"/> accepts them.
+		/// </summary>
+		protected virtual bool IsEmojiChar(char c)
+		{
+			return EmojiFont.IsEmojiChar (c);
+		}
+
+		/// <summary>
+		/// Programmatic-Text filter: called by the <see cref="Text"/> setter before the new
+		/// value is stored.  Subclasses that must restrict the character set (e.g. reject
+		/// emoji) override this to strip invalid characters; default passes the value through.
+		/// </summary>
+		protected virtual string FilterTextAssignment(string value)
+		{
+			return value;
+		}
+
 		public Func<char, bool> IsInputCharCallBack { get; set; }
 
 		public bool IsInputChar(char c) 
 		{
 			if (ModifierKeys.AltPressed)
+				return false;
+			if (!AcceptChar (c))
 				return false;
 			if (IsInputCharCallBack != null)
 				return IsInputCharCallBack (c);
@@ -621,24 +676,26 @@ namespace SummerGUI
 			
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{
+			string text = e.Text ?? e.KeyChar.ToString();
 			if (IsFocused && Enabled && !ReadOnly && IsInputChar (e.KeyChar)) {
 				if (MaxLength > 0)
 				{
 					int textLen = Text == null ? 0 : Text.Length;
-					if (textLen - SelLength >= MaxLength)
-						return false;					
+					if (textLen - SelLength + text.Length > MaxLength)
+						return false;				
 				}
 
-                SetUndoInsert (e.KeyChar.ToString ());
+				SetUndoInsert (text);
 				if (SelLength > 0) {
 					DeleteSelection ();
 					SelLength = 0;
 				}
 
-				InsertChar(CursorPosition++, e.KeyChar);
-                SelStart = CursorPosition;
+				InsertRange (CursorPosition, text);
+				CursorPosition += text.Length;
+				SelStart = CursorPosition;
 
-                EnsureCursorVisible ();
+				EnsureCursorVisible ();
 				CursorOn = true;
 				Invalidate ();
 				return true;

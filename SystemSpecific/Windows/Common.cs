@@ -18,6 +18,18 @@ namespace SummerGUI.SystemSpecific.Windows
 			_ClipboardText = text;
 		}
 
+		/// <summary>Pfad zum systemweiten Color-Emoji-Font (CBDT-17/PNG) für die Emoji-Fallback-Rendering-Pipeline.</summary>
+		public static string EmojiFontPath
+		{
+			get
+			{
+				string dir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Windows);
+				if (!string.IsNullOrEmpty(dir))
+					return System.IO.Path.Combine(dir, "Fonts", "seguiemj.ttf");
+				return string.Empty;
+			}
+		}
+
 		public static string GetClipboardText()
 		{
 			return _ClipboardText;

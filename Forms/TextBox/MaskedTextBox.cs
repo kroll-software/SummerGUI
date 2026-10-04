@@ -256,7 +256,24 @@ namespace SummerGUI
 			return false;
 		}
 
-		private bool CanAcceptAt(int i, char c)
+		protected override bool AcceptChar(char c)
+	{
+		// Emojis have no meaningful numeric/alpha role in a masked field
+		if (IsEmojiChar(c))
+			return false;
+		return base.AcceptChar(c);
+	}
+
+	protected override string FilterTextAssignment(string value)
+	{
+		StringBuilder sb = new StringBuilder(value.Length);
+		foreach (char c in value)
+			if (!IsEmojiChar(c))
+				sb.Append(c);
+		return sb.ToString();
+	}
+
+	private bool CanAcceptAt(int i, char c)
 		{
 			switch (char.ToUpperInvariant(m_Mask[i]))
 			{
@@ -272,7 +289,7 @@ namespace SummerGUI
 				case 'a':
 					return char.IsLetterOrDigit(c);
 				case '*':
-					return (int)c > 31;
+						return (int)c > 31 && !IsEmojiChar(c);
 			}
 			return false;
 		}

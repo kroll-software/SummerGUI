@@ -13,6 +13,9 @@ namespace SummerGUI.SystemSpecific.Mac
 {	
 	public static class Common
 	{
+		/// <summary>Pfad zum systemweiten Color-Emoji-Font (sbix/PNG-Bitmaps in TTC) für die Emoji-Fallback-Rendering-Pipeline.</summary>
+		public static string EmojiFontPath => "/System/Library/Fonts/Apple Color Emoji.ttc";
+
 		public static void SetClipboardText(string text)
 		{
 			try

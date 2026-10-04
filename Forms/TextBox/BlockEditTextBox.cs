@@ -196,6 +196,7 @@ namespace SummerGUI
 		{
 			if (m_Blocks == null || m_Blocks.Length == 0)
 				return;
+			digits = FilterTextAssignment (digits ?? string.Empty);   // Emojis would silently shift the block mapping.
 			CommitAll ();
 			int ri = 0;
 			for (int i = 0; i < m_Blocks.Length; i++)
@@ -247,6 +248,22 @@ namespace SummerGUI
 		}
 
 		// ── input handling ───────────────────────────────────────────────
+
+		protected override bool AcceptChar(char c)
+		{
+			if (IsEmojiChar(c))
+				return false;
+			return base.AcceptChar(c);
+		}
+
+		protected override string FilterTextAssignment(string value)
+		{
+			var sb = new System.Text.StringBuilder(value.Length);
+			foreach (char c in value)
+				if (!IsEmojiChar(c))
+					sb.Append(c);
+			return sb.ToString();
+		}
 
 		public override bool OnKeyPress (KeyPressEventArgs e)
 		{

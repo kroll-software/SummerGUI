@@ -8,10 +8,10 @@ using KS.Foundation;
 
 namespace SummerGUI.Editor
 {	
-	public class GlyphList : ClassicLinkedList<GlyphChar>
+	public class GlyphList : ClassicLinkedList<MlGlyph>
 	{
 		public GlyphList() : base()	{}
-		public GlyphList(IEnumerable<GlyphChar> source) : base(source) {}
+		public GlyphList(IEnumerable<MlGlyph> source) : base(source) {}
 	}
 
 	public class BreakList : ClassicLinkedList<int>
@@ -60,9 +60,9 @@ namespace SummerGUI.Editor
 
 	public class Paragraph : IComparable<Paragraph>
 	{	
-		public static bool IsSpaceWrapCharacter(char c)
+		public static bool IsSpaceWrapCharacter(int cp)
 		{
-			switch (c)
+			switch (cp)
 			{
 			case ' ':
 			case '\n':
@@ -73,9 +73,9 @@ namespace SummerGUI.Editor
 			}
 		}
 
-		public static bool IsWrapCharacter(char c)
+		public static bool IsWrapCharacter(int cp)
 		{
-			switch (c)
+			switch (cp)
 			{
 			case ' ':
 			case '\n':
@@ -142,8 +142,12 @@ namespace SummerGUI.Editor
 			}
 		}
 
-		void SetEndGlyph()
+		private void SetEndGlyph()
 		{
+			// NOTE: Do<T>(this T) passes a copy for struct T; MlGlyph is a struct
+			// so this assignment would not persist — exactly the same behavior as
+			// the old GlyphChar code.  We keep the call for parity; see comment
+			// inside the body for details.
 			Glyphs.LastOrDefault ().Do (g => {
 				if (Next == null)
 					g.Char = SpecialCharacters.EndOfText;
@@ -195,31 +199,78 @@ namespace SummerGUI.Editor
 			if (Glyphs.Count == 0)
 				return String.Empty;
 			StringBuilder sb = new StringBuilder (Glyphs.Count);
-			Glyphs.ForEach(c => sb.Append(c.Char));
+			Glyphs.ForEach(c => AppendCodePoint(sb, c.Char));
 			return sb.ToString();
 		}
 
 		public void ToString (StringBuilder sb)
 		{
 			if (Glyphs.Count > 0) {
-				Glyphs.ForEach(c => sb.Append(c.Char));
-			}				
+				Glyphs.ForEach(c => AppendCodePoint(sb, c.Char));
+			}
+
 		}
 
-		public bool NeedsWordWrap { get; set; }
+		/// <summary>
+		/// Fügt <paramref name="count"/> Runen an, beginnend bei glyph-basierter
+		/// <paramref name="start"/> (0-basiert), an <paramref name="sb"/> an und
+		/// liefert die Anzahl der tatsächlich angehängten Runen zurück
+		/// (kleiner, wenn am Absatzende).  Runen-sicher: ein astrales
+		/// Surrogate-Paar bleibt zusammen, da direkt aus <see cref="MlGlyph.Char"/>
+		/// (Codepoint) wieder in UTF-16 umgewandelt wird — NICHT über eine
+		/// UTF-16-Substring-Operation, die ein Paar spalten könnte.
+		/// </summary>
+		public int AppendRunes(StringBuilder sb, int start, int count)
+		{
+			int total = 0;
+			if (start < 0) start = 0;
+			int i = start;
+			while (count > 0 && i < Glyphs.Count) {
+				AppendCodePoint (sb, Glyphs [i].Char);
+				i++;
+				total++;
+				count--;
+			}
+			return total;
+		}
+
+		// MlGlyph stores the Unicode code point (int) instead of a UTF-16 code unit.
+		// For BMP code points this is a plain char append; for astral code points
+		// (e.g. emoji) the surrogate pair must be re-emitted so Text round-trips.
+		private static void AppendCodePoint(StringBuilder sb, int cp)
+		{
+			// MlGlyph holds the Unicode code point as int:
+			//   cp <= 0xFFFF  → BMP, append the single char
+			//   cp >  0xFFFF  → astral (emoji, CJK extend-B…), emit surrogate pair
+			//                  (UTF-16 — that's what StringBuilder / Text expose)
+			if (cp <= 0 || cp > 0x10FFFF) return;
+			if (cp > 0xFFFF) {
+				int v = cp - 0x10000;
+				sb.Append ((char)(0xD800 + ((v >> 10) & 0x3FF)));
+				sb.Append ((char)(0xDC00 + (v & 0x3FF)));
+				return;
+			}
+			if (cp >= 0xD800 && cp <= 0xDFFF) return;  // isolated surrogate, ignore
+			sb.Append ((char)cp);
+		}
+
+	public bool NeedsWordWrap { get; set; }
 
 		public void ParseString(string line, IGUIFont font, SpecialCharacterFlags flags)
-		{			
+			{		
 			if (font == null) {
 				this.LogError ("ParseString: font must not be null");
 				return;
-			}
-				
-			if (line != null) {				
-				for (int i = 0; i < line.Length; i++) {					
-					char c = line [i];
-					if (c != '\n')
-						AppendChar (c, font, flags);					 
+			}			
+
+			if (line != null) {			
+				// Iterate by Unicode code point (runes), NOT by UTF-16 code unit, so that
+				// astral code points (surrogate pairs) stay together.  This is the
+				// primary motivation for MlGlyph (int cp) vs the framework GlyphChar (char).
+				foreach (Rune rune in line.EnumerateRunes ()) {
+					int cp = rune.Value;
+					if (cp != '\n')
+						AppendChar (cp, font, flags);				
 				}
 			}
 
@@ -230,41 +281,88 @@ namespace SummerGUI.Editor
 				WordWrap();
 		}
 
-		public bool AppendChar(char c, IGUIFont font, SpecialCharacterFlags flags)
+		public bool AppendChar(int cp, IGUIFont font, SpecialCharacterFlags flags)
 		{			
-			GlyphChar g = font.GetGlyphChar (c, flags);
-			if (g.Char > 0) {
+			// BMP path: resolve advance via the framework so the existing
+			// special-character mapping (SpaceDot, Paragraph…) still applies.
+			if (cp <= 0xFFFF) {
+				GlyphChar g = font.GetGlyphChar ((char)cp, flags);
+				if (g.Char > 0) {
+					try {
+						Glyphs.AddLast (new MlGlyph (cp, g.Advance));
+						NeedsWordWrap = true;
+						return true;
+					} catch (Exception ex) {
+						ex.LogError ();
+					}
+				}
+				return false;
+			}
+
+			// Astral (surrogate-pair) code point: only source is the emoji font.
+			// WICHTIG: GetAdvance (kein GL-Call) – Layout-Läufe laufen auf
+			// Background-Threads ohne GL-Kontext. Die echte GL-Textur wird
+			// lazy von TryGetGlyphInfo im Render-/Paint-Pfad erstellt.
+			EmojiFont efont = EmojiFont.Instance;
+			if (efont != null && efont.HasGlyph ((uint)cp)) {
+				float adv = efont.GetAdvance ((uint)cp, font.Height);
 				try {
-					Glyphs.AddLast(g);
+					Glyphs.AddLast (new MlGlyph (cp, adv));
 					NeedsWordWrap = true;
 					return true;
 				} catch (Exception ex) {
 					ex.LogError ();
-				}					
+				}
 			}
 			return false;
 		}
 
-		public bool InsertChar(int pos, char c, IGUIFont font, SpecialCharacterFlags flags)
-		{			
-			GlyphChar g = font.GetGlyphChar (c, flags);
-			if (g.Char > 0) {
-				try {					
-					Glyphs.InsertAt(pos, g);
+	public bool InsertChar(int pos, int cp, IGUIFont font, SpecialCharacterFlags flags)
+		{	
+			// BMP path
+			if (cp <= 0xFFFF) {
+				GlyphChar g = font.GetGlyphChar ((char)cp, flags);
+				if (g.Char > 0) {
+					try {	
+						Glyphs.InsertAt(pos, new MlGlyph(cp, g.Advance));
+						NeedsWordWrap = true;
+						return true;
+					} catch (Exception ex) {
+						ex.LogError ();
+					}
+				}
+				return false;
+			}
+		
+			// Astral path – GetAdvance (kein GL); Textur später im Render-Pfad
+			EmojiFont efont = EmojiFont.Instance;
+			if (efont != null && efont.HasGlyph ((uint)cp)) {
+				float adv = efont.GetAdvance ((uint)cp, font.Height);
+				try {
+					Glyphs.InsertAt(pos, new MlGlyph(cp, adv));
 					NeedsWordWrap = true;
 					return true;
 				} catch (Exception ex) {
 					ex.LogError ();
-				}					
+				}
 			}
 			return false;
 		}
 
-		public void RefreshGlyphs(IGUIFont font, SpecialCharacterFlags flags)
+	public void RefreshGlyphs(IGUIFont font, SpecialCharacterFlags flags)
 		{
+			// Re-resolve each glyph's advance at the current font size / flag config.
+			// Astral (surrogate-pair) code points keep their previous advance — the
+			// emoji font's per-height cache already produced a value when we first appended.
 			GlyphList glyphs = new GlyphList ();
-			foreach (GlyphChar g in Glyphs)
-				glyphs.AddLast (font.GetGlyphChar (g.Char, flags));
+			foreach (MlGlyph g in Glyphs) {
+				if (g.Char <= 0xFFFF) {
+					GlyphChar gc = font.GetGlyphChar ((char)g.Char, flags);
+					glyphs.AddLast (new MlGlyph (g.Char, gc.Advance));
+				} else {
+					glyphs.AddLast (g);
+				}
+			}
 
 			Concurrency.LockFreeUpdate (ref m_Glyphs, glyphs);
 			NeedsWordWrap = true;
@@ -446,7 +544,7 @@ namespace SummerGUI.Editor
 	{
 		public struct TextLineInfo
 		{
-			public ClassicLinkedList<GlyphChar>.Node StartNode;
+			public ClassicLinkedList<MlGlyph>.Node StartNode;
 			public int Length;
 		}
 

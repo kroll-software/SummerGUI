@@ -153,7 +153,7 @@ namespace SummerGUI
 			foreach (ShapedGlyph si in font.ShapeText(text))	
 			{		
 				if (font.GetGlyphInfo (si.GlyphIndex, out gi)) 
-				{										
+				{											
 					if (gi.Size.X > 0 && gi.Size.Y > 0)
 					{
 						RectangleF destRect = new RectangleF(
@@ -168,11 +168,40 @@ namespace SummerGUI
 							destRect,
 							gi.UV,
 							brush.Color
-						);						
+						);											
 					}
 
 					adv += si.XAdvance;
 					currentX += si.XAdvance;
+				}
+				else
+				{
+					// Emoji-Fallback: Hauptfont hat keinen Glyphen → Color-Emoji-Font nutzen
+					// SafeCodePoint wirft nie (lone surrogates werden zu 0 gemeldet) –
+					// char.ConvertToUtf32 WÜRFE und trieb so die Exceptions in die Air.
+					int clusterIdx = si.Cluster;
+					if (clusterIdx < text.Length)
+					{
+						uint cp = EmojiFont.SafeCodePoint(text, clusterIdx);
+						if (cp != 0)
+						{
+							var ef = EmojiFont.Instance;
+							if (ef != null && ef.HasGlyph(cp))
+							{
+								if (ef.TryGetGlyphInfo(cp, font.Height, out var egi))
+								{
+									RectangleF dest = new RectangleF(
+										font.Snap(currentX + egi.Bearing.X),
+										font.Snap(baselineY - egi.Bearing.Y),
+										egi.Size.X,
+										egi.Size.Y);
+									ctx.Batcher.AddTextureRectangle(dest, egi.UV, Color4.White, egi.TextureId);
+									adv += egi.Advance;
+									currentX += egi.Advance;
+								}
+							}
+						}
+					}
 				}
 			}
 
@@ -227,10 +256,10 @@ namespace SummerGUI
 				gi = glyphs[k];
 				si = shapes[k];
 				if (gi.Size.X > 0 && gi.Size.Y > 0)
-				{					
+				{				
 					RectangleF destRect = new RectangleF(
 						font.Snap(currentX + gi.Bearing.X + si.XOffset),
-						font.Snap(baselineY - gi.Bearing.Y + si.YOffset),						
+						font.Snap(baselineY - gi.Bearing.Y + si.YOffset),				
 						gi.Size.X,
 						gi.Size.Y
 					);
@@ -240,9 +269,30 @@ namespace SummerGUI
 						destRect,
 						gi.UV,
 						brush.Color
-					);					
+					);				
 				}
-				currentX += si.XAdvance;				
+				else
+				{
+					// Emoji-Fallback
+					int clusterIdx = si.Cluster;
+					if (clusterIdx < text.Length)
+					{
+						uint cp = EmojiFont.SafeCodePoint(text, clusterIdx);
+						if (cp != 0)
+						{
+							var ef = EmojiFont.Instance;
+							if (ef != null && ef.HasGlyph(cp) && ef.TryGetGlyphInfo(cp, font.Height, out var egi))
+							{
+								ctx.Batcher.AddTextureRectangle(
+									new RectangleF(font.Snap(currentX + egi.Bearing.X), font.Snap(baselineY - egi.Bearing.Y), egi.Size.X, egi.Size.Y),
+									egi.UV, Color4.White, egi.TextureId);
+								currentX += egi.Advance;
+								continue;
+							}
+						}
+					}
+				}
+				currentX += si.XAdvance;			
 			}
 
 			if (format.HasFlag(FontFormatFlags.Underline))
@@ -301,19 +351,37 @@ namespace SummerGUI
 					}
 
 					currentX += si.XAdvance;
-					adv += si.XAdvance;
-				}
-			}
-			
+						adv += si.XAdvance;
+					}
+					else
+					{
+					// Emoji-Fallback
+					int clusterIdx = si.Cluster;
+					if (clusterIdx < text.Length)
+					{
+						var ef = EmojiFont.Instance;
+						uint cp = EmojiFont.SafeCodePoint(text, clusterIdx);
+						if (cp != 0 && ef != null && ef.HasGlyph(cp) && ef.TryGetGlyphInfo(cp, font.Height, out var egi))
+						{
+							ctx.Batcher.AddTextureRectangle(
+								new RectangleF(font.Snap(currentX + egi.Bearing.X), font.Snap(baselineY - egi.Bearing.Y), egi.Size.X, egi.Size.Y),
+								egi.UV, Color4.White, egi.TextureId);
+							currentX += egi.Advance;
+							adv += egi.Advance;
+							}
+							}
+							}
+							}
+
 			// Unterstrich zeichnen (DPI skaliert)
-			if (showMnemonics && mstart >= 0) 
-			{                
+			if (showMnemonics && mstart >= 0)
+			{
 				float thickness = Math.Max(1f, 1f * font.ScaleFactor);
-				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline				
+				float yPos = baselineY + thickness * 2f; // Knapp unter der Baseline
 				ctx.Batcher.AddRectangle(new RectangleF(mstart, yPos, mend - mstart, thickness), brush.Color);
 			}
 
-			return new SizeF(adv, font.Height);            
+			return new SizeF(adv, font.Height);
 		}
 
 		private static SizeF PrintMultiline(IGUIContext ctx, IGUIFont font, Brush brush, string text, RectangleF bounds)
@@ -429,10 +497,27 @@ namespace SummerGUI
 					}
 					currentX += si.XAdvance;
 				}
-			}
-			// Nach dem Rendern der Zeile die Bounds für die nächste Zeile nach unten schieben
-			lineBounds.Y += font.LineHeight;
+				else
+				{
+					// Emoji-Fallback
+					int clusterIdx = si.Cluster;
+					if (clusterIdx < text.Length)
+					{
+						var ef = EmojiFont.Instance;
+						uint cp = EmojiFont.SafeCodePoint(text, clusterIdx);
+						if (cp != 0 && ef != null && ef.HasGlyph(cp) && ef.TryGetGlyphInfo(cp, font.Height, out var egi))
+						{
+							ctx.Batcher.AddTextureRectangle(
+								new RectangleF(font.Snap(currentX + egi.Bearing.X), font.Snap(baselineY - egi.Bearing.Y), egi.Size.X, egi.Size.Y),
+								egi.UV, Color4.White, egi.TextureId);
+							currentX += egi.Advance;
+						}
+					}
+				}
+
 		}		
+			lineBounds.Y += font.LineHeight;
+		}
 
 		public static SizeF DrawSelectedString(this IGUIContext ctx, string text, IGUIFont font, int selStart, int selLength, RectangleF bounds, float offsetX, FontFormat format, Color foreColor, Color selectionBackColor, Color selectionForeColor)
 		{
@@ -474,6 +559,26 @@ namespace SummerGUI
 					ctx.Batcher.AddGlyph(glyphInfo.TextureId, dest, glyphInfo.UV, activeColor);
 					currentX += glyphInfo.Advance;
 				}
+				else
+				{
+					// Fallback: Base-Font hat keine Glyph (Emoji, U+26xx-BMP, Surrogate-Paar etc.) → EmojiFont.
+					uint cp = EmojiFont.SafeCodePoint(text, i);
+					var efont = EmojiFont.Instance;
+					if (cp != 0 && efont != null && efont.TryGetGlyphInfo(cp, font.Height, out var egi))
+					{
+						RectangleF dest = new RectangleF(
+							font.Snap(currentX + egi.Bearing.X),
+							font.Snap(currentY + (font.Ascender - egi.Bearing.Y)),
+							egi.Size.X,
+							egi.Size.Y
+						);
+						// Emoji-Texturen sind selbst gefärbt (CBDT/PNG) — NICHT mit der Textfarbe tinten (sonst S/W-Silhouetten).
+						ctx.Batcher.AddTextureRectangle(dest, egi.UV, Color4.White, egi.TextureId);
+						currentX += egi.Advance;
+						if (char.IsHighSurrogate(text[i]))
+							i++;   // Low-Surrogate mitkonsumieren
+					}
+				}
 			}
 
 			return new SizeF(currentX - startX, font.Height);
@@ -486,7 +591,21 @@ namespace SummerGUI
 			for (int i = 0; i < length && i < text.Length; i++)
 			{
 				if (font.GetGlyphInfo(text[i], out var gi))
+				{
 					w += gi.Advance;
+				}
+				else
+				{
+					// Fallback auf EmojiFont (BMP-Emoji, Surrogate-Paar).
+					uint cp = EmojiFont.SafeCodePoint(text, i);
+					var efont = EmojiFont.Instance;
+					if (cp != 0 && efont != null && efont.TryGetGlyphInfo(cp, font.Height, out var egi))
+					{
+						w += egi.Advance;
+						if (char.IsHighSurrogate(text[i]))
+							i++;
+					}
+				}
 			}
 			return w;
 		}

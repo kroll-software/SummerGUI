@@ -512,24 +512,23 @@ namespace SummerGUI.Editor
 			Paragraphs.OnUpdateBreakWidthAsync (breakWidth);			
 		}
 			
-		public void InsertChar(char c)
+		public void InsertChar(int cp)
 		{			
-			switch (c) {
-			case '\r':
-				break;
-			case '\n':
+			if (cp == '\r')
+				return;
+
+			if (cp == '\n') {
 				InsertLineBreak ();
-				break;
-			default:
-				int startParaIndex = CurrentParagraphIndex;
-				Paragraph para = CurrentParagraph;
-				if (para.InsertChar (CursorPosition++, c, Font, Flags)) {
-					//MoveNextChar ();
-					//para.WordWrap (BreakWidth);
-					Paragraphs.OnUpdate (startParaIndex, BreakWidth, false, 250);
-					ResetCursorColoumns ();
-				}
-				break;
+				return;
+			}
+
+			int startParaIndex = CurrentParagraphIndex;
+			Paragraph para = CurrentParagraph;
+			if (para.InsertChar (CursorPosition++, cp, Font, Flags)) {
+				//MoveNextChar ();
+				//para.WordWrap (BreakWidth);
+				Paragraphs.OnUpdate (startParaIndex, BreakWidth, false, 250);
+				ResetCursorColoumns ();
 			}
 		}
 
@@ -721,10 +720,11 @@ namespace SummerGUI.Editor
 			List<Paragraph> result = new List<Paragraph>();
 			Paragraph current = new Paragraph(0, BreakWidth);
 
-			foreach (char c in text)
-			{
-				if (c == '\n')
-				{
+			// Iterate by Unicode code point (runes), NOT by UTF-16 code unit —
+			// astral (surrogate pair) characters must stay together.
+			foreach (Rune rune in text.EnumerateRunes ()) {
+				int cp = rune.Value;
+				if (cp == '\n') {
 					// Absatz beenden MIT Newline
 					current.AppendChar('\n', Font, Flags);
 					current.NeedsWordWrap = true;
@@ -732,11 +732,9 @@ namespace SummerGUI.Editor
 
 					// neuen Absatz anfangen
 					current = new Paragraph(0, BreakWidth);
-				}
-				else
-				{
+				} else {
 					// Normales Zeichen
-					current.AppendChar(c, Font, Flags);
+					current.AppendChar(cp, Font, Flags);
 				}
 			}
 
@@ -814,7 +812,17 @@ namespace SummerGUI.Editor
 			int absStart = AbsCursorPosition; // Nutzung Ihrer Eigenschaft
 			
 			// 2. Zielposition (Absolutes Ende)
-			int absEnde = absStart + text.Length;
+			// WICHTIG: Das Dokument zählt in GLYPHS (1 astral Codepoint = 1 Glyph,
+			// MlGlyph speichert den int-Codepoint), text.Length zählt in UTF-16-Units
+			// (1 astral = 2).  Für BMP-Text ist beides identisch; für astral (Emoji/CJK)
+			// zählt hier die Rune-Zahl, sonst wandert der Cursor nach dem Einfügen.
+			int runeCount = 0;
+			for (int i = 0; i < text.Length; i++) {
+				runeCount++;
+				if (char.IsHighSurrogate (text[i]) && i + 1 < text.Length && char.IsLowSurrogate (text[i + 1]))
+					i++;
+			}
+			int absEnde = absStart + runeCount;
 
 			var newParas = ParseTextToParagraphs(text);
 
@@ -849,7 +857,7 @@ namespace SummerGUI.Editor
 					Paragraph cp = CurrentParagraph;
 					Paragraph np = Paragraphs [CurrentParagraphIndex + 1];
 					cp.Glyphs.RemoveLast ();
-					foreach (GlyphChar g in np.Glyphs)
+					foreach (MlGlyph g in np.Glyphs)
 						cp.Glyphs.AddLast (g);
 					cp.NeedsWordWrap = true;
 					cp.WordWrap (BreakWidth);
@@ -950,28 +958,24 @@ namespace SummerGUI.Editor
 				return String.Empty;
 			}
 
+			// Runen-sicherer Abzug (1 astral Codepoint = 1 Rune).
+			// Früher wurde über para.ToString().StrMid(offset+1, len) geschnitten —
+			// StrMid zählt UTF-16-Code-Einheiten, start/len sind aber RUNEN → ein
+			// astrales Surrogate-Paar wurde mitten durchgeschnitten (Copy/Undo-Data
+			// = einsames Surrogate) und `len -= utf16Length` lief unter.  Jetzt
+			// direkt aus den Glyph-Codepoints (MlGlyph.Char), paar-weise intakt.
 			StringBuilder sb = new StringBuilder (len);
 			int end = start + len;
-			int startParaIndex = FindParagraphIndexByPosition (start);
-			int index = startParaIndex;
-			while (len > 0 && index < Paragraphs.Count) {
+			int index = FindParagraphIndexByPosition (start);
+			int remaining = len;
+			while (remaining > 0 && index < Paragraphs.Count) {
 				Paragraph para = Paragraphs [index];
-				if (para.PositionOffset < end) {
-					int count = 0;
-					if (start - para.PositionOffset > 0 || len < para.Length) {
-						para.ToString ().StrMid (Math.Max(0, start - para.PositionOffset) + 1, len).Do (s => {
-							count = s.Length;
-							sb.Append (s);	
-						});
-					} else {						
-						para.ToString (sb);
-						count = para.Length;
-					}
-
-					if (count < 0)
-						break;
-					len -= count;
-				}
+				if (para.PositionOffset >= end)
+					break;
+				int runInPara = Math.Max (0, start - para.PositionOffset);
+				int take = Math.Min (remaining, para.Length - runInPara);
+				if (take > 0)
+					remaining -= para.AppendRunes (sb, runInPara, take);
 				index++;
 			}
 

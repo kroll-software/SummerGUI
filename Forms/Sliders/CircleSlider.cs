@@ -171,17 +171,24 @@ namespace SummerGUI
 			float normalized = NormalizedValue;
 			float sweepAngle = 360f * normalized;
 
-			float pieRadius = Radius - Math.Max(2, (Radius / 10f));
+			// Der gezeichnete Kreis muss komplett in die Box passen:
+			// Radius auf die halbe Box-Groesse zurueckstufen (1px Rand),
+			// sonst sitzt der Bogengrundpunkt auf der Scissor-Kante und
+			// wird durch die Pixel-Rundung 1-2px abgerastelt.
+			float drawRadius = Math.Max(1f,
+				Math.Min(Radius, Math.Min(bounds.Width, bounds.Height) / 2f) - 1f);
+
+			float pieRadius = drawRadius - Math.Max(2, (Radius / 10f));
 
 			// --- Hintergrund & Glättung ---
 			// Tipp für Smoothness: Zeichne den Hintergrundkreis minimal größer 
 			// als den Pie, um "Blitzer" an den Rändern zu vermeiden.
 			using (Pen pen = new Pen(Color.Gray, 1f)) {
-				ctx.DrawCircle(pen, CenterPoint.X, CenterPoint.Y, Radius);
-			}               
+				ctx.DrawCircle(pen, CenterPoint.X, CenterPoint.Y, drawRadius);
+			}              
 
 			using (Brush brush = new SolidBrush(Style.BorderColorPen.Color)) {
-				ctx.FillCircle(brush, CenterPoint.X, CenterPoint.Y, Radius);
+				ctx.FillCircle(brush, CenterPoint.X, CenterPoint.Y, drawRadius);
 			}
 
 			// --- Daten-Farbe ---
