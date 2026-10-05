@@ -897,58 +897,57 @@ namespace SummerGUI.Editor
 			ResetCursorColoumns ();
 
 			int end = start + len;
-			int startParaIndex = FindParagraphIndexByPosition (start);
-			int index = startParaIndex;
-			Paragraph para = null;
-			while (len > 0 && index < Paragraphs.Count) {
-				para = Paragraphs [index];
-				if (para.PositionOffset < end) {
-					int count;
-					if (start - para.PositionOffset > 0 || len < para.Length) {
-						count = para.RemoveRange (Math.Max(0, start - para.PositionOffset), len, Font, Flags);
-					} else {						
-						count = para.Length;
-						para.Glyphs.Clear ();
-					}
-										
-					len -= count;
+			int remaining = len;
+			int index = FindParagraphIndexByPosition (start);
+
+			// Löschung über mehrere Absätze: in JEDEM Absatz wird nur so viel entfernt,
+			// wie tatsächlich in der [start, end)-Region liegt — exakt das Clamping-Schema der
+			// korrekten GetCharRange-Methode.
+
+			// Die alte Implementierung warf das gesamte `len` in EINEN Absatz
+			// (para.RemoveRange(start-Offset, len)).  Ließt die Region über mehrere Absätze
+			// (z.B. das Undo eines mehrzeiligen Paste), lief das über das Glyph-Array hinaus,
+			// RemoveRange warf, gab -1 zurück, und `len -= (-1)` verfälschte den Zähler,
+			// wodurch die FALSCHEN Absätze entfernt wurden (Buffer-Korruption).
+			while (remaining > 0 && index < Paragraphs.Count) {
+				Paragraph para = Paragraphs [index];
+				if (para.PositionOffset >= end)
+
+					break;
+				int runInPara = Math.Max (0, start - para.PositionOffset);
+				int take = Math.Min (remaining, para.Glyphs.Count - runInPara);
+				if (take > 0) {
+					para.RemoveRange (runInPara, take, Font, Flags);
+					remaining -= take;
 				}
-				if (para.Glyphs.Count == 0)
-					Paragraphs.RemoveAt (index);
+				index++;
+			}
+
+			// Durch die Löschung (leer) gewordene Absätze entfernen.
+			int ci = 0;
+			while (ci < Paragraphs.Count) {
+				if (Paragraphs [ci].Glyphs.Count == 0)
+					Paragraphs.RemoveAt (ci);
 				else
-					index++;
+					ci++;
 			}
 
-			int endParaIndex = index; // Index des ersten Paragraphen NACH der gelöschten Region
-
-			// ============================================================
-			// 2. Merge der Ränder (Symmetrie zu InsertRange)
-			// ============================================================
-
-			// Der Start-Paragraph
-			Paragraph startPara = Paragraphs[startParaIndex]; 
-
-			// Index des Paragraphen, der an startPara angehängt werden soll (falls vorhanden)
-			int mergePartnerIndex = startParaIndex + 1;
-			
-			// Prüfen, ob ein Merge-Partner existiert
-			if (mergePartnerIndex < Paragraphs.Count)
-			{
-				// Wenn der startPara NICHT mit einem Zeilenumbruch endet, 
-				// wurde der ursprüngliche Zeilenumbruch (zwischen startPara und dem neuen mergePartner) gelöscht.
-				if (!startPara.EndsWithNewline()) 
-				{
-					Paragraph mergePartner = Paragraphs[mergePartnerIndex];
-
-					// Füge alle Glyphen des mergePartner an startPara an
-					startPara.Glyphs.AppendRange(mergePartner.Glyphs);
-
-					// Entferne den mergePartner
-					Paragraphs.RemoveAt(mergePartnerIndex);
-				}
+			// Invariante: das Dokument besitzt immer mindestens einen Absatz (der Ctor legt
+			// einen leeren Start-Absatz an).  Löscht die Operation das GANZE Dokument (z.B.
+			// das Undo eine Select-All-Paste über 'AlphaBeta\nGamma'), wird der leere
+			// Start-Absatz wiederhergestellt statt wie früher einen ArgumentOutOfRangeException.
+			if (Paragraphs.Count == 0) {
+				Paragraph newPara = new Paragraph (0, BreakWidth, String.Empty, Font, Flags);
+				newPara.Glyphs.Clear ();        // garantiert wirklich leer (keine Sentinel-Glyph)
+				Paragraphs.AddLast (newPara);
+				CurrentParagraphIndex = 0;
+				CursorPosition = 0;
+			} else {
+				CurrentParagraphIndex = CurrentParagraphIndex.Clamp (0, Paragraphs.Count - 1);
+				CursorPosition = CursorPosition.Clamp (0, Paragraphs [CurrentParagraphIndex].Glyphs.Count);
 			}
-			
-			Paragraphs.OnUpdate(startParaIndex, BreakWidth);
+
+			Paragraphs.OnUpdate (0, BreakWidth);
 		}
 
 		public string GetCharRange(int start, int len)

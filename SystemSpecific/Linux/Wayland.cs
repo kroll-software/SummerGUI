@@ -231,8 +231,13 @@ public static class Wayland
 
             display.Roundtrip();
 
+            // GNOME/Mutter und viele Compositoren (u.a. Weston) werfen KEIN zxdg_exporter_v2
+            // aus (GNOME nutzt das interne Portal ohne xdg-foreign). Das ist gültig:
+            // Das XDG-Desktop-Portal erlaubt ein leeres parent_window. Dann ist der
+            // Dialog nicht an ein Elternfenster gekoppelt. Kein Throw — ein Throw hier
+            // war der uncatchte Crash bei FileOpen/FileNew. (2026-10-05)
             if (exporterName == 0)
-                throw new Exception("zxdg_exporter_v2 not advertised by compositor.");
+                return "";
 
             var exporter =
                 registry.Bind<ZxdgExporterV2>(
@@ -242,19 +247,26 @@ public static class Wayland
             //Console.WriteLine("Exporter successfully bound.");
 
             var surface = new WlSurface(wlSurfacePtr, display);
-            var exported = exporter.ExportToplevel(surface);            
+            var exported = exporter.ExportToplevel(surface);           
 
             exported.OnHandle += handle =>
             {
-                //Console.WriteLine($"Handle: {handle}");
+                //Console.WriteLine($"\tHandle: {handle}");
                 tcs.TrySetResult(handle);
             };
 
             display.Roundtrip();            
         }
 
-        string parentWindowToken = await tcs.Task;
-        return parentWindowToken;
+        // Sicherheits-Timeout: Manche Compositoren wirbeln zxdg_exporter_v2 aus,
+        // liefern aber nie ein handle. Ohne Timeout würde `await tcs.Task` ewig
+        // blockieren → App freeze. Fallback ist dann ein leerer Token (kein Parent),
+        // mit dem das Portal trotzdem korrekt funktioniert. (2026-10-05)
+        var finished = await Task.WhenAny(tcs.Task, Task.Delay(2000));
+        if (finished == tcs.Task)
+            return await tcs.Task;
+
+        return "";
     }
     
 
@@ -266,9 +278,38 @@ public static class Wayland
         string initialDirectory,
         string defaultFileName)
     {
+        // Defensive: JEDER Fehler im Portal-Pfad (fehlendes Backend, D-Bus-Abbruch,
+        // Timeout) darf die Anwendung NICHT abstürzen lassen. Der Callers erwartet
+        // null bei Abbruch/Cancel. Früher flog jede Exception uncaught bis in den
+        // GUI-Thread → "crasht sofort" ohne Fehlermeldung. (2026-10-05)
+        try
+        {
+            return await ShowDialogPortalInnerAsync(
+                ctx,
+                action,
+                filter,
+                filterIndex,
+                initialDirectory,
+                defaultFileName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SummerGUI] FileDialog-Portal-Fehler: {ex.Message}");
+            return null; // Cancel/Abbruch — App läuft weiter
+        }
+    }
+
+    private static async Task<string> ShowDialogPortalInnerAsync(
+        IGUIContext ctx,
+        int action,
+        string filter,
+        int filterIndex,
+        string initialDirectory,
+        string defaultFileName)
+    {
         string parentWindowToken = await GetParentWindowToken(ctx);
-        //Console.WriteLine($"parentWindowToken: {parentWindowToken}");
-                    
+        //Console.WriteLine($"\tparentWindowToken: {parentWindowToken}");
+        
         var connection =
             new Connection(Address.Session);
 
@@ -292,7 +333,12 @@ public static class Wayland
             options["current_folder"] = pathBytes;
         }
 
-        string formattedToken = $"wayland:{parentWindowToken}";
+        // Leeres Token (Compositor ohne zxdg_exporter_v2, z.B. GNOME/Mutter, Weston)
+        // → leere parent_window: gültig, Dialog ohne Eltern-Bezug. Kein "wayland:"-Prefix
+        // auf leeren String — das wäre ein kaputt gebildetes Token.
+        string formattedToken = string.IsNullOrEmpty(parentWindowToken)
+            ? ""
+            : $"wayland:{parentWindowToken}";
 
         ObjectPath requestPath =
             await chooser.OpenFileAsync(

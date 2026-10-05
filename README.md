@@ -46,6 +46,21 @@ Check out the **SummerGUI Demo Application** and see it in action:
 
 [👉 SummerGUI.Demo](https://github.com/kroll-software/SummerGUI.Demo)  
 
+## 🐧 Linux / Wayland — the bundled GLFW fork
+
+SummerGUI's Wayland support (`glfwGetWaylandToplevel`) ships in a **forked GLFW** located in `NativeLibs/linux-x64/`. OpenTK's standard `libglfw.so.3` (from `OpenTK.Redist.Glfw`) does **not** include that symbol — and NuGet asset copying always overwrites anything a project file copies on its own.
+
+`SummerGUI.targets` solves this: it runs after NuGet's asset copy and swaps in the fork wherever a stock file was placed (`bin/` root **and** `runtimes/linux-x64/native/`). It is self-gated: projects without a stock `libglfw.so.3` are untouched, and on Windows the target never runs.
+
+Consumers that reference the **SummerGUI project** add one line to their `.csproj`:
+
+```xml
+<Import Project="..\\SummerGUI\\SummerGUI.targets"
+        Condition="Exists('..\\SummerGUI\\SummerGUI.targets')" />
+```
+
+No other configuration is needed.
+
 ## 🤝 Join the Journey
 This is an exciting stage of development! SummerGUI is evolving rapidly, and we are looking for early adopters and contributors. If you are familiar with:
 

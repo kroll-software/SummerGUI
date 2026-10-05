@@ -122,6 +122,9 @@ namespace SummerGUI
 
 		private static void CenterWindowOnParent(SummerGUIWindow parent, SummerGUIWindow child)
 		{
+			if (SummerGUIWindow.IsWayland)
+				return;   // Wayland: parent-Location lesen/setzen feuert GLFW-Error, Compositor platziert das Dialog
+
 			Vector2i parentLocation = parent.Location;
 			Vector2i parentSize = parent.Size;
 			Vector2i childSize = child.Size;

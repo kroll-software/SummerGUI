@@ -324,7 +324,6 @@ namespace SummerGUI
 			get; set;
 		}
 
-		float m_LineHeight;
 		float LineHeight
 		{
 			get { return (m_Font != null && m_Font.LineHeight > 0) ? m_Font.LineHeight : 16f; }

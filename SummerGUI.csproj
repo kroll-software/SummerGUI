@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="SummerGUI.targets"
+          Condition="Exists('SummerGUI.targets')" /><!-- SummerGUI: GLFW-Wayland-Fork -->
+
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>    
@@ -37,6 +40,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- WaylandDotnet ist ein Generator, dessen QUELLEN Teil dieser Assembly sind
+         (liefern Basistypen für Wayland). Seine eigenen BUILD-ARTEFAKTE (obj/, bin/)
+         gehören NICHT dazu: die enthaltene generierte AssemblyInfo + AssemblyAttributes
+         würden sonst doppelt kompiliert -> CS0579 (nur, wenn obj/ existiert, also
+         state-dependent). -->
+    <Compile Remove="SystemSpecific/Linux/Wayland/WaylandDotnet/obj/**" />
+    <Compile Remove="SystemSpecific/Linux/Wayland/WaylandDotnet/bin/**" />
+  </ItemGroup>
+
+  <!--
+    Per-Datei-Unterdrückungen (nicht projekt-weit) für den vendierten/dritten-
+    Partei-WaylandCode (WaylandDotnet) leben in ./.editorconfig:
+      CS8632 (Custom/Core/wayland + WaylandDotnet/* = vendierter Hand-Code)
+      CS0649 (Generated/* = per Protokoll auto-generierte Wrapper-Klassen)
+    Sie gilt NUR für die dort aufgelisteten Dateien — der Rest des Projekts
+    ist davon unberührt.
+  -->
+
+  <ItemGroup>
     <PackageReference Include="FreeTypeSharp" Version="3.0.1" />
     <PackageReference Include="HarfBuzzSharp" Version="2.8.2.3" />    
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="2.8.2.3" />    
@@ -46,8 +68,6 @@
     <PackageReference Include="StbImageSharp" Version="2.30.15" />    
     <PackageReference Include="Tmds.DBus" Version="0.94.2" />    
   </ItemGroup>
-
-  <Import Project="SummerGUI.targets" />
 
   <ItemGroup>    
     <Folder Include="Properties/" />

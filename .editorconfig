@@ -1,0 +1,61 @@
+# SummerGUI — per-Datei (nicht projekt-weite) Compiler-Warn-Unterdrückungen
+# Nur für den vendierten/dritten-Party-WaylandCode (WaylandDotnet), den wir
+# nicht anfassen. Die dortigen Warnungen sind rein kosmetisch:
+#
+#   CS8632 — nullable-Annotation '?' ohne #nullable-Kontext; das Projekt läuft
+#            mit Nullable=disable, die ? sind dort schlicht nutzlos.
+#            (Custom/Core/wayland + WaylandDotnet/* = vendierter Hand-Code)
+#   CS0649 — Feld 'disposed' wird nie zugewiesen: der Generator emittiert die
+#            ObjectDisposedException-Guards, aber weder IDisposable noch Dispose();
+#            die Guard prüft also konstant 'false' (sinnerlos, aber harmlos).
+#            (Generated/* = per-Protokoll auto-generierte Wrapper-Klassen)
+#
+# Diese Unterdrückung gilt NUR für die unten aufgeführten Dateien — nicht fürs
+# gesamte Projekt. Roslyn ehrt dotnet_diagnostic.*.severity auch bei `dotnet build`
+# und in VS Code.
+
+root = false
+
+# ---- CS8632 (nullable-Annotation '?' ohne Kontext) ----
+[SystemSpecific/Linux/Wayland/WaylandDotnet/Custom/Core/wayland/WlDisplay.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/Custom/Core/wayland/WlShm.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/Exceptions/WaylandDispatchException.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/Interfaces/WlFixed.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/Internal/WaylandMarshal.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/WaylandLogger.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/WaylandObject.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+[SystemSpecific/Linux/Wayland/WaylandDotnet/WaylandProxy.cs]
+dotnet_diagnostic.CS8632.severity = none
+
+# ---- CS0649 (nie zugewiesenes 'disposed'-Feld, Generator-Wrapper) ----
+[SystemSpecific/Linux/Wayland/Generated/Staging/xdg-dialog-v1/XdgDialogV1.cs]
+dotnet_diagnostic.CS0649.severity = none
+
+[SystemSpecific/Linux/Wayland/Generated/Staging/xdg-dialog-v1/XdgWmDialogV1.cs]
+dotnet_diagnostic.CS0649.severity = none
+
+[SystemSpecific/Linux/Wayland/Generated/Unstable/xdg-foreign-unstable-v2/ZxdgExportedV2.cs]
+dotnet_diagnostic.CS0649.severity = none
+
+[SystemSpecific/Linux/Wayland/Generated/Unstable/xdg-foreign-unstable-v2/ZxdgExporterV2.cs]
+dotnet_diagnostic.CS0649.severity = none
+
+[SystemSpecific/Linux/Wayland/Generated/Unstable/xdg-foreign-unstable-v2/ZxdgImportedV2.cs]
+dotnet_diagnostic.CS0649.severity = none
+
+[SystemSpecific/Linux/Wayland/Generated/Unstable/xdg-foreign-unstable-v2/ZxdgImporterV2.cs]
+dotnet_diagnostic.CS0649.severity = none

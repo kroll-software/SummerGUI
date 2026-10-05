@@ -1,16 +1,69 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
+  <!--
+    SummerGUI GLFW-Override (portabel, repo-intern, NuGet-fähig).
 
-  <Target Name="CopyCustomGlfw"
-          AfterTargets="CopyFilesToOutputDirectory">
+    Hintergrund:
+      Der SummerGUI-Wayland-Code (SystemSpecific/Linux/Wayland.cs) benötigt
+      glfwGetWaylandToplevel — eine Funktion, die in der von OpenTK
+      (OpenTK.Redist.Glfw) ausgelieferten Standard-GLFW nicht existiert.
+      Die geforkte Version liegt in NativeLibs/linux-x64/libglfw.so.3.
+
+      Jede Konsumenten-Projekt, die OpenTK (direkt oder transitiv über
+      SummerGUI) bezieht, bekommt die Standard-GLFW als NuGet-Runtime-Asset
+      in ihr bin/-Verzeichnis kopiert — und zwar NACH jeder Kopie, die in
+      einer einzelnen .csproj fest verdrahtet ist.  Deshalb muss das Target
+      hier AfterTargets="CopyFilesToOutputDirectory" laufen: es ersetzt die
+      Stock-Datei exakt dann, wenn sie im Output liegt (Self-Gating).
+
+    Einbindung:
+      Jeder, der SummerGUI verwendet und auf Linux laufen will, ergänzt in
+      SEINEM .csproj eine Zeile:
+
+        <Import Project="../SummerGUI/SummerGUI.targets"
+                Condition="Exists('../SummerGUI/SummerGUI.targets')" />
+
+      (Pfad relativ zum eigenen Projekt; bei NuGet-Paket-Konsumenten ist
+      nichts zu tun — die Datei wird aus build/ automatisch importiert.)
+
+    Pfad-Auflösung der Fork-Quelle (in dieser Reihenfolge):
+      1. <dieses Verzeichnis>/NativeLibs/linux-x64/libglfw.so.3   (repo-local)
+      2. <dieses Verzeichnis>/../runtimes/linux-x64/native/libglfw.so.3 (nupkg: build/ → Paket-Root)
+      3. <dieses Verzeichnis>/runtimes/linux-x64/native/libglfw.so.3    (nupkg, alternative Paket-Layouts)
+  -->
+
+  <PropertyGroup>
+    <_GlfwForkC1>$(MSBuildThisFileDirectory)NativeLibs/linux-x64/libglfw.so.3</_GlfwForkC1>
+    <_GlfwForkC2>$(MSBuildThisFileDirectory)../runtimes/linux-x64/native/libglfw.so.3</_GlfwForkC2>
+    <_GlfwForkC3>$(MSBuildThisFileDirectory)runtimes/linux-x64/native/libglfw.so.3</_GlfwForkC3>
+    <GlfwForkSource Condition="'$(GlfwForkSource)' == ''">$(_GlfwForkC1)</GlfwForkSource>
+    <GlfwForkSource Condition="'$(GlfwForkSource)' != '' AND !Exists('$(GlfwForkSource)')">$(_GlfwForkC2)</GlfwForkSource>
+    <GlfwForkSource Condition="'$(GlfwForkSource)' != '' AND !Exists('$(GlfwForkSource)')">$(_GlfwForkC3)</GlfwForkSource>
+  </PropertyGroup>
+
+  <Target Name="OverrideGlfwWithSummerGUIFork"
+          AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(OS)' != 'Windows_NT'
+                     AND '$(OS)' != 'Windows'
+                     AND Exists('$(GlfwForkSource)')">
+
+    <!-- Alle Orte, an denen die .NET-DllImport-Ladefindung die Datei findet:
+         bin-Root UND/ODER RID-Layout (runtimes/linux-x64/native/).
+         Self-Gating: nur existierende Stock-Kopien werden ersetzt;
+         Projekte ohne libglfw.so.3 bleiben unangefasst. -->
+    <ItemGroup>
+      <_GlfwOutputs Include="$(TargetDir)libglfw.so.3"
+                    Condition="Exists('$(TargetDir)libglfw.so.3')" />
+      <_GlfwOutputs Include="$(TargetDir)runtimes/linux-x64/native/libglfw.so.3"
+                    Condition="Exists('$(TargetDir)runtimes/linux-x64/native/libglfw.so.3')" />
+    </ItemGroup>
 
     <Message Importance="high"
-             Text="Copy GLFW $(TargetDir)"/>
-
-    <Copy
-        SourceFiles="$(MSBuildThisFileDirectory)NativeLibs/linux-x64/libglfw.so.3"
-        DestinationFiles="$(TargetDir)libglfw.so.3"
-        OverwriteReadOnlyFiles="true"/>
-
+             Text="SummerGUI: GLFW-Wayland-Fork → @(_GlfwOutputs)"
+             Condition="'@(_GlfwOutputs)' != ''" />
+    <Copy SourceFiles="$(GlfwForkSource)"
+          DestinationFiles="@(_GlfwOutputs)"
+          OverwriteReadOnlyFiles="true"
+          Condition="'@(_GlfwOutputs)' != ''" />
   </Target>
 
 </Project>

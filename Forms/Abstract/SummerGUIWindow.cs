@@ -153,6 +153,20 @@ namespace SummerGUI
 
 		public int OriginalWidth { get; private set; }
 		public int OriginalHeight { get; private set; }
+
+		/// <summary>
+		/// true, wenn die App gerade unter Wayland läuft, false auf X11/Win32/Cocoa.
+		/// Wir prüfen damit, ob wir in SummerGUIWindow auf API verzichten müssen, die Wayland
+		/// nicht implementiert (Get/SetWindowPos, SetWindowOpacity).
+		/// <para>
+		/// Muss nur aufgerufen werden, AFTER <see cref="NativeWindow"/> erstellt wurde
+		/// (also <see cref="OpenTK.Windowing.Desktop.GLFWProvider.EnsureInitialized"/> gelaufen ist) —
+		/// sonst liefert <see cref="GLFW.GetPlatform"/> "Unknown" (0). In SummerGUIWindow ist das
+		/// der Fall ab dem ersten Konstruktor, d.h. alle Aufrufstellen (OnLoadSettings, OnMove,
+		/// ToggleFullScreen, Run) sind sicher.
+		/// </para>
+		/// </summary>
+		public static bool IsWayland => GLFW.GetPlatform() == Platform.Wayland;
 		public float LayoutFrameRate { get; set; }
 		public float PaintFrameRate { get; set; }
 
@@ -173,7 +187,8 @@ namespace SummerGUI
 		private DeltaTimer _frameTimer;
 		public int DeltaTicks { get => _frameTimer.Delta; }
 
-		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30) : base(settings)
+		protected SummerGUIWindow(NativeWindowSettings settings, SummerGUIWindow parent = null, int frameRate = 30)
+			: base(GlfwErrorGuard.EnsureInstalled(settings))
         {			
 			Interlocked.Increment(ref _instanceCount);
 			_mainThreadId = Environment.CurrentManagedThreadId;
@@ -351,6 +366,9 @@ namespace SummerGUI
         protected override void OnMove(WindowPositionEventArgs e)
         {
             base.OnMove(e);
+			if (IsWayland)
+				return;   // Wayland: Fensterposition ist Compositor-Interna (Location lesen feuert GLFW-Error)
+
 			if (WindowState == WindowState.Normal)
 				DefaultLocation = Location;
         }
@@ -443,23 +461,35 @@ namespace SummerGUI
 			ConfigurationService.Instance.ConfigFile.Do (cfg => {
 				if (!String.IsNullOrEmpty (Name) && this.WindowBorder == WindowBorder.Resizable) {				
 					WindowState winState = (WindowState)cfg.GetSetting (this.Name, "WindowState", this.WindowState).SafeString ().ToEnum (this.WindowState);
-					if (winState != WindowState.Minimized) {
-						int left = Math.Max(0, cfg.GetSetting (this.Name, "Left", this.Location.X).SafeInt ());
-						int top = Math.Max(0, cfg.GetSetting (this.Name, "Top", this.Location.Y).SafeInt ());
-						DefaultLocation = new Vector2i (left, top);
-						int width = Math.Max(10, cfg.GetSetting (this.Name, "Width", this.Width).SafeInt ());
-						int height = Math.Max(10, cfg.GetSetting (this.Name, "Height", this.Height).SafeInt ());
-						DefaultSize = new Vector2i (width, height);
-
-						if (winState != WindowState.Normal) {
-							this.WindowState = winState;
-							//this.Context.Update (this.WindowInfo);
-						} else {							
-							this.Location = DefaultLocation;
-							this.Size = DefaultSize;
+						if (winState != WindowState.Minimized) {
+							// Unter Wayland gibt es keine Fensterposition (GLFW.GetWindowPos feuert Fehler,
+							// GLFW.SetWindowPos ebenfalls) — der Compositor platziert das Fenster selbst.
+							int left;
+							int top;
+							if (IsWayland)
+							{
+								left = 0;
+								top = 0;
+							}
+							else {
+								left = Math.Max(0, cfg.GetSetting (this.Name, "Left", this.Location.X).SafeInt ());
+								top = Math.Max(0, cfg.GetSetting (this.Name, "Top", this.Location.Y).SafeInt ());
+							}
+							DefaultLocation = new Vector2i (left, top);
+							int width = Math.Max(10, cfg.GetSetting (this.Name, "Width", this.Width).SafeInt ());
+							int height = Math.Max(10, cfg.GetSetting (this.Name, "Height", this.Height).SafeInt ());
+							DefaultSize = new Vector2i (width, height);
+	
+							if (winState != WindowState.Normal) {
+								this.WindowState = winState;
+								//this.Context.Update (this.WindowInfo);
+							} else {
+	
+								if (!IsWayland)
+									this.Location = DefaultLocation;   // Wayland: Compositor platziert das Fenster selbst
+								this.Size = DefaultSize;
+							}
 						}
-					}
-				}
 
 				ScaleFactor = Math.Max (1, cfg.GetSetting (this.Name, "ScaleFactor", ScaleFactor).SafeFloat ());
 				Device = cfg.GetSetting (this.Name, "Device", Device.ToString ()).SafeString ().ToEnum (Devices.Desktop);
@@ -478,6 +508,7 @@ namespace SummerGUI
 							item.ClickCount = val.FindBlock ("Clicks:", ";").SafeInt ();
 						}
 					});
+				}
 				}
 			});
 		}
@@ -1004,8 +1035,12 @@ namespace SummerGUI
 			
 			_frameTimer.Update();
 			
-			if (iDirtyLayout > 0) {			
-				Rectangle rec = new Rectangle(0, 0, ClientRectangle.Size.X, ClientRectangle.Size.Y);
+			if (iDirtyLayout > 0) {
+				// WICHTIG: ClientSize statt ClientRectangle.
+				// ClientRectangle (OpenTK/GlWindow) liest hinter der Kulissen GLFW.GetWindowPos,
+				// das unter Wayland einen Fehler feuert ("platform does not provide the window position").
+				// Das Layout braucht nur die Größe — die liefert GetWindowSize (Wayland-kompatibel).
+				Rectangle rec = new Rectangle(0, 0, ClientSize.X, ClientSize.Y);
 				this.Controls.OnLayout(this, rec);
 				
 				OnAfterLayout();
@@ -1071,7 +1106,9 @@ namespace SummerGUI
 				return;
 			}
 						
-			DoPaint ((Rectangle)ClientRectangle);
+			// ClientSize statt ClientRectangle: GetWindowPos ist unter Wayland kein no-op
+			// (feuert Fehler), GetWindowSize schon.
+			DoPaint (new RectangleF (0, 0, ClientSize.X, ClientSize.Y));
 			iDirtyPaint--;			
 		}
 
@@ -1251,8 +1288,9 @@ namespace SummerGUI
 				if (BeforeFullscreenWindowState == WindowState.Normal)
 				{											
 					Vector2i newSize = new Vector2i(DefaultSize.X, DefaultSize.Y);
-					this.Size = newSize;
-					this.Location = DefaultLocation;
+						this.Size = newSize;
+						if (!IsWayland)
+							this.Location = DefaultLocation;   // Wayland: keine Fensterposition (GLFW feuert Fehler)
 				}
 
 				//this.BringToFront ();	// Window does not always have focus on Linux after it
@@ -1640,8 +1678,8 @@ namespace SummerGUI
 					Task.Delay (500).ContinueWith ((t) => {
 						MessageBoxOverlay.Show (msg.Message, msg.Context, MessageBoxButtons.OK, this);					
 					});
+					}
 				}
-			}
 		}
 
 		public void Run() 
@@ -1680,12 +1718,19 @@ namespace SummerGUI
 				OriginalUpdateFrequency = updates_per_second;
 				OriginalRenderFrequency = renderframes_per_second;
 
+				// Der Fade-in-Effekt nutzt GLFW.SetWindowOpacity — unter Wayland nicht
+				// verfügbar (feuert "The platform does not support setting the window opacity").
+				// Unter X11 bleibt der Effekt, unter Windowss und Wayland zeigen wir das Fenster direkt an.
 				bool isWindows = PlatformExtensions.CurrentOS == PlatformExtensions.OS.Windows;
-				if (!isWindows)
+				if (!isWindows && !IsWayland)
 				{
 					SetOpacity(0);
 					IsVisible = true;
 					_isFadingIn = true;
+				}
+				else
+				{
+					IsVisible = true;
 				}
 
 				OnLoad(EventArgs.Empty);

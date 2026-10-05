@@ -170,20 +170,21 @@ namespace SummerGUI.SystemSpecific.Linux
             string initialDirectory = "",
             bool restoreDirectory = false)
         {
-            EnsureGtkInit();            
+            // WICHTIG: Kein EnsureGtkInit() + keine GTK-Dialog-Erstellung hier!
+            // Auf Wayland müssen wir GTK3 nie initialisieren — das würde auf
+            // GNOME-Systemen (Mutter) zu "Failed to initialize GTK" und im
+            // schlechtesten Fall zu einem Hängen/Krash führen. (2026-10-05)
+            if (GLFW.GetPlatform() == Platform.Wayland)
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory, "");
 
-            // Wir erstellen den Dialog ohne explizites Parent-Handle, 
-            // da GLFW-Handles (X11) nicht ohne weiteres als GtkWindow-Pointer akzeptiert werden.            
+            EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
-                caption, 
-                IntPtr.Zero, 
+                caption, IntPtr.Zero,
                 GTK_FILE_CHOOSER_ACTION_OPEN,
-                GTK_RESPONSE_CANCEL, -6, // GTK_RESPONSE_CANCEL
-                GTK_RESPONSE_OPEN, -5,    // GTK_RESPONSE_OK
-                IntPtr.Zero
-            );            
-            
-            return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory);
+                GTK_RESPONSE_CANCEL, -6,
+                GTK_RESPONSE_OPEN, -5,
+                IntPtr.Zero);
+            return ShowDialogGTK(ctx, dialog, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory, "");
         }
 
         public string SaveFileDialog(
@@ -195,43 +196,37 @@ namespace SummerGUI.SystemSpecific.Linux
             string initialDirectory = "",
             bool restoreDirectory = false)
         {
-            EnsureGtkInit();
+            if (GLFW.GetPlatform() == Platform.Wayland)
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);
 
-            // Wir erstellen den Dialog ohne explizites Parent-Handle, 
-            // da GLFW-Handles (X11) nicht ohne weiteres als GtkWindow-Pointer akzeptiert werden.
+            EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
-                caption, 
-                IntPtr.Zero, 
+                caption, IntPtr.Zero,
                 GTK_FILE_CHOOSER_ACTION_SAVE,
                 GTK_RESPONSE_CANCEL, -6,
                 GTK_RESPONSE_SAVE, -5,
-                IntPtr.Zero
-            );
-            
-            return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);            
-        }        
+                IntPtr.Zero);
+            return ShowDialogGTK(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);
+        }
 
         public string SelectFolderDialog(
             IGUIContext ctx, 
-            string caption = "Select Folder",            
+            string caption = "Select Folder",
             string initialDirectory = "",
             bool restoreDirectory = false)
         {
-            EnsureGtkInit();
+            if (GLFW.GetPlatform() == Platform.Wayland)
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory, "");
 
-            // Wir erstellen den Dialog ohne explizites Parent-Handle, 
-            // da GLFW-Handles (X11) nicht ohne weiteres als GtkWindow-Pointer akzeptiert werden.
+            EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
-                caption, 
-                IntPtr.Zero, 
+                caption, IntPtr.Zero,
                 GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
                 GTK_RESPONSE_CANCEL, -6,
                 GTK_RESPONSE_SELECT, -5,
-                IntPtr.Zero
-            );
-            
-            return ShowDialog(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory);
-        }        
+                IntPtr.Zero);
+            return ShowDialogGTK(ctx, dialog, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory, "");
+        }
 
         private unsafe string ShowDialogGTK(
             IGUIContext ctx,             

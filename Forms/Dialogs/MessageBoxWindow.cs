@@ -159,7 +159,10 @@ namespace SummerGUI
 			text.HAlign = Alignment.Center;
 			text.ForeColor = Color.Black;		
 
-			Controls.OnLayout (this, (Rectangle)ClientRectangle);
+			// ClientRectangle (OpenTK/GlWindow) liest hinter den Kulissen GLFW.GetWindowPos,
+			// das unter Wayland einen Fehler feuert. Das Layout braucht nur die Größe —
+			// GetWindowSize arbeitet unter Wayland fehlerfrei.
+			Controls.OnLayout (this, new Rectangle (0, 0, ClientSize.X, ClientSize.Y));
 
 			// Layout the text
 
