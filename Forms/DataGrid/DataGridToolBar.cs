@@ -163,24 +163,40 @@ namespace SummerGUI.DataGrid
 			subscription = RowManager.Subscribe (this);
 		}
 
-		public void OnDataLoaded()
+		/// <summary>
+		/// ★66 — Enabled-Zustand aus der aktuellen RowCount ableiten:
+		/// leer → disabled, Zeilen vorhanden → enabled.
+		/// OnDataLoaded (Anfangszustand) UND OnNext/RowsChanged (jedes Daten-Update,
+		/// z.B. leerer Start → „250 Random“, Undo/Redo, Datei-Open) nutzen dies.
+		/// </summary>
+		private void SyncEnabledState ()
 		{
 			Enabled = RowManager != null && RowManager.RowCount > 0;
+		}
+
+		public void OnDataLoaded()
+		{
+			SyncEnabledState ();
 			if (Enabled)
 				EnableControls (RowManager.CurrentRowIndex);
 		}
 
 		public void OnNext(EventMessage message) 
-		{			
+		{
 			switch (message.Subject) {
 			case RowManagerMessages.RowsChanged:
 				int current = (int)message.Args [0];
 				int total = (int)message.Args [1];
+				// ★66 — Enabled wird bei JEDEM Daten-Update aus der tatsächlichen
+				// RowCount neu abgeleitet (davor nur einmalig in OnDataLoaded:
+				// Attach mit 0 Zeilen → Enabled=false gefriert, spätere Rows
+				// reaktivierten nie, weil EnableControls bei !Enabled early-returns).
+				SyncEnabledState ();
 				UpdateRecordCount (current, total);
 				EnableControls (current);
 				break;
 			}
-		}			
+		}
 
 		public void OnError(Exception ex) 
 		{

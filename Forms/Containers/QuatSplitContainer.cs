@@ -1,35 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
 using SummerGUI.Splitting;
 
 namespace SummerGUI
 {
-	// not in use, not ready, not tested
-
-	public class QuatSplitter : Container
+	/// <summary>
+	/// Container mit vier Panels in einer Linie, getrennt durch drei Splitter:
+	///   Vertical:   [Panel1 | S1 | Panel2 | S2 | Panel3 | S3 | Panel4]
+	///   Horizontal: [Panel1 / S1 / Panel2 / S2 / Panel3 / S3 / Panel4]
+	///
+	/// Wird ein Panel ausgeblendet (PanelNCollapsed = true), verschwinden die
+	/// direkt angrenzenden Splitter mit, und die übrigen Panels fließen
+	/// auf - sie überlappen sich dabei nie (siehe SplitPaneLayout).
+	///
+	/// (Klassename entspricht jetzt dem Dateinamen; war zuvor "QuatSplitter".
+	/// Der alte OnLayout-Code layoutete nie Panel4 und mischte horizontalen und
+	/// vertikalen Splitter in einer Zeile, was zu null-/negativen Breiten führte.)
+	/// </summary>
+	public class QuatSplitContainer : Container
 	{
-		// to be tested if it makes any sense
-
 		private bool m_Panel1Collapsed;
 		public bool Panel1Collapsed {
 			get {
 				return m_Panel1Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel1Collapsed != value) {
 					m_Panel1Collapsed = value;
 					Panel1.Visible = !value;
-					Splitter1.Visible = !value;
 					Invalidate ();
 				}
 			}
@@ -40,11 +40,11 @@ namespace SummerGUI
 			get {
 				return m_Panel2Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel2Collapsed != value) {
 					m_Panel2Collapsed = value;
 					Panel2.Visible = !value;
-					Splitter1.Visible = !value;
 					Invalidate ();
 				}
 			}
@@ -55,11 +55,11 @@ namespace SummerGUI
 			get {
 				return m_Panel3Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel3Collapsed != value) {
 					m_Panel3Collapsed = value;
 					Panel3.Visible = !value;
-					Splitter2.Visible = !value;
 					Invalidate ();
 				}
 			}
@@ -70,40 +70,59 @@ namespace SummerGUI
 			get {
 				return m_Panel4Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel4Collapsed != value) {
 					m_Panel4Collapsed = value;
 					Panel4.Visible = !value;
-					Splitter2.Visible = !value;
 					Invalidate ();
 				}
 			}
 		}
 
 		public ScrollableContainer Panel1 { get; private set; }
-		public ScrollableContainer Panel2 { get; private set; }
 		public SplitterBase Splitter1 { get; private set; }
+		public ScrollableContainer Panel2 { get; private set; }
 		public SplitterBase Splitter2 { get; private set; }
 		public ScrollableContainer Panel3 { get; private set; }
+		public SplitterBase Splitter3 { get; private set; }
 		public ScrollableContainer Panel4 { get; private set; }
 
-		public QuatSplitter (string name, Docking dock, IWidgetStyle style)
-			: base(name, dock, style)
+		public SplitOrientation Orientation { get; private set; }
+
+		public QuatSplitContainer (string name, SplitOrientation orientation, Docking dock, IWidgetStyle style)
+				: base(name, dock, style)
 		{
-			Panel1 = new ScrollableContainer ("panel1", Docking.Fill, new SplitContainerPanelStyle ());
-			Panel2 = new ScrollableContainer ("panel2", Docking.Fill, new SplitContainerPanelStyle ());
-			Panel3 = new ScrollableContainer ("panel3", Docking.Fill, new SplitContainerPanelStyle ());
-			Panel4 = new ScrollableContainer ("panel4", Docking.Fill, new SplitContainerPanelStyle ());
+			Orientation = orientation;
 
-			Splitter1 = new HorizontalSplitter ();
-			Splitter2 = new VerticalSplitter ();
+			Panel1 = new ScrollableContainer ("panel1", Docking.Fill, new EmptyWidgetStyle ());
+			Panel2 = new ScrollableContainer ("panel2", Docking.Fill, new EmptyWidgetStyle ());
+			Panel3 = new ScrollableContainer ("panel3", Docking.Fill, new EmptyWidgetStyle ());
+			Panel4 = new ScrollableContainer ("panel4", Docking.Fill, new EmptyWidgetStyle ());
 
-			Children.Add (Splitter1);
-			Children.Add (Splitter2);
+			if (orientation == SplitOrientation.Horizontal) {
+				Splitter1 = new HorizontalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle ());
+				Splitter2 = new HorizontalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle ());
+				Splitter3 = new HorizontalSplitter ("splitter3", new SplitContainerTransparentSplitterStyle ());
+			} else {
+				Splitter1 = new VerticalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle ());
+				Splitter2 = new VerticalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle ());
+				Splitter3 = new VerticalSplitter ("splitter3", new SplitContainerTransparentSplitterStyle ());
+			}
+
 			Children.Add (Panel1);
+			Children.Add (Splitter1);
 			Children.Add (Panel2);
+			Children.Add (Splitter2);
 			Children.Add (Panel3);
+			Children.Add (Splitter3);
 			Children.Add (Panel4);
+
+			// Gleicher Koordinatenraum (volle Container-Breite/-Höhe),
+			// Positionen der Panel-Reihenfolge nach sortiert: 1/4, 2/4, 3/4.
+			Splitter1.Distance = 0.25f;
+			Splitter2.Distance = 0.5f;
+			Splitter3.Distance = 0.75f;
 		}
 
 		public override void Focus ()
@@ -114,7 +133,7 @@ namespace SummerGUI
 				Panel2.Focus ();
 			else if (!Panel3Collapsed)
 				Panel3.Focus ();
-			else
+			else if (!Panel4Collapsed)
 				Panel4.Focus ();
 		}
 
@@ -122,39 +141,19 @@ namespace SummerGUI
 		{
 			base.OnLayout (ctx, bounds);
 
-			if (!Panel1Collapsed && !Panel2Collapsed)
-				Splitter1.OnLayout (ctx, this.Bounds);
-			if (!Panel3Collapsed && !Panel2Collapsed)
-				Splitter2.OnLayout (ctx, this.Bounds);
-
-
-			/***
-			if (Panel1Collapsed && Panel2Collapsed && !Panel3Collapsed)
-				Panel3.OnLayout (ctx, bounds);
-
-			if (Panel1Collapsed && !Panel2Collapsed && Panel3Collapsed)
-				Panel2.OnLayout (ctx, bounds);
-
-			if (!Panel1Collapsed && Panel2Collapsed && Panel3Collapsed)
-				Panel1.OnLayout (ctx, bounds);
-
-			if (!Panel1Collapsed && !Panel3Collapsed)
-				Panel2.OnLayout (ctx, bounds);
-			***/
-
-
-			if (Panel1.IsVisibleEnabled)
-				Panel1.OnLayout (ctx, new RectangleF (Left, Top, Splitter1.Left - Left, Height));
-			if (Panel2.IsVisibleEnabled)
-				Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Splitter2.Left - Splitter1.Right, Height));
-			if (Panel3.IsVisibleEnabled)
-				Panel3.OnLayout (ctx, new RectangleF (Splitter2.Right, Top, Right - Splitter2.Right, Height));
+			// Gemeinsames Tiling: Anker-Splitter (beide Nachbarn sichtbar) bilden harte
+			// Grenzen, ausgeblendete Panels hinterlassen Lücken, die die Nachbarn
+			// gleichmäßig teilen - in beiden Orientierungen, ohne Überlappung.
+			SplitPaneLayout.Tile (
+				ctx, bounds,
+				Orientation == SplitOrientation.Vertical,
+				new ScrollableContainer[] { Panel1, Panel2, Panel3, Panel4 },
+				new SplitterBase[] { Splitter1, Splitter2, Splitter3 });
 		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
 		{
-			// we've already layouted the children
+			// wird in OnLayout explizit ge-layoutet
 		}
 	}
 }
-

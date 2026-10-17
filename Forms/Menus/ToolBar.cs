@@ -78,6 +78,14 @@ namespace SummerGUI
 	{		
 		public IGuiMenuItem MenuItem { get; set; }
 
+		/// <summary>
+		/// Toolbar-Überlauf: Button passt nicht mehr in die verfügbare Toolbar-Breite.
+		/// Blendet NUR den Toolbar-Button aus — die Sichtbarkeit des zugehörigen
+		/// Menü-Eintrags (MenuItem.Visible) bleibt unberührt, damit der Eintrag im Menü
+		/// und per Tastenkürzel weiterhin klickbar bleibt.
+		/// </summary>
+		public bool ToolBarOverflow { get; set; }
+
 		public override bool Enabled {
 			get {
 				if (MenuItem != null)
@@ -86,7 +94,7 @@ namespace SummerGUI
 					return base.Enabled;
 			}
 			set {
-                if (MenuItem != null)
+				if (MenuItem != null)
 					MenuItem.Enabled = value;
 				base.Enabled = value;
 			}
@@ -94,10 +102,8 @@ namespace SummerGUI
 
 		public override bool Visible {
 			get {
-				if (MenuItem != null)
-					return MenuItem.Visible;
-				else
-					return base.Visible;
+				bool itemVisible = MenuItem != null ? MenuItem.Visible : base.Visible;
+				return itemVisible && !ToolBarOverflow;
 			}
 			set {
 				if (MenuItem != null)
@@ -460,18 +466,22 @@ namespace SummerGUI
 			float x = Left + Padding.Left;
 			//Children.OfType<ToolBarButton>().Where(c => !c.IsOverlay && c.MenuItem != null)
 			Children.OfType<Widget>().Where(c => !c.IsOverlay && c != HamburgerMenu).ForEach (c => {
-				if (c.IsOverlay) {
-				}
-				else if (x > maxRight) {
-					c.Visible = false;
+				bool overflow = x > maxRight;
+				ToolBarButton barBtn = c as ToolBarButton;
+				if (barBtn != null) {
+					// Überlauf blendet nur den Button aus — der zugehörige Menü-Eintrag bleibt sichtbar/klickbar
+					barBtn.ToolBarOverflow = overflow;
 				}
 				else {
-					c.Visible = true;
+					c.Visible = !overflow;
+				}
+
+				if (!overflow) {
 					c.OnLayout(ctx, new RectangleF(x, Bounds.Top + Padding.Top + c.Margin.Top, c.PreferredSize(ctx).Width + c.Margin.Width, Bounds.Height - Padding.Height));
 					x += c.Width + c.Margin.Width;
 				}
 			});
-		}        
+		}
 	}
 
 	public class ComponentToolBar : ToolBarBase

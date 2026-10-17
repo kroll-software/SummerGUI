@@ -175,7 +175,7 @@ namespace SummerGUI
 
 			SetActiveItem (e.X, e.Y);
 			Invalidate ();
-		}			
+		}		
 
 		public override void OnMouseUp (MouseButtonEventArgs e)
 		{
@@ -185,7 +185,8 @@ namespace SummerGUI
 			SetActiveItem (e.X, e.Y);
 			Invalidate ();
 			if (m_ActiveItem != null) {
-				if (m_ActiveItem.OnClick ())
+				bool did = m_ActiveItem.OnClick ();
+				if (did)
 					OnClose ();
 			}
 		}

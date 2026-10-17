@@ -347,11 +347,38 @@ namespace SummerGUI
 		}
 	}
 
+	public class TabChangedEventArgs : EventArgs
+	{
+		public TabPage Tab { get; }
+		public TabChangedEventArgs (TabPage tab)
+		{
+			Tab = tab;
+		}
+	}
+
 	public class TabContainer : Container
 	{
 		public TabBar TabBar { get; private set; }
 		public TabPageCollection TabPages  { get; private set; }	
-		public int SelectedTabIndex { get; set; }
+
+		// Initial value 0 — exactly the semantics of the former auto-property
+		// (first tab selected once it exists); selection changes flow through
+		// SelectPage() and update this field explicitly.
+		private int m_SelectedTabIndex = 0;
+		public int SelectedTabIndex
+		{
+			get {
+				return m_SelectedTabIndex;
+			}
+			set {
+				if (value < 0 || value >= TabPages.Count)
+					return;
+				// Route through SelectedTab so that a programmatic tab switch
+				// updates exactly the same state as a click (button highlight,
+				// scroll-into-view, layout) and raises TabChanged.
+				SelectedTab = TabPages [value];
+			}
+		}
 
 		public Button ScrollLeftButton { get; private set; }
 		public Button ScrollRightButton { get; private set; }
@@ -396,22 +423,44 @@ namespace SummerGUI
 		public TabPage SelectedTab
 		{
 			get{
-				if (SelectedTabIndex < 0 || SelectedTabIndex >= TabPages.Count)
+				if (m_SelectedTabIndex < 0 || m_SelectedTabIndex >= TabPages.Count)
 					return null;
 
-				return TabPages[SelectedTabIndex];
+				return TabPages[m_SelectedTabIndex];
 			}
 			set{
-				if (value != null && value != SelectedTab && value.IsVisibleEnabled) {
-					TabPages.ForEach (t => t.TabButton.Selected = false);
-					value.TabButton.Selected = true;
-					SelectedTabIndex = TabPages.IndexOf (value);
-					value.Focus ();
-					TabBar.EnsureIndexVisible (SelectedTabIndex);
-					ResetCachedLayout ();
-					value.Update();
-				}
+				if (value != null && value != SelectedTab && value.IsVisibleEnabled)
+					SelectPage (value);
 			}
+		}
+
+		/// <summary>
+		/// Fired after a tab became active — both for the CLICK path (TabButton)
+		/// and the programmatic path (SelectedTab / SelectedTabIndex).
+		/// Not fired when the selection does not change (idempotent no-op).
+		/// </summary>
+		/// <param name="e">e.</param>
+		public event EventHandler<TabChangedEventArgs> TabChanged;
+
+		/// <summary>
+		/// Common selection path, used by <see cref="SelectedTab"/> (click AND
+		/// code) — updates button highlight, scroll-into-view and layout, then
+		/// raises <see cref="TabChanged"/> exactly once.
+		/// </summary>
+		/// <param name="tp">tp.</param>
+		void SelectPage (TabPage tp)
+		{
+			TabPages.ForEach (t => t.TabButton.Selected = false);
+			tp.TabButton.Selected = true;
+			m_SelectedTabIndex = TabPages.IndexOf (tp);
+			tp.Focus ();
+			TabBar.EnsureIndexVisible (m_SelectedTabIndex);
+			ResetCachedLayout ();
+			tp.Update ();
+
+			var handler = TabChanged;
+			if (handler != null)
+				handler (this, new TabChangedEventArgs (tp));
 		}
 
 		public void SelectNextTabPage()

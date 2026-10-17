@@ -124,8 +124,10 @@ namespace SummerGUI.DataGrid
 					m_RowCount = value;
 					if (m_RowCount == 0)
 						m_CurrentRowIndex = -1;
+					else if (m_CurrentRowIndex < 0)
+						m_CurrentRowIndex = 0;      // Laden/Aktualisieren mit Daten: erste Zeile markieren (nur wenn noch nichts gesetzt)
 					else if (m_CurrentRowIndex > m_RowCount - 1)
-						m_CurrentRowIndex = m_RowCount - 1;					
+						m_CurrentRowIndex = m_RowCount - 1;  // Absichern: Index bleibt gültig
 					OnRowsChanged();
 				}
 			}

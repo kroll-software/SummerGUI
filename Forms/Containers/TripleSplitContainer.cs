@@ -1,19 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
 using KS.Foundation;
 using SummerGUI.Splitting;
 
 namespace SummerGUI
 {
+	/// <summary>
+	/// Container mit drei Panels, getrennt durch zwei Splitter:
+	///   Vertical:   [Panel1 | Splitter1 | Panel2 | Splitter2 | Panel3]
+	///   Horizontal: [Panel1 / Splitter1 / Panel2 / Splitter2 / Panel3]
+	///
+	/// Wird ein Panel ausgeblendet (PanelNCollapsed = true), verschwinden die
+	/// direkt angrenzenden Splitter mit, und die übrigen Panels fließen
+	/// auf - sie überlappen sich dabei nie (siehe SplitPaneLayout).
+	/// </summary>
 	public class TripleSplitContainer : Container
 	{
 		private bool m_Panel1Collapsed;
@@ -21,26 +21,26 @@ namespace SummerGUI
 			get {
 				return m_Panel1Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel1Collapsed != value) {
 					m_Panel1Collapsed = value;
 					Panel1.Visible = !value;
-					//Splitter1.Visible = !value;
 					Invalidate ();
 				}
 			}
 		}
-			
+
 		private bool m_Panel2Collapsed;
 		public bool Panel2Collapsed {
 			get {
 				return m_Panel2Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel2Collapsed != value) {
 					m_Panel2Collapsed = value;
 					Panel2.Visible = !value;
-					//Splitter1.Visible = !value;
 					Invalidate ();
 				}
 			}
@@ -51,16 +51,15 @@ namespace SummerGUI
 			get {
 				return m_Panel3Collapsed;
 			}
-			set {				
+			set {
+
 				if (m_Panel3Collapsed != value) {
 					m_Panel3Collapsed = value;
 					Panel3.Visible = !value;
-					//Splitter2.Visible = !value;
 					Invalidate ();
 				}
 			}
 		}
-
 
 		public ScrollableContainer Panel1 { get; private set; }
 		public SplitterBase Splitter1 { get; private set; }
@@ -71,27 +70,20 @@ namespace SummerGUI
 		public SplitOrientation Orientation { get; private set; }
 
 		public TripleSplitContainer (string name, SplitOrientation orientation, Docking dock, IWidgetStyle style)
-			: base(name, dock, style)
+				: base(name, dock, style)
 		{
 			Orientation = orientation;
-
-			/***
-			Panel1 = new ScrollableContainer ("panel1", Docking.Fill, new SplitContainerPanelStyle ());
-			Panel2 = new ScrollableContainer ("panel2", Docking.Fill, new SplitContainerPanelStyle ());
-			Panel3 = new ScrollableContainer ("panel3", Docking.Fill, new SplitContainerPanelStyle ());
-			***/
 
 			Panel1 = new ScrollableContainer ("panel1", Docking.Fill, new EmptyWidgetStyle ());
 			Panel2 = new ScrollableContainer ("panel2", Docking.Fill, new EmptyWidgetStyle ());
 			Panel3 = new ScrollableContainer ("panel3", Docking.Fill, new EmptyWidgetStyle ());
 
-
 			if (orientation == SplitOrientation.Horizontal) {
-				Splitter1 = new HorizontalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle());
-				Splitter2 = new HorizontalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle());
+				Splitter1 = new HorizontalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle ());
+				Splitter2 = new HorizontalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle ());
 			} else {
-				Splitter1 = new VerticalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle());
-				Splitter2 = new VerticalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle());
+				Splitter1 = new VerticalSplitter ("splitter1", new SplitContainerTransparentSplitterStyle ());
+				Splitter2 = new VerticalSplitter ("splitter2", new SplitContainerTransparentSplitterStyle ());
 			}
 
 			Children.Add (Panel1);
@@ -100,9 +92,13 @@ namespace SummerGUI
 			Children.Add (Splitter2);
 			Children.Add (Panel3);
 
-			//if (distance != 0)
+			// Beide Splitter sind Anker im selben Koordinatenraum (volle Container-Breiten/Höhe),
+			// daher müssen ihre Positionen der Panel-Reihenfolge nach sortiert sein:
+			// 1/3 beim ersten Splitter, 2/3 beim zweiten.
+			// FIX: beide Splitter standen bisher auf 0.334f, wodurch Panel2 auf (nahezu)
+			// null Breite kollabierte und Panel3 die rechte Hälfte des Containers einnahm.
 			Splitter1.Distance = 0.334f;
-			Splitter2.Distance = 0.334f;
+			Splitter2.Distance = 0.667f;
 		}
 
 		public override void Focus ()
@@ -116,90 +112,22 @@ namespace SummerGUI
 		}
 
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{			
+		{
 			base.OnLayout (ctx, bounds);
 
-			bool visible1 = Panel1.Visible && Panel2.Visible && !Panel1Collapsed && !Panel2Collapsed;
-			bool visible2 = Panel2.Visible && Panel3.Visible && !Panel2Collapsed && !Panel3Collapsed;
-			if (!visible1 && !visible2)
-				visible1 = true;
-
-			Splitter1.Visible = visible1;
-			Splitter2.Visible = visible2;
-
-			if (Splitter1.Visible)
-				Splitter1.OnLayout (ctx, bounds);
-			if (Splitter2.Visible)
-				Splitter2.OnLayout (ctx, bounds);
-
-			if (Orientation == SplitOrientation.Vertical) {
-				if (Panel1.Visible) {
-					if (Panel2.Visible)
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Splitter1.Left - Left, Height));
-					else if (Panel3.Visible) {
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Splitter1.Left - Left, Height));
-					} else {
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));
-					}
-				}
-				if (Panel2.Visible) {
-					if (Panel1.Visible) {
-						if (Panel3.Visible)
-							Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Splitter2.Left - Splitter1.Right, Height));
-						else
-							Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Right - Splitter1.Right, Height));
-					}
-					else if (Panel3.Visible)
-						Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Splitter2.Left - Left, Height));
-					else
-						Panel2.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));				
-				}
-				if (Panel3.Visible) {
-					if (Panel1.Visible)
-						Panel3.OnLayout (ctx, new RectangleF (Left, Top, Right - Splitter1.Right, Height));
-					else if (Panel2.Visible)
-						Panel3.OnLayout (ctx, new RectangleF (Left, Top, Right - Splitter2.Right, Height));
-					else
-						Panel3.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));
-				}
-			} else {	// *** Orientation = Horizontal
-				if (Panel1.Visible) {
-					if (Panel2.Visible)
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Width, Splitter1.Top - Top));
-					else if (Panel3.Visible) {
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Width, Splitter1.Top - Top));
-					} else {
-						Panel1.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));
-					}
-				}
-				if (Panel2.Visible) {
-					if (Panel1.Visible) {
-						if (Panel3.Visible)
-							Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Width, Splitter2.Top - Splitter1.Bottom));
-						else
-							Panel2.OnLayout (ctx, new RectangleF (Splitter1.Right, Top, Width, Bottom - Splitter1.Bottom));
-					}
-					else if (Panel3.Visible)
-						Panel2.OnLayout (ctx, new RectangleF (Left, Top, Width, Splitter2.Top - Top));				
-					else
-						Panel2.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));				
-				}
-				if (Panel3.Visible) {
-					if (Panel2.Visible)
-						Panel3.OnLayout (ctx, new RectangleF (Left, Splitter2.Bottom, Width, Bottom - Splitter2.Bottom));
-					else if (Panel1.Visible)
-						Panel3.OnLayout (ctx, new RectangleF (Left, Splitter1.Bottom, Width, Bottom - Splitter1.Bottom));
-					else
-						Panel3.OnLayout (ctx, new RectangleF (Left, Top, Width, Height));
-				}
-			}
-			
-		}		
+			// Gemeinsames Tiling: Anker-Splitter (beide Nachbarn sichtbar) bilden harte
+			// Grenzen, ausgeblendete Panels hinterlassen Lücken, die die Nachbarn
+			// gleichmäßig teilen - in beiden Orientierungen, ohne Überlappung.
+			SplitPaneLayout.Tile (
+				ctx, bounds,
+				Orientation == SplitOrientation.Vertical,
+				new ScrollableContainer[] { Panel1, Panel2, Panel3 },
+				new SplitterBase[] { Splitter1, Splitter2 });
+		}
 
 		protected override void LayoutChildren (IGUIContext ctx, RectangleF bounds)
 		{
-			// we've already layouted the children
+			// wird in OnLayout explizit ge-layoutet
 		}
 	}
 }
-

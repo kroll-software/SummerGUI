@@ -157,7 +157,9 @@ namespace SummerGUI
 				float bottom = bounds.Bottom;
 				if (!PanelBottomCollapsed && SplitterBottom.Visible)
 					bottom = SplitterBottom.Top;
-				SplitterRight.OnLayout (ctx, new RectangleF (SplitterRight.Left, Top, SplitterRight.Width, Height - bottom));
+				// bounds.Breite als Basis (X-Rechnung in VerticalSplitter.OnLayout),
+				// Hoehe = bottom - Top (absolute Y-Werte, nie `Height - bottom` = -Top <= 0)
+				SplitterRight.OnLayout (ctx, new RectangleF (bounds.Left, Top, bounds.Width, bottom - Top));
 			}
 
 
@@ -195,7 +197,8 @@ namespace SummerGUI
 				float bottom = bounds.Bottom;
 				if (!PanelBottomCollapsed && SplitterBottom.Visible)
 					bottom = SplitterBottom.Top;
-				PanelRight.OnLayout (ctx, new RectangleF (SplitterRight.Right, Top, Right - SplitterRight.Right, Height - bottom));
+				// wie PanelCenter (Zeile oben): bottom - Top, nicht Height - bottom
+				PanelRight.OnLayout (ctx, new RectangleF (SplitterRight.Right, Top, Right - SplitterRight.Right, bottom - Top));
 			}
 		}			
 

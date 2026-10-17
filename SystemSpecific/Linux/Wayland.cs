@@ -25,6 +25,12 @@ public interface IFileChooser : IDBusObject
         string parentWindow,
         string title,
         IDictionary<string, object> options);
+
+    // Tmds.DBus streift "Async" → D-Bus-Methode "SaveFile" (Signatur identisch zu OpenFile)
+    Task<ObjectPath> SaveFileAsync(
+        string parentWindow,
+        string title,
+        IDictionary<string, object> options);
 }
 
 [DBusInterface("org.freedesktop.portal.Request")]
@@ -186,7 +192,8 @@ public static class Wayland
         string filter = "",
         int filterIndex = 1,
         string initialDirectory = "",
-        string defaultFileName = "")
+        string defaultFileName = "",
+        string caption = "")
     {
         return ShowDialogPortalAsync(
             ctx,
@@ -194,7 +201,8 @@ public static class Wayland
             filter,
             filterIndex,
             initialDirectory,
-            defaultFileName)
+            defaultFileName,
+            caption)
             .GetAwaiter()
             .GetResult();
     }
@@ -276,7 +284,8 @@ public static class Wayland
         string filter,
         int filterIndex,
         string initialDirectory,
-        string defaultFileName)
+        string defaultFileName,
+        string caption = "")
     {
         // Defensive: JEDER Fehler im Portal-Pfad (fehlendes Backend, D-Bus-Abbruch,
         // Timeout) darf die Anwendung NICHT abstürzen lassen. Der Callers erwartet
@@ -290,11 +299,13 @@ public static class Wayland
                 filter,
                 filterIndex,
                 initialDirectory,
-                defaultFileName);
+                defaultFileName,
+                caption);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[SummerGUI] FileDialog-Portal-Fehler: {ex.Message}");
+            // Volldump (Typ, Nachricht, innere Ausnahmen, Stack) — zur Diagnose
+            Console.WriteLine($"[SummerGUI] FileDialog-Portal-Fehler: {ex}");
             return null; // Cancel/Abbruch — App läuft weiter
         }
     }
@@ -305,7 +316,8 @@ public static class Wayland
         string filter,
         int filterIndex,
         string initialDirectory,
-        string defaultFileName)
+        string defaultFileName,
+        string caption = "")
     {
         string parentWindowToken = await GetParentWindowToken(ctx);
         //Console.WriteLine($"\tparentWindowToken: {parentWindowToken}");
@@ -333,6 +345,38 @@ public static class Wayland
             options["current_folder"] = pathBytes;
         }
 
+        if (action == SystemDialogs.GTK_FILE_CHOOSER_ACTION_SAVE &&
+            !string.IsNullOrEmpty(defaultFileName))
+        {
+            // Portal-Spec: "current-name" ist Typ s (String) — NICHT Byte-Array.
+            // (ay wird mit InvalidArgument "Expected type 's' ... got 'ay'" abgelehnt. 2026-10-17)
+            string name = defaultFileName;
+
+            // Anzeige: Ruft man das Save-Dialog mit Namen OHNE Extension an
+            // (Name + Filter, Extension wird vom Caller nach dem Dialog
+            // nachgereicht), zeigt das Portal den Namen ohne Extension —
+            // verwirrend. Extension wird dann aus dem gewählten Filter
+            // vorbefüllt, falls keine gesetzt ist. (2026-10-17)
+            if (string.IsNullOrEmpty(System.IO.Path.GetExtension(name)))
+            {
+                string ext = FirstFilterExtension(filter, filterIndex);
+                if (ext != null)
+                    name += ext;
+            }
+
+            options["current_name"] = name;
+        }
+
+        // Filter: Das Portal kennt keine Filter-Dropdowns, aber die Option "mime_types" (as)
+        // für OpenFile/SaveFile. Beste Anstrengung: bekannte Extension → MIME-Typ,
+        // unbekannte (z.B. *.trn) werden übersprungen → dann kein Filter, alle Dateien sichtbar. (2026-10-17)
+        if (action != SystemDialogs.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        {
+            List<string> mimes = FilterToMimeTypes(filter, filterIndex);
+            if (mimes.Count > 0)
+                options["mime_types"] = mimes.ToArray();
+        }
+
         // Leeres Token (Compositor ohne zxdg_exporter_v2, z.B. GNOME/Mutter, Weston)
         // → leere parent_window: gültig, Dialog ohne Eltern-Bezug. Kein "wayland:"-Prefix
         // auf leeren String — das wäre ein kaputt gebildetes Token.
@@ -340,11 +384,39 @@ public static class Wayland
             ? ""
             : $"wayland:{parentWindowToken}";
 
-        ObjectPath requestPath =
-            await chooser.OpenFileAsync(
-                formattedToken,
-                "Datei öffnen",
-                options);
+        // Fallback-Caption pro Aktion (nur wenn der Caller keine Caption übergibt)
+        string title = caption;
+        if (string.IsNullOrEmpty(title))
+        {
+            if (action == SystemDialogs.GTK_FILE_CHOOSER_ACTION_SAVE)
+                title = "Save File";
+            else if (action == SystemDialogs.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER)
+                title = "Select Folder";
+            else
+                title = "Open File";
+        }
+
+        ObjectPath requestPath;
+        switch (action)
+        {
+            case SystemDialogs.GTK_FILE_CHOOSER_ACTION_SAVE:
+                requestPath = await chooser.SaveFileAsync(formattedToken, title, options);
+                break;
+
+            case SystemDialogs.GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER:
+                // WICHTIG: Das Portal kennt KEINE "PickFolder"-Methode
+                // (Portal 1.21.1 beantwortet mit UnknownMethod!).
+                // Folder-Selektion = OpenFile mit der Option "directory"
+                // (FileChooser-Interface v3 = xdg-desktop-portal >= 1.7.1).
+                // Die Antwort kommt identisch: results.uris mit genau einer Ordner-URI.
+                options["directory"] = true;
+                requestPath = await chooser.OpenFileAsync(formattedToken, title, options);
+                break;
+
+            default:
+                requestPath = await chooser.OpenFileAsync(formattedToken, title, options);
+                break;
+        }
 
         var request =
             connection.CreateProxy<IRequest>(
@@ -357,6 +429,16 @@ public static class Wayland
         responseData =>
         {
             var (response, results) = responseData;
+
+            // DIAGNOSTIK (2026-10-17, Save/Open-Unterscheidung): exaktes Portal-Ergebnis
+            // machen. Erwartete Werte: response 0=Success 1=Reject 2=Cancel; results: uris (as)
+            var diag = new System.Text.StringBuilder($"[SummerGUI] Portal-Response {response}");
+            if (results != null)
+                foreach (var kv in results)
+                    diag.Append(' ').Append(kv.Key).Append('=').Append(kv.Value?.GetType().Name);
+            else
+                diag.Append(" results=<null>");
+            Console.WriteLine(diag);
 
             try
             {
@@ -391,5 +473,94 @@ public static class Wayland
         });
 
         return await tcs.Task;
+    }
+
+    /***
+    Filter-Translation für das XDG-Desktop-Portal:
+    SummerGUI-Filter-String ("Name|*.ext|Name2|*.ext2") → Portal-Option "mime_types" (as).
+    Nur Extensions mit eindeutigem, in der GIO-Datenbank vorhandenem MIME-Typ werden
+    übersetzt; alles andere bleibt unfilteriert (Dialog zeigt alle Dateien).
+    Das Portal bietet kein Filter-Dropdown — das ist eine Portal-Begrenzung, die für
+    jede Anwendung unter diesem Backend gleich aussieht. (2026-10-17)
+    ***/
+    private static readonly Dictionary<string, string> KnownMimeTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "txt",   "text/plain" },
+        { "log",   "text/plain" },
+        { "csv",   "text/csv" },
+        { "xml",   "text/xml" },
+        { "json",  "application/json" },
+        { "md",    "text/markdown" },
+        { "pdf",   "application/pdf" },
+        { "png",   "image/png" },
+        { "jpg",   "image/jpeg" },
+        { "jpeg",  "image/jpeg" },
+        { "gif",   "image/gif" },
+        { "bmp",   "image/bmp" },
+        { "svg",   "image/svg+xml" },
+        { "mp3",   "audio/mpeg" },
+        { "wav",   "audio/wav" },
+        { "cs",    "text/x-csharp" },
+        { "zip",   "application/zip" },
+    };
+
+    private static List<string> FilterToMimeTypes(string filter, int filterIndex)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrEmpty(filter))
+            return result;
+
+        string[] parts = filter.Split('|');
+        if (parts.Length < 2)
+            return result;
+
+        // filterIndex ist 1-basiert → Pattern-Teil liegt auf Index (idx*2)-1
+        int patternIdx = (Math.Max(1, filterIndex) * 2) - 1;
+        if (patternIdx >= parts.Length)
+            patternIdx = parts.Length - 1;
+
+        foreach (string entry in parts[patternIdx].Split(';'))
+        {
+            string ext = entry.Trim().TrimStart('*').TrimStart('.');
+            if (ext.Length == 0)
+                continue;
+
+            if (KnownMimeTypes.TryGetValue(ext, out string mime) && !result.Contains(mime))
+                result.Add(mime);
+        }
+
+        return result;
+    }
+
+    /**
+     Die erste Extension DES GEWÄHLTEN Filters (1-basierter Index), inkl. Punkt
+     (z.B. ".trn"). Rückt null, falls der Filter unlesbar ist.
+     Filter-Format: "Name (*.trn)|*.trn" oder mehrere: "A|*.a;*.b|B|*.c". (2026-10-17)
+     ***/
+    private static string FirstFilterExtension(string filter, int filterIndex)
+    {
+        if (string.IsNullOrEmpty(filter))
+            return null;
+
+        string[] parts = filter.Split('|');
+        if (parts.Length < 2)
+            return null;
+
+        // filterIndex ist 1-basiert → Pattern-Teil liegt auf Index (idx*2)-1
+        int patternIdx = (Math.Max(1, filterIndex) * 2) - 1;
+        if (patternIdx >= parts.Length)
+            patternIdx = parts.Length - 1;
+
+        foreach (string entry in parts[patternIdx].Split(';'))
+        {
+            string ext = entry.Trim().TrimStart('*');
+            if (ext.Length == 0)
+                continue;
+            if (!ext.StartsWith('.'))
+                ext = "." + ext;
+            return ext;
+        }
+
+        return null;
     }
 }

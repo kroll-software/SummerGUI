@@ -28,7 +28,9 @@ namespace SummerGUI
 		VSplit,
 		HSplit,
 		Text,
-		Custom
+		Custom,
+		// OpenTK-Standard-Cursors (plattform-seitig, kein Asset nötig):
+		Hand
 	}
 
 	public class WindowResourceManager : DisposableObject
@@ -98,6 +100,21 @@ namespace SummerGUI
             {
                 //ctx.GlWindow.Cursor = Cursor.Default;
 				ctx.GlWindow.Cursor = MouseCursor.Default;
+            }
+            else if (name == Cursors.Hand.ToString())
+            {
+                // ★ OpenTK-Standard-Cursor (Zeigefinger) — plattformgesteuert,
+				// benötigt kein geladenes Asset. Bei Plattformen ohne
+				// Standard-Cursoren fallen wir auf ein Warning zurück.
+				try
+                {
+                    ctx.GlWindow.Cursor = MouseCursor.PointingHand;
+                }
+                catch (Exception ex)
+                {
+                    this.LogWarning("OpenTK standard cursor 'Hand' nicht verfügbar: {0}",
+                        ex.Message);
+                }
             }
             else
             {

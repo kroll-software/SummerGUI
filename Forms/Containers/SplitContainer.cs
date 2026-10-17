@@ -19,17 +19,6 @@ namespace SummerGUI
 	{
 		Vertical,
 		Horizontal
-	}
-
-	[Flags]
-	public enum SplitterFixedPanel
-	{
-		None,
-		All,
-		Panel1,
-		Panel2,
-		Panel3,
-		Panel4,
 	}	
 
 	/// <summary>
@@ -42,9 +31,7 @@ namespace SummerGUI
 			get {
 				return Splitter.Orientation;
 			}
-		}
-
-		public SplitterFixedPanel FixedPanel { get; set; }
+		}		
 
 		private bool m_Panel1Collapsed;
 		public bool Panel1Collapsed {

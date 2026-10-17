@@ -365,6 +365,8 @@ namespace SummerGUI
 			}
 			if (ColumnManager != null)
 				ColumnManager.OnColumnsChanged ();
+
+			HeadHeight = 0;	// Reset HeadHeight so that it can shrink
 			ensureVisibleFlag = true;
 		}			
 			
@@ -382,34 +384,48 @@ namespace SummerGUI
 			else
 				m_HeaderHeight = 0;			
 
-			HeadHeight = m_HeaderHeight;
+			// HeadHeight wird stets mindestens auf die Font-basierte Größe
+			// gesetzt; explizit größere Werte (z.B. GanttDataGrid) bleiben erhalten.
+			if (m_HeaderHeight > 0 && HeadHeight < m_HeaderHeight)
+				HeadHeight = m_HeaderHeight;
 			if (RowHeaders)
 				RowHeaderWidth = ScrollBar.ScrollBarWidth;
 			else
 				RowHeaderWidth = 0;
 			SetupScrollBars ();
-		}
+		}		
 
 		public void SetupScrollBars()
 		{			
 			if (Bounds.IsEmpty || ColumnManager == null)
-				return;
-			
-			// ToDo:
-			if (ColumnHeaders)
-				VScrollBar.Margin = new Padding (0, m_HeaderHeight > 0 ? m_HeaderHeight : RowHeight, 0, 0);
-			if (RowHeaders)
-				HScrollBar.Margin = new Padding (RowHeaderWidth > 0 ? RowHeaderWidth : RowHeight, 0, 0, 0);
-			ScrollBars = ScrollBars.Both;
+				return;			
 
 			if (!HasData)
 				return;
 
 			float documentWidth = ColumnManager.Columns.Where(c => c.Visible).Sum(c => c.Width);			
 
-			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, RowManager.LastRowBottom, RowHeight);
+			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, RowManager.LastRowBottom, RowHeight);			
 			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, documentWidth, ScrollBar.ScrollBarWidth);
 		}
+
+        protected override void LayoutChild(IGUIContext ctx, Widget child, RectangleF bounds)
+        {
+			if (child == HScrollBar)
+			{
+				if (RowHeaders)
+				{
+					bounds.Offset (RowHeaderWidth, 0);
+					bounds.Width -= RowHeaderWidth;					
+				}
+			}
+			else if (child == VScrollBar) {				
+				bounds.Offset (0, HeadHeight);
+				bounds.Height -= HeadHeight;
+			}
+
+            base.LayoutChild(ctx, child, bounds);
+        }
 
 		public override void OnResize (IGUIContext ctx)
 		{
@@ -1155,11 +1171,9 @@ namespace SummerGUI
 
 			IGUIFont font = HeaderFont;
 			if (font == null)
-				font = Font;
+				font = Font;			
 
-			RectangleF ClipRect = new RectangleF(Bounds.X + RowHeaderWidth, Bounds.Y, Bounds.Width - RowHeaderWidth, m_HeaderHeight);
-
-			using (var clip = new ClipBoundClip (ctx, ClipRect)) 
+			using (var clip = new ClipBoundClip (ctx, RH)) 
 			using (SolidBrush ColumnTextBrush = new SolidBrush(HeaderForeground.Color))
 			{
 				m_MaxColumnWidth = 0;
@@ -1280,7 +1294,7 @@ namespace SummerGUI
 
 		protected virtual void DrawTextCell(IGUIContext ctx, DataGridColumn col, RectangleF RText, string text, bool bHighLight)
 		{			
-			if (!(RText.Left < Right && RText.Right > Left))
+			if (RText.Right < Bounds.Left || RText.Left > Bounds.Right)
 				return;
 
 			FontFormat sf = TextCellStringFormat(col);
@@ -1406,7 +1420,8 @@ namespace SummerGUI
 			//Brush SelectedRowBrushLight = new SolidBrush(Theme.Colors.HighLightBlueTransparent);
 			//Pen SelectedBorderPen = new Pen(Color.DarkSlateGray, 1, LineStyles.Dotted);
 
-			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
+			//RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width - RowHeaderWidth, ScrollBounds.Height);
+			RectangleF ClipRect = new RectangleF(Bounds.X, Bounds.Y + HeadHeight, Bounds.Width, ScrollBounds.Height);
 			using (var clip = new ClipBoundClip (ctx, ClipRect)) {				
 				for (int rowIndex = startRowIndex; rowIndex <= endRowIndex; rowIndex++) 
 				{						
@@ -1491,7 +1506,8 @@ namespace SummerGUI
 			DrawHeaderTopSpace (ctx, RTOP);
 
 			// Column-Headers
-			RectangleF RH = new RectangleF (Left, Top, Width, m_HeaderHeight);
+			//RectangleF RH = new RectangleF (Left, Top, Width, m_HeaderHeight);
+			RectangleF RH = new RectangleF (Left, Top + HeadHeight - m_HeaderHeight, Width, m_HeaderHeight);
 			if (ColumnHeaders) {				
 				ctx.DrawGrayButton (RH);
 				ctx.DrawLine (Theme.Pens.Base01, RH.Left, RH.Top, RH.Right, RH.Top);
@@ -1501,10 +1517,7 @@ namespace SummerGUI
 
 				// HeaderLine
 				ctx.DrawLine (HeaderBorder, Bounds.Left, Top + HeadHeight, Bounds.Right, Top + HeadHeight);
-			}
 
-			// overridable action
-			if (ColumnHeaders) {
 				DrawColumnHeaders (ctx, RH, Bounds); // since here, column.Left is valid
 			}			
 

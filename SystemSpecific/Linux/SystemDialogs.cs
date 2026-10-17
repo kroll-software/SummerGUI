@@ -153,9 +153,10 @@ namespace SummerGUI.SystemSpecific.Linux
             }
         }
 
-        private static int GTK_FILE_CHOOSER_ACTION_OPEN = 0;
-        private static int GTK_FILE_CHOOSER_ACTION_SAVE = 1; // Buttons: Verwende "_Speichern" statt "_Öffnen".
-        private static int GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER = 2;   //Buttons: Verwende "_Auswählen".
+        // internal const: von Wayland.cs referenziert, um die Portal-Methode (OpenFile/SaveFile) zu wählen
+        internal const int GTK_FILE_CHOOSER_ACTION_OPEN = 0;
+        internal const int GTK_FILE_CHOOSER_ACTION_SAVE = 1; // Buttons: Verwende "_Speichern" statt "_Öffnen".
+        internal const int GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER = 2;   //Buttons: Verwende "_Auswählen".
         private static string GTK_RESPONSE_CANCEL = "_Cancel";
         private static string GTK_RESPONSE_OPEN = "_Open";
         private static string GTK_RESPONSE_SAVE = "_Save";
@@ -175,7 +176,7 @@ namespace SummerGUI.SystemSpecific.Linux
             // GNOME-Systemen (Mutter) zu "Failed to initialize GTK" und im
             // schlechtesten Fall zu einem Hängen/Krash führen. (2026-10-05)
             if (GLFW.GetPlatform() == Platform.Wayland)
-                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory, "");
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_OPEN, filter, filterIndex, initialDirectory, "", caption);
 
             EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
@@ -197,7 +198,7 @@ namespace SummerGUI.SystemSpecific.Linux
             bool restoreDirectory = false)
         {
             if (GLFW.GetPlatform() == Platform.Wayland)
-                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName);
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SAVE, filter, filterIndex, initialDirectory, defaultFileName, caption);
 
             EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
@@ -216,7 +217,7 @@ namespace SummerGUI.SystemSpecific.Linux
             bool restoreDirectory = false)
         {
             if (GLFW.GetPlatform() == Platform.Wayland)
-                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory, "");
+                return Wayland.ShowDialogPortal(ctx, GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, null, 0, initialDirectory, "", caption);
 
             EnsureGtkInit();
             IntPtr dialog = GtkNative.gtk_file_chooser_dialog_new(
