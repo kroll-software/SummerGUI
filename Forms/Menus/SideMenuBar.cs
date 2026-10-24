@@ -222,11 +222,17 @@ namespace SummerGUI
 						LastExpandedItems.Add(active); 
 					}
 					Invalidate ();
-				} else if (m_ActiveItem.OnClick () && AutoClose) {
-					var pw = ParentWindow;
-					if (pw != null) {
-						OnClose ();
+				} else if (m_ActiveItem.WillExecuteOnClick ()) {
+					// capture the item: OnClose () may dispose this widget,
+					// which nulls m_ActiveItem
+					IGuiMenuItem mi = m_ActiveItem;
+					if (AutoClose) {
+						var pw = ParentWindow;
+						if (pw != null) {
+							OnClose ();
+						}
 					}
+					mi.OnClick ();
 				}
 			}
 		}			

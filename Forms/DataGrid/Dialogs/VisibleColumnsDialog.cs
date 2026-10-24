@@ -35,10 +35,13 @@ namespace SummerGUI.DataGrid
         public VisibleColumnsDialog(SummerGUIWindow parent, DataGridColumnCollection columns)
             : base ("VisibleColumnsDialog", "Visible Columns", 340, 240, parent, modal: true, sizable: true)
         {
+            this.Controls.BackColor = Color.White;
+
             m_Columns = columns;
 
             m_buttonContainer = Controls.AddChild(new Panel("m_buttonContainer", Docking.Right, null));
             m_buttonContainer.Padding = new Padding(8);
+            m_buttonContainer.BackColor = Color.White;
             
             //m_buttonContainer = Controls.AddChild(new ButtonContainer("m_buttonContainer", Docking.Right, null));
             //m_buttonContainer.FlexDirection = FlexDirections.Column;            

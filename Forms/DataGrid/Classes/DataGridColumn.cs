@@ -245,6 +245,46 @@ namespace SummerGUI.DataGrid
 		//[XmlIgnore]        
 		public Type ValueType { get; set; }
 
+		// ── Zahlenbereiche (Phase 1, Q6: Column-Properties, default Int32.Min/Max/1) ──
+		protected decimal m_NumericMinimum = int.MinValue;
+		public decimal Minimum
+		{
+			get { return m_NumericMinimum; }
+			set { m_NumericMinimum = value; }
+		}
+
+		protected decimal m_NumericMaximum = int.MaxValue;
+		public decimal Maximum
+		{
+			get { return m_NumericMaximum; }
+			set { m_NumericMaximum = value; }
+		}
+
+		protected decimal m_NumericIncrement = 1m;
+		public decimal Increment
+		{
+			get { return m_NumericIncrement; }
+			set { m_NumericIncrement = value; }
+		}
+
+		static decimal AsDecimal (object v, decimal fallback)
+		{
+			if (v == null)
+				return fallback;
+			if (v is decimal)
+				return (decimal) v;
+			if (v is double)
+				return (decimal) (double) v;
+			if (v is int)
+				return (int) v;
+			if (v is long)
+				return (long) v;
+			decimal d;
+			if (decimal.TryParse (v.ToString (), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out d))
+				return d;
+			return fallback;
+		}
+
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		//[XmlElement("ValueType")]
@@ -304,6 +344,9 @@ namespace SummerGUI.DataGrid
 			info.AddValue("ValueList", m_ValueList, typeof(List<ValueListItem>));
 
 			info.AddValue("AllowNull", m_AllowNull);
+			info.AddValue("Minimum", m_NumericMinimum);
+			info.AddValue("Maximum", m_NumericMaximum);
+			info.AddValue("Increment", m_NumericIncrement);
 
 			info.AddValue("ValueType", ValueType, typeof(Type));
 			
@@ -405,6 +448,18 @@ namespace SummerGUI.DataGrid
 
 				case "AllowNull":
 					m_AllowNull = (bool)entry.Value;
+					break;
+
+				case "Minimum":
+					m_NumericMinimum = AsDecimal (entry.Value, m_NumericMinimum);
+					break;
+
+				case "Maximum":
+					m_NumericMaximum = AsDecimal (entry.Value, m_NumericMaximum);
+					break;
+
+				case "Increment":
+					m_NumericIncrement = AsDecimal (entry.Value, m_NumericIncrement);
 					break;
 
 				case "DefaultValue":					

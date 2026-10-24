@@ -31,6 +31,18 @@ namespace SummerGUI.DataGrid
 		
 		RowInfo RowInfoByRowIndex (int rowIndex);
 		RowInfo RowInfoFromPoint (float y);
+		RectangleF RowBoundsByRowIndex (int rowIndex);
+
+		// VariableRowHeight: kumulative Zeilen-Unterkanten (1:1 Legacy
+		// "ViewModelBase.rowoffsets"). Nur gefüllt/wirksam, wenn
+		// HasVariableHeightRows — sonst fällt alles auf die einheitliche
+		// RowHeight zurück.
+		BinarySortedList<float> RowOffsets { get; }
+
+		// VariableRowHeight (1:1 Legacy "ViewModelBase.HasVariableHeightRows"):
+		// wird von der View im RebuildItems/PerformRowUpdate gesetzt →
+		// RowIndexFromPoint nimmt dann den Binärsuche-Pfad über RowOffsets.
+		bool HasVariableHeightRows { get; set; }
 
 		int FirstRowInWindow { get; }
 		int LastRowInWindow { get; }
@@ -77,7 +89,7 @@ namespace SummerGUI.DataGrid
 			return m_Observable.Subscribe (observer);
 		}
 			
-		public BinarySortedList<float> RowOffsets;
+		public BinarySortedList<float> RowOffsets { get; } = new BinarySortedList<float> ();
 
 		public RowManager (IController parent, IRowManagerOwner owner)
 			: base(parent)
@@ -86,7 +98,6 @@ namespace SummerGUI.DataGrid
 			if (Owner != null)
 				Scrollbar = Owner.VScrollBar;
 			m_Observable = new Observable<EventMessage> ();
-			RowOffsets = new BinarySortedList<float> ();
 		}
 
 		// Params: int Current RowIndex, int Total RowCount
@@ -140,8 +151,15 @@ namespace SummerGUI.DataGrid
 			}
 		}
 
+				// 1:1 Legacy (GanttControl vertikale Dokument- / Scroll-Groesse):
+		//   if (m_Controller.CurrentView.HasVariableHeightRows && ItemCount > 0)
+		//       documentSize = Controller.CurrentView.LastRowBottom;
+		//   else
+		//       documentSize = (MaxRowIndex + 1) * GanttSettings.RowHeight;
 		public virtual float DocumentSize { 
 			get {
+				if (HasVariableHeightRows && RowCount > 0)
+					return LastRowBottom;
 				return RowCount * RowHeight;
 			}
 		}
@@ -239,20 +257,14 @@ namespace SummerGUI.DataGrid
 			}
 		}						
 
-		public bool HasVariableHeightRows { get; private set; }
-		public void DetectVariableRowHeights()
-		{
-			float lastRowBottom = 0;            
-			for (int i = 0; i < RowOffsets.Count; i++)
-			{
-				if (Math.Abs (Math.Abs (RowOffsets [i] - lastRowBottom) - RowHeight) > 0.00001) {
-					HasVariableHeightRows = true;
-					return;
-				}					
-				lastRowBottom = RowOffsets[i];
-			}
-			HasVariableHeightRows = false;
-		}
+		// 1:1 Legacy (ViewModelBase: "protected bool m_HasVariableHeightRows" +
+		// "public virtual bool HasVariableHeightRows { get; }"): wird von der View
+		// im RebuildItems (PerformRowUpdate) gesetzt:
+		//   Rows.HasVariableHeightRows = rowoffsets.HasVariableRowHeights (Owner.RowHeight);
+		// Aktiv -> RowIndexFromPoint wechselt auf die Binärsuche ueber RowOffsets
+		// (BinarySortedList.IndexOfElementOrSuccessor); RowInfoByRowIndex /
+		// LastRowBottom / DocumentSize lesen dann die Offsets.
+		public bool HasVariableHeightRows { get; set; }
 
 		public float RowHeight 
 		{ 
@@ -342,6 +354,16 @@ namespace SummerGUI.DataGrid
 			return RowInfoByRowIndex(RowIndexFromPoint(y));
 		}
 
+		// 1:1 Legacy (ViewModelBase.RowBoundsByRowIndex, float-Variante):
+		//   RowInfo info = RowInfoByRowIndex(rowIndex);
+		//   return new Rectangle(gantt.ClientRectangle.Left, info.RowTop + gantt.VerticalOffset,
+		//                        gantt.ClientRectangle.Width, info.RowHeight);
+		public RectangleF RowBoundsByRowIndex (int rowIndex)
+		{
+			RowInfo info = RowInfoByRowIndex (rowIndex);
+			return new RectangleF (Owner.ScrollBounds.Left, info.RowTop + VerticalOffset, Owner.ScrollBounds.Width, info.RowHeight);
+		}
+
 		public float LastRowBottom
 		{
 			get{
@@ -367,5 +389,38 @@ namespace SummerGUI.DataGrid
 			base.CleanupManagedResources ();
 		}
 	}
-}
 
+/// <summary>
+/// 1:1 Legacy-Extensions (KS.Gantt/Controller/ViewModels/RowInfo.cs, dort statische Klasse
+/// GanttViewModelExtensions; hier an die 2026er-BinarySortedList&lt;float&gt; angepasst).
+/// </summary>
+	public static class RowManagerExtensions
+	{
+		// Legacy 1:1:
+		//   public static bool HasVariableRowHeights (this BinarySortedList&lt;int&gt; rowoffsets, int defaultRowHeight)
+		//   {
+		//       int lastRowBottom = 0;
+		//       for (int i = 0; i < rowoffsets.Count; i++) {
+		//           if (rowoffsets[i] - lastRowBottom != defaultRowHeight)
+		//               return true;
+		//           lastRowBottom = rowoffsets[i];
+		//       }
+		//       return false;
+		//   }
+		public static bool HasVariableRowHeights (this BinarySortedList<float> rowoffsets, float defaultRowHeight)
+		{
+			if (rowoffsets == null || rowoffsets.Count == 0)
+				return false;
+
+			float lastRowBottom = 0;
+			for (int i = 0; i < rowoffsets.Count; i++) {
+				if (Math.Abs (rowoffsets [i] - lastRowBottom - defaultRowHeight) > 0.00001)
+					return true;
+
+				lastRowBottom = rowoffsets[i];
+			}
+
+			return false;
+		}
+	}
+}

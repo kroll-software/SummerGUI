@@ -185,9 +185,17 @@ namespace SummerGUI
 			SetActiveItem (e.X, e.Y);
 			Invalidate ();
 			if (m_ActiveItem != null) {
-				bool did = m_ActiveItem.OnClick ();
-				if (did)
+				// Close before executing the click: the Click handler may
+				// open a modal dialog that blocks the event loop, and closing
+				// after the execution would keep this dropdown open behind
+				// that dialog until the dialog is dismissed.
+				// Note: m_ActiveItem is nulled by the close/dispose chain of
+				// OnClose (), so the item must be captured in a local first.
+				IGuiMenuItem mi = m_ActiveItem;
+				if (mi.WillExecuteOnClick ()) {
 					OnClose ();
+					mi.OnClick ();
+				}
 			}
 		}
 
@@ -488,8 +496,14 @@ namespace SummerGUI
 				break;
 			case Keys.Space:
 				if (m_ActiveItem != null) {
-					if (m_ActiveItem.OnClick ())
-						Invalidate ();
+					IGuiMenuItem mi = m_ActiveItem;
+					if (mi.IsToggleButton) {
+						if (mi.OnClick ())
+							Invalidate ();
+					} else if (mi.WillExecuteOnClick ()) {
+						OnClose ();
+						mi.OnClick ();
+					}
 					return true;
 				}
 				break;
@@ -503,9 +517,11 @@ namespace SummerGUI
 					}
 					return true;
 				}
-				if (m_ActiveItem != null) {					
-					if (m_ActiveItem.OnClick()) {
+				if (m_ActiveItem != null) {				
+					IGuiMenuItem mi = m_ActiveItem;
+					if (mi.WillExecuteOnClick()) {
 						OnClose ();
+						mi.OnClick();
 						return true;
 					}
 				}
@@ -519,11 +535,12 @@ namespace SummerGUI
 						IGuiMenuItem mi = Menu [i];
 						if (mi == null || !(mi.Visible && mi.Enabled))
 							continue;
-						if (mi.ProcessInputKey (e))	// iterates recursive through all children
-							return true;						
-						if (ModifierKeys.AltPressed && keyChar == mi.Mnemonic) {							
-							if (mi.OnClick()) {
+						if (mi.ProcessInputKey (e, OnClose))	// iterates recursive through all children
+							return true;					
+						if (ModifierKeys.AltPressed && keyChar == mi.Mnemonic) {					
+							if (mi.WillExecuteOnClick()) {
 								OnClose ();
+								mi.OnClick();
 								return true;
 							}
 							else if (!mi.Children.IsNullOrEmpty ()) {

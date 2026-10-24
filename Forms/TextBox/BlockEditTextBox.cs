@@ -59,6 +59,9 @@ namespace SummerGUI
 		public BlockEditTextBox (string name, Block[] blocks, char separator)
 			: base (name)
 		{
+			Styles.SetStyle (new TextBoxActiveWidgetStyle (), WidgetStates.Active);
+			Styles.SetStyle (new TextBoxDisabledWidgetStyle (), WidgetStates.Disabled);
+
 			m_Blocks = blocks ?? new Block[0];
 			m_Sep = separator;
 			if (m_Blocks.Length > 0)
@@ -137,6 +140,8 @@ namespace SummerGUI
 			int selLen = IsFocused ? m_ActLen : 0;
 			if (!string.IsNullOrEmpty (text))
 			{
+				// ToDo: Nur Selection zeichnen, wenn fokussiert!
+
 				ctx.DrawSelectedString (text, Font, selStart, selLen, bounds, TextOffsetX, Format,
 					Style.ForeColorBrush.Color, Theme.Colors.HighLightBlue, Theme.Colors.White);
 			}
@@ -351,6 +356,8 @@ namespace SummerGUI
 
 		public override void Focus ()
 		{
+			if (!IsVisibleEnabled)
+				return;
 			base.Focus ();
 			SelectBlock (0);
 		}
@@ -365,7 +372,7 @@ namespace SummerGUI
 		{
 			CommitAll ();
 			Refresh ();   // drop the highlight
-			OnValueChanged ();
+			OnValueChanged ();	// ToDo: Falsch! OnValueChanged nur wenn de5 Value Changed
 			base.OnLostFocus ();
 		}
 
@@ -375,7 +382,7 @@ namespace SummerGUI
 			// the block under the cursor becomes the active one (whole block highlighted)
 			if (m_Blocks != null && m_Blocks.Length > 0 && Font != null)
 			{
-				float local = e.X - Bounds.Left;
+				float local = e.X - Bounds.Left - TextMargin.Width;
 				int idx = m_Blocks.Length - 1;
 				int cidx = 0;
 				float x = 0f;

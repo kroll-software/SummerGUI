@@ -79,7 +79,7 @@ namespace SummerGUI
 		}
 
 		public void RegisterOverlay(Widget widget)
-		{		
+		{
 			if (widget != null && !Overlays.Contains(widget))
 				Overlays.Add (widget);
 		}
@@ -337,10 +337,10 @@ namespace SummerGUI
 			HideTooltip ();
 			
 			Widget c = this.HitTest (e.X, e.Y);
-			//if (c == null || !Overlays.Contains (c)) 
-			if (c == null || !c.IsOverlay)
-			{
-				int overlayCount = Overlays.Count;
+				//if (c == null || !Overlays.Contains (c)) 
+					if (c == null || !c.IsOverlay)
+					{
+					int overlayCount = Overlays.Count;
 				if (!Overlays.OfType<IOverlayWidget> ().Any (ov => ov.OverlayMode == OverlayModes.Modal)) {
 					Overlays.OfType<IOverlayWidget> ().ToList ().ForEach (ov => ov.OnClose ());
 					if (Overlays.Count != overlayCount) {

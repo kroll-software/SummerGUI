@@ -25,6 +25,61 @@ namespace SummerGUI
 		public Button CalendarButton { get; private set; }
 		protected CalendarPopup Popup { get; private set; }
 
+		// ── eingebaute, optionale Checkbox („aktiv"-Anzeige, wie WinForms-DTP ShowCheckBox) ──
+		public CheckBox EmbeddedCheckBox { get; private set; }
+
+		public event EventHandler<EventArgs> CheckedChanged;
+		public void OnCheckedChanged ()
+		{
+			ApplyCheckGate ();
+			if (CheckedChanged != null && !IsDisposed)
+				CheckedChanged (this, EventArgs.Empty);
+		}
+
+		/// <summary>Nach WinForms: ob eine Checkbox links im Feld eingebunden ist. Standard: false.
+		/// Nur per Code schaltbar — die Checkbox bleibt dann permanent sichtbar.</summary>
+		public bool ShowCheckBox
+		{
+			get { return EmbeddedCheckBox != null && EmbeddedCheckBox.Visible; }
+			set
+			{
+				if (EmbeddedCheckBox == null || EmbeddedCheckBox.Visible == value)
+					return;
+				EmbeddedCheckBox.Visible = value;
+				ApplyCheckGate ();
+				ResetCachedLayout ();
+				Invalidate ();
+			}
+		}
+
+		// ── Gate: DateBox + Kalender sind aktiv NUR, wenn die eingebettete Checkbox (ein-)gewählt ist.
+		//    „Checkbox ungewählt + Box/Kalender aktiv“ tritt damit nie auf. Die Checkbox-Glyphe
+		//    selbst bleibt (bei Sichtbarkeit) enabled, damit der User sie zum Umschalten nutzen kann.
+		private bool ActiveGate
+		{
+			get { return (EmbeddedCheckBox == null) || !EmbeddedCheckBox.Visible || EmbeddedCheckBox.Checked; }
+		}
+		private void ApplyCheckGate ()
+		{
+			bool g = ActiveGate;
+			if (DateBox != null)
+				DateBox.Enabled = g;
+			if (CalendarButton != null)
+				CalendarButton.Enabled = g;
+		}
+
+		/// <summary>Status der eingebauten Checkbox („aktiv/inaktiv").</summary>
+		public bool Checked
+		{
+			get { return EmbeddedCheckBox != null && EmbeddedCheckBox.Checked; }
+			set
+			{
+				if (EmbeddedCheckBox == null || EmbeddedCheckBox.Checked == value)
+					return;
+				EmbeddedCheckBox.Checked = value;
+			}
+		}
+
 		protected DateTime m_Value = DateTime.Today;
 		/// <summary>The selected date. Default: <see cref="DateTime.Today"/>.</summary>
 		public DateTime Value
@@ -69,6 +124,15 @@ namespace SummerGUI
 			CalendarButton.Fire += CalendarButton_Fire;
 			AddChild (CalendarButton);
 
+			EmbeddedCheckBox = new CheckBox ("embeddedcheckbox", "");
+			EmbeddedCheckBox.CanFocus = false;   // keine Fokus-Übernahme, nur visuelle/klickbare Anzeige
+			EmbeddedCheckBox.Visible = false;
+			EmbeddedCheckBox.CheckedChanged += delegate { OnCheckedChanged (); };
+			// Klick in die Datums-TextBox -> automatisch aktivieren (Checkbox anhaken)
+			DateBox.Click += delegate { if (EmbeddedCheckBox != null && EmbeddedCheckBox.Visible) Checked = true; };
+			AddChild (EmbeddedCheckBox);
+
+			ApplyCheckGate ();
 			CanFocus = true;
 			UpdateText ();
 		}
@@ -188,15 +252,16 @@ namespace SummerGUI
 			set
 			{
 				base.Enabled = value;
-				if (DateBox != null)
-					DateBox.Enabled = value;
-				if (CalendarButton != null)
-					CalendarButton.Enabled = value;
+				// Die Checkbox-Glyphe folgt nur dem Picker-Level (bleibt bei Sichtbarkeit klickbar —
+				// das ist ihre Aufgabe: Box/Kalender umschalten). DateBox + Kalender folgen dem Gate.
+				if (EmbeddedCheckBox != null)
+					EmbeddedCheckBox.Enabled = value;
+				ApplyCheckGate ();
 			}
 		}
 
 		public override void Focus ()
-		{
+		{			
 			DateBox.Focus ();
 		}
 
@@ -206,7 +271,12 @@ namespace SummerGUI
 		{
 			if (DateBox == null)
 				return base.PreferredSize (ctx, proposedSize);
-			return DateBox.PreferredSize (ctx, proposedSize);
+			SizeF sz = DateBox.PreferredSize (ctx, proposedSize);
+			if (ShowCheckBox && EmbeddedCheckBox != null) {
+				float cbw = Math.Max (EmbeddedCheckBox.PreferredSize (ctx).Width, sz.Height);
+				sz.Width += cbw;
+			}
+			return sz;
 		}
 
 		// ── layout ───────────────────────────────────────────────────────
@@ -224,8 +294,20 @@ namespace SummerGUI
 			// keep the button roughly square
 			buttonwidth = Math.Max (buttonwidth, height);
 
+			// optionale Checkbox-Zone links
+			float leftEdge = bounds.Left;
+			if (ShowCheckBox && EmbeddedCheckBox != null) {
+				float cbw = Math.Max (EmbeddedCheckBox.PreferredSize (ctx).Width, height);
+				EmbeddedCheckBox.SetBounds (new RectangleF (bounds.Left, bounds.Top, cbw, height));
+				leftEdge += cbw;
+			}
+
+			float boxWidth = bounds.Right - buttonwidth - leftEdge;
+			if (boxWidth < 0f)
+				boxWidth = 0f;
+
 			CalendarButton.SetBounds (new RectangleF (bounds.Right - buttonwidth, bounds.Top, buttonwidth, height));
-			DateBox.OnLayout (ctx, new RectangleF (bounds.Left, bounds.Top, bounds.Width - buttonwidth, height));
+			DateBox.OnLayout (ctx, new RectangleF (leftEdge, bounds.Top, boxWidth, height));
 
 			// popup: anchor near the calendar button, clamped into the visible window.
 			// CalendarPopup.SetBounds clamps the width to a compact month-grid size.

@@ -16,6 +16,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
 using SummerGUI.Scrolling;
 using SummerGUI.DataGrid;
+using SummerGUI.DataGrid.Editors;
 using System.Runtime.InteropServices.Marshalling;
 
 namespace SummerGUI
@@ -405,13 +406,27 @@ namespace SummerGUI
 
 			float documentWidth = ColumnManager.Columns.Where(c => c.Visible).Sum(c => c.Width);			
 
-			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, RowManager.LastRowBottom, RowHeight);			
+			float lastRowBottom = RowManager.LastRowBottom + (NewRowAvailable ? RowHeight : 0);
+			VScrollBar.SetUp (Height - HeadHeight - HScrollBarHeight, lastRowBottom, RowHeight);			
 			HScrollBar.SetUp (Width - RowHeaderWidth - VScrollBarWidth, documentWidth, ScrollBar.ScrollBarWidth);
 		}
 
-        protected override void LayoutChild(IGUIContext ctx, Widget child, RectangleF bounds)
+        protected override void LayoutChild (IGUIContext ctx, Widget child, RectangleF bounds)
         {
-			if (child == HScrollBar)
+        	// Zell-Editor: Position gehört dem Grid (Overlay);
+        	// das base OnLayout würde die Bounds von Docking.None-Kindern überschreiben.
+        	if (child == m_EditControl && m_EditControl != null)
+        	{
+        		if (m_EditDataColumn != null && m_EditingCell != CellInfo.Empty)
+        		{
+        			RectangleF cb = GetCellEditBounds (m_EditDataColumn, m_EditingCell.Row);
+        			if (!cb.IsEmpty)
+        				child.SetBounds (cb);
+        		}
+        		return;
+        	}
+
+        	if (child == HScrollBar) 
 			{
 				if (RowHeaders)
 				{
@@ -547,15 +562,23 @@ namespace SummerGUI
 		public void MoveNext()
 		{
 			if (!HasData) return;
-			RowManager.MoveNext();	
+			// New-Row (AllowNew): von der letzten Datenzeile in die New-Row
+			if (NewRowAvailable && RowIndex >= RowManager.RowCount - 1 && RowIndex < RowManager.RowCount)
+				RowManager.CurrentRowIndex = RowManager.RowCount;
+			else
+				RowManager.MoveNext();
 			SelectCurrentRow();
 			Invalidate ();
-		}		
-
+		}
+		
 		public void MoveLast()
 		{
 			if (!HasData) return;
-			RowManager.MoveLast();	
+			// New-Row (AllowNew): Ctrl+End / MoveLast landet in der New-Row (WinForms-Verhalten)
+			if (NewRowAvailable)
+				RowManager.CurrentRowIndex = RowManager.RowCount;
+			else
+				RowManager.MoveLast();
 			SelectCurrentRow();
 			Invalidate ();
 		}
@@ -583,16 +606,18 @@ namespace SummerGUI
 			get
 			{
 				if (!HasData) return false;
-				return RowManager.CanMoveForward;
+				// New-Row zählt als nächste Zeile von der letzten Datenzeile
+				return RowManager.CanMoveForward
+					|| (NewRowAvailable && RowIndex < RowManager.RowCount);
 			}
-		}		
-
+		}
+		
 		public bool CanMoveLast
 		{
 			get
 			{
 				if (!HasData) return false;
-				return RowManager.CanMoveForward;
+				return RowManager.CanMoveForward || NewRowAvailable;
 			}
 		}
 		
@@ -612,6 +637,22 @@ namespace SummerGUI
 		public event EventHandler IsEditingChanged;
 
 		public event EventHandler UpdateEditMenu;
+
+		// *** Cell-Editing (Phase 1, Konzeption CELL-EDITING-Konzeption.md) ***
+
+		public delegate void CellEditEventHandler (object sender, CellEditEventArgs e);
+
+		/// <summary>
+		/// Feuert, bevor ein Editor für eine Zelle erzeugt wird. Cancel=true verhindert das Edit.</summary>
+		public event CellEditEventHandler CellEdit;
+
+		/// <summary>
+		/// Feuert, bevor der Wert in den DataProvider geschrieben wird. Cancel=true bricht den Commit ab.</summary>
+		public event CellEditEventHandler CellValidating;
+
+		/// <summary>
+		/// Feuert, nachdem ein Wert erfolgreich committet wurde.</summary>
+		public event CellEditEventHandler CellEdited;
 		public void OnUpdateEditMenu()
 		{
 			if (UpdateEditMenu != null)
@@ -781,6 +822,9 @@ namespace SummerGUI
 		protected Rectangle m_EditControlTextBounds = Rectangle.Empty;
 		protected int m_EditControlIndent = 0;        
 
+		/// <summary>Zelle, die gerade editiert wird (Zustand von BeginEdit/EndEdit).</summary>
+		protected CellInfo m_EditingCell = CellInfo.Empty;
+
 		private int m_AllowEditSuspendCounter = 0;
 		public void SuspendAllowEdit()
 		{
@@ -813,6 +857,56 @@ namespace SummerGUI
 		}
 
 		public bool AllowEdit { get; set; }
+		protected bool m_AllowNew = false;
+
+		/// <summary>
+		/// „AllowNew" (WinForms-„AllowUserToAddRows"-Analogon, Default false):
+		/// wenn true und der DataProvider <see cref="INewRowProvider"/> implementiert,
+		/// wird die leere Letztzeile als neue, editierbare Zeile dargestellt.
+		/// Ein Commit in dieser Zeile ruft <c>INewRowProvider.TryAddNew</c> auf
+		/// (neuer Datensatz); der Cursor bleibt darauf am neuen Datensatz.
+		/// Setzt <see cref="AllowEdit"/> VORAUS — ohne AllowEdit ist AllowNew wirkungslos.
+		/// </summary>
+		public bool AllowNew
+		{
+			get { return m_AllowNew; }
+			set
+			{
+				if (m_AllowNew != value)
+				{
+					m_AllowNew = value;
+					if (HasData)
+					{
+						SetupScrollBars ();
+						Invalidate ();
+					}
+				}
+			}
+		}
+
+		/// <summary>New-Row aktiv: <see cref="AllowNew"/> + <see cref="AllowEdit"/> gesetzt UND Provider implementiert <see cref="INewRowProvider"/>.</summary>
+		public bool NewRowAvailable
+		{
+			get { return AllowNew && AllowEdit && RowManager != null && DataProvider is INewRowProvider; }
+		}
+
+		/// <summary>Zeilenindex der New-Row (== RowManager.RowCount); -1 wenn New-Row inaktiv.</summary>
+		public int NewRowIndex
+		{
+			get { return NewRowAvailable ? RowManager.RowCount : -1; }
+		}
+
+		/// <summary>Gibt an, ob <paramref name="row"/> die New-Row ist.</summary>
+		public bool IsNewRow (int row)
+		{
+			return NewRowAvailable && row == RowManager.RowCount;
+		}
+
+		/// <summary>Zeilenanzeige insgesamt (Datensätze + evtl. New-Row).</summary>
+		public int ViewRowCount
+		{
+			get { return RowManager == null ? 0 : RowManager.RowCount + (NewRowAvailable ? 1 : 0); }
+		}
 		public bool AllowRowReorder { get; set; }
 		public bool AllowColumnReorder { get; set; }
 		public bool AllowSort { get; set; }			
@@ -943,20 +1037,343 @@ namespace SummerGUI
 			}
 		}
 
-		public virtual bool EndEdit(bool SaveData)
+		/// <summary>
+		/// Beginnt eine Zell-Edit-Sitzung an der aktuellen Zelle (Aufrufpunkt: F2, Doppelklick).
+		/// Konzeption §2.4.2: Re-Klick auf die aktive Zelle committet und schließt.
+		/// </summary>
+		public virtual bool BeginEdit ()
 		{
+			PointF pt = this.CurrentPoint ();
+			return BeginEdit (pt.X, pt.Y);
+		}
+
+		/// <summary>
+		/// Beginnt eine Zell-Edit-Sitzung an der angegebenen (Client-)Position.
+		/// Protokoll (Konzeption §2.13 G):
+		/// Re-Klick-Check → CanEditCell → CellEdit-Event → CreateCellEditor →
+		/// Initialize → SetBounds → AddChild (Root-Registry) → Fokus → IsEditing=true.
+		/// </summary>
+		public virtual bool BeginEdit (float X, float Y)
+		{
+			if (RowManager == null || ColumnManager == null)
+				return false;
+
+			SetCurrentRowAndCellFromPoint (X, Y);
+
+			int row = RowIndex;
+			if (row < 0 || row >= ViewRowCount)
+			{
+				return false;
+			}
+
+			DataGridColumn col = ColumnManager.ColumnFromColumnIndex (ColumnIndex);
+			if (col == null)
+				return false;
+
+			CellInfo cell = new CellInfo (row, ColumnIndex);
+
+			// Klick auf bereits editierte Zelle = Commit und schließen (Legacy-Verhalten)
+			if (m_EditControl != null)
+			{
+				bool sameCell = m_EditingCell == cell;
+				EndEdit (true);
+				if (sameCell)
+					return true;
+			}
+
+			if (!CanEditCell (col, row))
+			{
+				return false;
+			}
+
+			// New-Row hat keinen Datensatz: Initialwert bleibt null (Editor zeigt leerer Start).
+		object curValue = (DataProvider != null && row < RowManager.RowCount)
+			? DataProvider.GetFormattedValue (row, col.Key)
+			: null;
+			CellEditEventArgs args = new CellEditEventArgs (cell, col, curValue);
+			if (CellEdit != null)
+				CellEdit (this, args);
+			if (args.Cancel)
+				return false;
+
+			ICellEditor editor = null;
+			try
+			{
+				editor = CreateCellEditor (col, row);
+			}
+			catch (Exception ex)
+			{
+				ex.LogError ();
+			}
+			if (editor == null)
+			{
+				return false;
+			}
+
+			try
+			{
+				editor.Initialize (this, col, cell);
+			}
+			catch (Exception ex)
+			{
+				ex.LogError ();
+				return false;
+			}
+
+			// Position: das Grid besitzt die Client-Koordinaten (Schutz vor OnLayout-Override)
+			// Editor ist immer auch ein Widget → einmal casten für AddChild/SetBounds/Focus
+		Widget ew = (Widget) editor;
+
+		RectangleF cb = GetCellEditBounds (col, row);
+			if (!cb.IsEmpty)
+				ew.SetBounds (cb);
+
+			// Overlay: AddChild registriert automatisch bei der Root (ZIndex >= 10000)
+			AddChild (ew);
+
+			editor.Closing += delegate
+			{
+				EndEdit (true);
+			};
+			editor.EditCompleted += delegate (object s, EditCompletedEventArgs e2)
+			{
+				EndEdit (e2.Accept);
+			};
+
+			m_EditControl = ew;
+			m_EditDataColumn = col;
+			m_EditingCell = cell;
+			m_EditControlTop = (int) cb.Y;
+			m_EditControlScrollY = (int) VScrollBar.Value;
+			m_EditControlRowIndex = row;
+
+			SetIsEditing (true);
+			OnUpdateEditMenu ();
+			ew.Focus ();
+			Invalidate ();
 			return true;
 		}
 
-		public virtual bool BeginEdit()
+		/// <summary>
+		/// Ends an edit session.
+		/// </summary>
+		/// <returns>True if edit ended successfully, false otherwise.</returns>
+		/// <param name='SaveData'>
+		/// If set, the edited value is committed to the underlying data source before the
+		/// editor widget is removed and focus is restored to the grid.
+		/// </param>
+		public virtual bool EndEdit (bool SaveData)
 		{
-			PointF pt = this.CurrentPoint();
-			return BeginEdit(pt.X, pt.Y);
+			if (m_EditControl == null)
+			{
+				SetIsEditing (false);
+				return true;
+			}
+
+			CellInfo cell = m_EditingCell;
+			DataGridColumn col = m_EditDataColumn;
+			ICellEditor editor = m_EditControl as ICellEditor;
+
+			m_EditControl = null;
+			m_EditDataColumn = null;
+			m_EditingCell = CellInfo.Empty;
+
+			bool wrote = false;
+			if (SaveData && editor != null && editor.IsDirty && col != null)
+			{
+				object value = editor.GetEditValue ();
+				CellEditEventArgs args = new CellEditEventArgs (cell, col, value);
+				if (CellValidating != null)
+					CellValidating (this, args);
+				if (!args.Cancel)
+				{
+					try
+					{
+						wrote = SetCellValue (col, cell.Row, value);
+					}
+					catch (Exception ex)
+					{
+						ex.LogError ();
+					}
+				}
+			}
+
+			// Editor ablösen (Overlay deregistriert automatisch) und verwerfen
+			try
+			{
+				Widget w = editor as Widget;
+				if (w != null)
+				{
+					w.Visible = false;
+					RemoveChild (w);
+					w.Dispose ();
+				}
+			}
+			catch (Exception ex)
+			{
+				ex.LogError ();
+			}
+
+			SetIsEditing (false);
+			OnUpdateEditMenu ();
+			Focus ();
+			if (wrote)
+				Invalidate ();
+
+			if (wrote && CellEdited != null)
+				CellEdited (this, new CellEditEventArgs (cell, col, null));
+
+			return true;
 		}
 
-		public virtual bool BeginEdit(float X, float Y)
+		/// <summary>
+		/// Prüft, ob eine Zelle editierbar ist. Override-Punkt für Gantt (Regeln je Zeile, Q7).</summary>
+		protected virtual bool CanEditCell (DataGridColumn col, int row)
 		{
+			if (!AllowEdit || IsAllowEditSuspended)
+				return false;
+
+			if (col == null || !col.CanEdit)
+				return false;
+
 			return true;
+		}
+
+		/// <summary>
+		/// Erzeugt den Editor für eine Spalte. Override-Punkt für Gantt (z.B. Duration, Q5).</summary>
+		protected virtual ICellEditor CreateCellEditor (DataGridColumn col, int row)
+		{
+			switch (col.EditType)
+			{
+				case EditTypes.Text:
+					return new TextCellEditor ();
+				case EditTypes.MultilineText:
+					return new MultiLineTextCellEditor ();
+				case EditTypes.NumericUpDown:
+					return new NumberCellEditor ();
+				case EditTypes.DropDownList:
+				case EditTypes.DropDownCombo:
+					return new ComboCellEditor ();
+				case EditTypes.Date:
+					return new DateTimeCellEditor ();
+				case EditTypes.Time:
+					return new TimeCellEditor ();
+				case EditTypes.CheckBox:
+					return new CheckCellEditor ();
+				case EditTypes.Duration:
+					// Basis Phase 1: kein Editor; Gantt override mit Duration-Logik (Konzeption §2.3).
+					return null;
+				default:
+					return null;
+			}
+		}
+
+		/// <summary>
+		/// Schreibt den Wert in den DataProvider (Bridge <see cref="IEditableDataProvider"/>, §2.12/§2.13).
+		/// New-Row (AllowNew): stattdessen <c>INewRowProvider.TryAddNew</c> → neuer Datensatz.</summary>
+		protected virtual bool SetCellValue (DataGridColumn col, int row, object value)
+		{
+			// New-Row (AllowNew): der Provider legt den neuen Datensatz an (first-value-Konzept).
+			if (IsNewRow (row) && DataProvider is INewRowProvider)
+			{
+				INewRowProvider nrp = (INewRowProvider) DataProvider;
+				if (nrp.TryAddNew (col.Key, value))
+				{
+					OnNewRowAdded (row);
+					return true;
+				}
+				return false;
+			}
+
+			IEditableDataProvider edp = DataProvider as IEditableDataProvider;
+			if (edp == null)
+				return false;
+
+			return edp.TrySetValue (row, col.Key, value);
+		}
+
+		/// <summary>
+		/// Wird nach erfolgreichem Anlegen eines neuen Datensatzes für die New-Row aufgerufen.
+		/// Die neue Zeile steht auf dem Index der ehemaligen New-Row; der Cursor bleibt dort
+		/// (WinForms-Verhalten). RowsChanged/OnRowCountChanged des Providers aktualisiert die Scroll-Geometrie.</summary>
+		protected virtual void OnNewRowAdded (int row)
+		{
+			if (RowManager == null)
+				return;
+
+			if (RowManager.RowCount > row)
+			{
+				RowManager.CurrentRowIndex = row;
+				if (SelectionManager != null)
+					SelectionManager.SelectRow (row);
+				EnsureRowindexVisible (row);
+			}
+
+			SetupScrollBars ();
+			Invalidate ();
+		}
+
+		/// <summary>
+		/// Position des Editors: Zell-Rechteck in Client-Koordinaten
+		/// (identische Spalten-Layout-Berechnung wie OnPaint/SelectionCellBounds).</summary>
+		protected virtual RectangleF GetCellEditBounds (DataGridColumn col, int row)
+		{
+			if (RowManager == null || ColumnManager == null || col == null)
+				return RectangleF.Empty;
+
+			RowInfo info = RowManager.RowInfoByRowIndex (row);
+			if (info == RowInfo.Empty)
+				return RectangleF.Empty;
+
+			float x = ColumnStartX ();
+			float clientWidth = ScrollBounds.Width;
+			bool found = false;
+			float cellWidth = 0;
+
+			foreach (DataGridColumn c in Columns)
+			{
+				if (!c.Visible)
+					continue;
+
+				float w = c.AbsoluteWidth (clientWidth);
+				if (ReferenceEquals (c, col))
+				{
+					cellWidth = w;
+					found = true;
+					break;
+				}
+				x += w;
+			}
+
+			if (!found)
+				return RectangleF.Empty;
+
+			return new RectangleF (x, info.RowTop + VerticalScrollOffset, cellWidth, info.RowHeight);
+		}
+
+		/// <summary>
+		/// Hält die Editor-Position beim Scrollen aktuell (Q10).</summary>
+		protected virtual void UpdateEditControlPosition ()
+		{
+			if (m_EditControl == null || !IsEditing || m_EditingCell == CellInfo.Empty || m_EditDataColumn == null)
+				return;
+
+			int sy = (int) VScrollBar.Value;
+			if (m_EditControlScrollY != sy)
+			{
+				m_EditControlScrollY = sy;
+				RectangleF cb = GetCellEditBounds (m_EditDataColumn, m_EditingCell.Row);
+				if (!cb.IsEmpty)
+					m_EditControl.SetBounds (cb);
+			}
+		}
+
+		/// <summary>
+		/// Jedes Frame: Editor-Position aktualisieren (Scroll-Follow), dann Standard-Update.</summary>
+		public override void Update (IGUIContext ctx)
+		{
+			UpdateEditControlPosition ();
+			base.Update (ctx);
 		}
 
 		public virtual void SelectNextCell()
@@ -1009,7 +1426,10 @@ namespace SummerGUI
 
 				RowInfo info = RowManager.RowInfoByRowIndex(RowIndex);
 				if (info != RowInfo.Empty)
-					p.Y = info.RowTop + VerticalScrollOffset + 1;
+					// p.Y im Fenster-Raum: RowTop (Content, 0-basiert) + Top + HeadHeight + ScrollOffsetY.
+					// BeginEdit(X,Y) -> SetCurrentRowAndCellFromPoint erwartet Fenster-Koordinaten.
+					// (Zeilen-Drift-Bug 2026-10-19: Klick Zeile 1 -> row=6 — dadurch behoben, live-verifiziert.)
+					p.Y = info.RowTop + Top + HeadHeight + ScrollOffsetY + 1;
 			}
 
 			return p;
@@ -1212,8 +1632,9 @@ namespace SummerGUI
 
 							if (col.AllowResize) {
 								// resizing / border
-								ControlItems.Add (new MouseControlItem (new RectangleF (ColumnDeviderX - 2, RT.Top + 4, 4, RT.Height - 8), MouseControlItemTypes.ColumnHeaderBorder, col));								
-							}
+								ControlItems.Add (new MouseControlItem (new RectangleF (ColumnDeviderX - 2, RT.Top + 4, 4, RT.Height - 8), MouseControlItemTypes.ColumnHeaderBorder, col));					
+
+								}
 
 							if (col.AllowSort && col.SortDirection != SortDirections.None) {
 								// Draw a Triangle
@@ -1349,14 +1770,14 @@ namespace SummerGUI
 
 				if (m_PrintingFlag)
 				{                    
-					return RowManager.RowCount - 1;
+					return ViewRowCount - 1;
 				}
 				else
 				{
 					int maxRow = RowManager.RowIndexFromPoint(Bottom + HeadHeight);
 
-					if (maxRow < 0 || maxRow > RowManager.RowCount - 1)
-						maxRow = RowManager.RowCount - 1;
+					if (maxRow < 0 || maxRow > ViewRowCount - 1)
+						maxRow = ViewRowCount - 1;
 
 					return maxRow;
 				}
@@ -1384,8 +1805,12 @@ namespace SummerGUI
 				ctx.DrawGrayButton (recRowHeader);
 				//ctx.DrawLine (HeaderBorder, recRowHeader.Left, recRowHeader.Bottom, recRowHeader.Right, recRowHeader.Bottom);
 				
-				// Selection Rectangle / RowHeader Selection Triangle                                                
-				if (RowHeaders && rowIndex == RowIndex && RowHeaderWidth > 0 && !m_PrintingFlag) {						
+				// Selection Rectangle / RowHeader Selection Triangle
+				// (WinForms-„AllowUserToAddRows"-Analogon: New-Row = kleiner Kreis,
+				//  New-Row WÄHREND Bearbeiten = Dreieck + Sternchen)
+				bool newRow = NewRowAvailable && IsNewRow (rowIndex);
+				if (RowHeaders && rowIndex == RowIndex && RowHeaderWidth > 0 && !m_PrintingFlag) {				
+					
 					float iCenter = R.Top + (R.Height / 2f) - 1;
 					PointF[] points = new PointF[3];
 
@@ -1395,7 +1820,22 @@ namespace SummerGUI
 					points [0] = new PointF (srDX, iCenter - srDY);
 					points [1] = new PointF (srDX, iCenter + srDY);
 					points [2] = new PointF (srDX + srDY, iCenter);
-					ctx.FillPolygon (Theme.Brushes.Base01, points);											
+					ctx.FillPolygon (Theme.Brushes.Base01, points);
+					
+					// New-Row ist aktuell und wird bearbeitet → Dreieck + Sternchen
+					if (newRow && IsEditing)
+					{
+						ctx.DrawString ("*", Font, Theme.Brushes.Base01,
+							new RectangleF (srDX + (8f * ScaleFactor), iCenter - (Font.LineHeight / 2f), 12f * ScaleFactor, Font.LineHeight),
+							FontFormat.DefaultSingleBaseLine);
+					}
+				}
+				else if (RowHeaders && newRow && RowHeaderWidth > 0 && !m_PrintingFlag)
+				{
+					// New-Row (nicht aktuelle Zeile) → kleiner Kreis
+					float cx = Bounds.Left + (8f * ScaleFactor);
+					float cy = R.Top + (R.Height / 2f) - 1;
+					ctx.FillCircle (Theme.Brushes.Base01, cx, cy, 2f * ScaleFactor);
 				}
 			}
 		}
@@ -1456,13 +1896,25 @@ namespace SummerGUI
 
 					if (m_RowBorderPen.Width > 0)
 						ctx.DrawLine (m_RowBorderPen, R.Left, R.Bottom, R.Right, R.Bottom);					
+					
+					// Cell-Selection (Cell-Mode): Rahmen um die aktuelle Zelle,
+					// gezeichnet ueber die Zeilen-Auswahl (siehe DrawSelectionBorder).
+					if (SelectionManager != null &&
+						SelectionManager.SelectionMode == DataGridSelectionModes.Cell &&
+						HighlightSelection && !m_PrintingFlag && !m_IsEditing && IsFocused &&
+						rowIndex == RowIndex)
+					{
+						RectangleF CR = SelectionCellBounds ();
+						if (CR.Width > 0 && CR.Height > 0)
+							DrawSelectionBorder (ctx, CR);
+					}
 				}
 
 				if (VerticalLines) {
 					Pen invertedPen = new Pen(BackColor);
 
 					RectangleF clientRectangle = ScrollBounds;
-					float LastBottomline = RowManager.LastRowBottom + VerticalScrollOffset;					
+					float LastBottomline = RowManager.LastRowBottom + (NewRowAvailable ? RowManager.RowHeight : 0) + VerticalScrollOffset;					
 					// Vertical Lines
 					float iColStartX = ColumnStartX ();
 					foreach (DataGridColumn col in Columns) {
@@ -1555,15 +2007,17 @@ namespace SummerGUI
 							float colWidth = col.AbsoluteWidth (clientRectangle.Width);
 							float columnDeviderX = iColStartX + colWidth;
 							string text = null;
+							// New-Row (AllowNew): leer, kein Provider-Zugriff
+							if (!IsNewRow (rowIndex))
+								text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 							if (columnDeviderX > Left) {
 								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
-								text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
 							}
 
 							if (AutoColumnWidth && col.SizeMode == DataGridColumn.SizeModes.Fixed)
 							{
-								if (text == null)
+								if (text == null && !IsNewRow (rowIndex))
 									text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 
 								float stringWidth = Font.Measure(text).Width;
@@ -1621,8 +2075,73 @@ namespace SummerGUI
 			}
 		}
 
+		/// <summary>
+		/// Zeichnet den Auswahl-Rahmen der aktuellen Zelle im Cell-Selection-Mode
+		/// (wird von OnPaintBackground gerufen, liegt ueber der Zeilen-Auswahl).
+		/// Doppelte Umrandung (Legacy GanttDataGrid.DrawSelectionBorder):
+		/// 1px schwarz aussen + 1px weiss innen — kontrastreich auf dem
+		/// Zeilen-Auswahl-Hintergrund (HighLightBlue) in beiden Themes.
+		/// Abgeleitete Grids duerfen dies mit dem gewuenschten Erscheinungsbild uberschreiben.
+		/// </summary>
 		public virtual void DrawSelectionBorder(IGUIContext ctx, RectangleF rSelect)
 		{
+			if (rSelect.Width <= 4f || rSelect.Height <= 4f)
+				return;
+
+			RectangleF rOuter = rSelect;
+			rOuter.Inflate (-1f, -1f);
+			using (Pen outer = new Pen (Color.Black, 1f))
+				ctx.DrawRectangle (outer, rOuter);
+
+			RectangleF rInner = rSelect;
+			rInner.Inflate (-2f, -2f);
+			using (Pen inner = new Pen (Color.White, 1f))
+				ctx.DrawRectangle (inner, rInner);
+		}
+
+		/// <summary>
+		/// Rechteck der aktuellen Auswahlzelle (RowIndex/ColumnIndex),
+		/// identische Spalten-Layout-Berechnung wie OnPaint, damit der Rahmen
+		/// exakt auf die Zellgrenzen trifft.
+		/// </summary>
+		protected RectangleF SelectionCellBounds()
+		{
+			if (RowManager == null || Columns == null || ColumnManager == null)
+				return RectangleF.Empty;
+
+			if (ColumnIndex < 0 || ColumnIndex > m_MaxColumnIndex)
+				return RectangleF.Empty;
+
+			RowInfo info = RowManager.RowInfoByRowIndex (RowIndex);
+
+			DataGridColumn col = ColumnManager.ColumnFromColumnIndex (ColumnIndex);
+			if (col == null)
+				return RectangleF.Empty;
+
+			float x = ColumnStartX ();
+			float clientWidth = ScrollBounds.Width;
+			bool found = false;
+			float cellWidth = 0;
+
+			foreach (DataGridColumn c in Columns)
+			{
+				if (!c.Visible)
+					continue;
+
+				float w = c.AbsoluteWidth (clientWidth);
+				if (ReferenceEquals (c, col))
+				{
+					cellWidth = w;
+					found = true;
+					break;
+				}
+				x += w;
+			}
+
+			if (!found)
+				return RectangleF.Empty;
+
+			return new RectangleF (x, info.RowTop + VerticalScrollOffset, cellWidth, info.RowHeight);
 		}
 
 		public void EnsureRowindexVisible(int rowIndex)
@@ -1640,11 +2159,22 @@ namespace SummerGUI
 			SelectionManager.StartSelectionTimer ();
 		}			
 			
+		// SummerGUI-Konzept: alle Maus-Events und alle gerenderten Bounds/ControlItems
+		// liegen im Fenster(-Root)-Koordinatensystem. Es gibt keine lokalen Koordinaten
+		// und keine Umrechnungsfunktion — Koordinaten werden direkt verglichen.
+
 		public override void OnDoubleClick (MouseButtonEventArgs e)
 		{
 			base.OnDoubleClick (e);
-
 			// ToDo: HitTest on Caption, ScrollBars, etc..
+
+			// Doppelklick = Edit-Trigger (Konzeption §2.4.2); schlägt es fehl, bleibt OnItemSelected.
+			if (AllowEdit && !IsAllowEditSuspended &&
+				SelectionManager != null && SelectionManager.SelectionMode == DataGridSelectionModes.Cell)
+			{
+				if (BeginEdit (e.X, e.Y))
+					return;
+			}
 
 			if (RowManager != null && RowManager.CurrentRowIndex >= 0)
 				OnItemSelected ();
@@ -1669,12 +2199,28 @@ namespace SummerGUI
 			bool bSeekColumn = false;			
 
 			switch (e.Key) {			
+			// F2 = Edit (Legacy; Q8: Enter bleibt OnItemSelected)
+			case Keys.F2:
+				bHandled = true;
+				BeginEdit ();
+				break;
+
 			case Keys.Down:
 				bHandled = true;
 				if (RowManager.CanMoveForward) {
 					if (m_LastShiftDownPosition < 0)
 						m_LastShiftDownPosition = RowIndex;
 					RowManager.MoveNext ();
+					if (ColumnIndex < 0)
+						ColumnIndex = 0;
+					bSeekRow = true;
+					bProcess = true;
+				}
+				else if (NewRowAvailable && RowIndex == RowManager.RowCount - 1) {
+					// New-Row (AllowNew): von der letzten Datenzeile in die leere Letztzeile
+					if (m_LastShiftDownPosition < 0)
+						m_LastShiftDownPosition = RowIndex;
+					RowManager.CurrentRowIndex = RowManager.RowCount;
 					if (ColumnIndex < 0)
 						ColumnIndex = 0;
 					bSeekRow = true;
@@ -1874,20 +2420,26 @@ namespace SummerGUI
 			if (y < HeadHeight || !HasData)
 				return;
 
-			int rowIndex = RowManager.RowIndexFromPoint(y);
-			if (rowIndex >= 0 && rowIndex < RowManager.RowCount)
+			// RowIndexFromPoint erwartet Fenster-Y und rechnet intern
+			// (y - ScrollBounds.Top - ScrollOffsetY)/RowHeight ab — y ist hier bereits Fenster-Y.
+			int rowIndex = RowManager.RowIndexFromPoint (y);
+			if (rowIndex >= 0 && rowIndex < ViewRowCount)
 			{
 				RowIndex = rowIndex;
-				ColumnIndex = Math.Min(m_MaxColumnIndex, ColumnManager.ColumnIndexFromPoint(x));
+
+				// Fenster-X -> Content-X: x - Left - ScrollOffsetX.
+				// (PP3000: Left = 0; Spalten-Null beginnt bei der ersten Spalten-Kante —
+				//  Spaltenauflösung live-verifiziert 2026-10-21.)
+				ColumnIndex = Math.Min (m_MaxColumnIndex, ColumnManager.ColumnIndexFromPoint (x - Left - ScrollOffsetX));
 			}
 		}
 
 		public override void OnMouseDown (MouseButtonEventArgs e)
-		{			
+		{	
 			base.OnMouseDown (e);
 
 			if (!HasData)
-				return;
+			return;
 
 			MouseX = e.X;
 			MouseY = e.Y;
@@ -1903,6 +2455,8 @@ namespace SummerGUI
 
 			//bool bWasFocussed = this.Focused || m_IsEditing;
 
+			// FindControlItem: ControlItems und Maus-Events liegen beide im Fenster-Raum
+			// (X inkl. Left, Y inkl. Top) → direkter Vergleich, keine Umrechnung.
 			MouseControlItem mc = FindControlItem(e.X, e.Y);
 			if (mc.ItemType != MouseControlItemTypes.Empty && mc.ItemType != MouseControlItemTypes.Tooltip)
 			{
@@ -1918,6 +2472,7 @@ namespace SummerGUI
 
 				case MouseControlItemTypes.ColumnHeaderBorder:
 					m_ColumnResizingColumn = (DataGridColumn)mc.Tag;
+					// XStart in Fensterräumen (Move-Events kommen in Fensterkoordinaten)
 					m_ColumnResizingXStart = e.X - ScrollOffsetX;
 					m_ColumnResizingWidthStart = m_ColumnResizingColumn.AbsoluteWidth(ScrollBounds.Width);
 					m_ColumnResizingFlag = true;
@@ -2088,8 +2643,10 @@ namespace SummerGUI
 			}			
 
 			// *** Clickable areas ***
-			PointF position = new PointF(e.Position.X, e.Position.Y);
-			MouseControlItem mc = FindControlItem(e.Position.X, e.Position.Y);			
+			// FindControlItem: ControlItems liegen im Fenster-Raum; Move-Events sind bereits
+			// Fensterkoordinaten (RootContainer routet Move-Events unverändert) → ohne Offset-Korrektur.
+			PointF position = new PointF(e.X, e.Y);
+			MouseControlItem mc = FindControlItem(e.X, e.Y);			
 
 			switch (mc.ItemType)
 			{
@@ -2138,10 +2695,13 @@ namespace SummerGUI
 		}
 
 		public CellInfo CurrentCell (Point p)
-		{			
+		{		
 			if (!HasData)
 				return CellInfo.Empty;
-			return new CellInfo (RowManager.RowIndexFromPoint(p.Y), ColumnManager.ColumnIndexFromPoint(p.X));
+
+			// p ist in Fensterkoordinaten; ColumnIndexFromPoint erwartet Content-Koordinaten
+			// (ColumnOffsets ab 0) -> Fenster-X - Left - ScrollOffsetX.
+			return new CellInfo (RowManager.RowIndexFromPoint(p.Y), ColumnManager.ColumnIndexFromPoint(p.X - Left - ScrollOffsetX));
 		}
 
 		public override void OnClick (MouseButtonEventArgs e)

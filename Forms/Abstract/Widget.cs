@@ -484,9 +484,19 @@ namespace SummerGUI
 
 		protected virtual void OnEnabledChanged()
 		{			
-			UpdateStyle ();
-			ResetCachedLayout ();
-			Invalidate (1);
+		// A widget that becomes disabled cannot keep the keyboard/mouse focus:
+		// release it here so the selection highlight (the blue block) drops and
+		// key events no longer target this widget. Re-enabling does not restore it.
+		if (!m_Enabled) {
+		RootContainer root = Root;
+		if (root != null && root.FocusedWidget == this) {
+		root.FocusedWidget = null;
+		OnLostFocus ();
+		}
+		}
+		UpdateStyle ();
+		ResetCachedLayout ();
+		Invalidate (1);
 		}
 
 		public bool IsVisibleEnabled

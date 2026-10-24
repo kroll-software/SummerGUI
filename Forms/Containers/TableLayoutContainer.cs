@@ -28,7 +28,8 @@ namespace SummerGUI
 		None,
 		Fixed,
 		Content,
-		Fill
+		Fill,
+		Relative      // col.Width = GEWICHT/Bruchteil (z.B. 0.1f); prop. Verteilung der freien Breite (WinForms-SizeTypePercent). Ein einzelnes Relative = ganze freie Breite
 	}		
 
 	public class WidgetTableCell : IComparable<WidgetTableCell>
@@ -54,8 +55,8 @@ namespace SummerGUI
 			return ret;
 		}
 
-		public int Column { get; private set; }
-		public int Row { get; private set; }
+		public int Column { get; set; }
+		public int Row { get; set; }
 
 		public int ColumnSpan { get; set; }
 		public int RowSpan { get; set; }
@@ -233,9 +234,73 @@ namespace SummerGUI
 				if (Rows.Count == 0)
 					return 0;
 
-				return Rows.Max (row => row.Cells.Sum(cell => cell.ColumnSpan));
+				int count = 0;
+				foreach (var row in Rows)
+					foreach (var cell in row.Cells)
+						count = Math.Max (count, cell.Column + cell.ColumnSpan);
+				return count;
 			}
-		}			
+		}
+		
+		// Ein Widget in seiner Zelle finden (uebergeordnete Zeile + Index in der Zellenliste).
+		bool FindCell (Widget widget, out WidgetTableRow parentRow, out int cellIndex)
+		{
+			parentRow = null;
+			cellIndex = -1;
+			for (int row = 0; row < Rows.Count; row++)
+			{
+				for (int c = 0; c < Rows [row].CellCount; c++)
+				{
+					if (ReferenceEquals (Rows [row].Cells [c].Widget, widget))
+					{
+						parentRow = Rows [row];
+						cellIndex = c;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		// WinForms-TableLayoutPanel.SetRow-Paritaet: ein Widget nach dem Hinzufuegen in eine
+		// andere Zeile umhaengen (gleiche Spalte bleibt). Loest das "gemeinsame Slot"-Muster:
+		// z.B. Start/StartTime links neben Duration ODER neben End, je nach TaskTyp.
+		public void SetRow (Widget widget, int row)
+		{
+			if (!FindCell (widget, out WidgetTableRow parentRow, out int cellIndex))
+				return;
+
+			WidgetTableCell cell = parentRow.Cells [cellIndex];
+			if (cell.Row == row)
+				return;	// kein Umdocking noewig
+
+			while (Rows.Count <= row)
+				Rows.AddLast (new WidgetTableRow (Rows.Count));
+			WidgetTableRow target = Rows [row];
+			if (target != parentRow)
+			{
+				parentRow.Cells.RemoveAt (cellIndex);
+				cell.Row = row;	// Sort-Key vor dem Re-Add aktualisieren
+				target.Cells.Add (cell);
+			}
+		}
+
+		// WinForms-TableLayoutPanel.SetColumn-Paritaet: in eine andere Spalte umhaengen.
+		public void SetColumn (Widget widget, int column)
+		{
+			if (!FindCell (widget, out WidgetTableRow parentRow, out int cellIndex))
+				return;
+
+			WidgetTableCell cell = parentRow.Cells [cellIndex];
+			if (cell.Column == column)
+				return;
+
+			while (Columns.Count <= column)
+				Columns.AddLast (new WidgetTableColumn (Columns.Count));
+			parentRow.Cells.RemoveAt (cellIndex);
+			cell.Column = column;
+			parentRow.Cells.Add (cell);
+		}
 
 		int tabIndex = 0;
 
@@ -250,9 +315,13 @@ namespace SummerGUI
 
 		public void AddWidget(Widget widget, int row, int column, int rowSpan = 1, int columnSpan = 1, bool autoSize = true)
 		{
+			// Spalten auf die volle Span-Range wachsen lassen (nicht nur bis Start-Index),
+			// sonst fehlt die rechte Spalte(n), die nur ueber einen Span erreicht wird;
+			// UpdateColumnWidthsNormal/LayoutNormal indexen Table.Columns[..column+span-1] ungesichert.
+			// Fuer span-1-Zellen identisch zu zuvor (while Count <= idx) -> backward-compatible.
 			while (RowCount <= row)
 				Rows.AddLast (new WidgetTableRow (Rows.Count));
-			while (Columns.Count <= column)
+			while (Columns.Count < column + columnSpan)
 				Columns.AddLast (new WidgetTableColumn (Columns.Count));
 		
 			if (widget != null)
@@ -365,10 +434,10 @@ namespace SummerGUI
 		// *** auf den hier würde ich auch gerne verzichten..
 		void UpdateColumnWidthsNormal(IGUIContext ctx, SizeF proposedSize)
 		{
-			int columnCount = Table.ColumnCount;
+			int columnCount = Table.Columns.Count;
 
-			int FillColCount = 0;
-			float FixedColWidth = 0;
+			float FillColWeight = 0;       // Fill/None = Gewicht 1.0; Relative = ihr Bruchteil (SizeTypePercent)
+			float FixedColWidth = 0;       // absolute (Fixed) + Content = reserviert, wird NICHT verteilt
 			for (int i = 0; i < columnCount; i++) {
 				WidgetTableColumn col = Table.Columns [i];
 				switch (col.SizeMode) {
@@ -392,20 +461,29 @@ namespace SummerGUI
 					break;
 				case TableSizeModes.None:
 				case TableSizeModes.Fill:
-					FillColCount++;
+					FillColWeight += 1.0f;             // gleichverteilt (Gewicht 1.0)
 					break;
 				case TableSizeModes.Fixed:
 					FixedColWidth += col.Width;
 					break;
+				case TableSizeModes.Relative:
+					FillColWeight += col.Width;        // Gewicht = Bruchteil (z.B. 0.1f)
+					break;
 				}
 			}
 
-			if (FillColCount > 0) {
-				float fillColWidth = (proposedSize.Width - FixedColWidth - ((columnCount - 1) * CellPadding.Width)) / FillColCount;
+			if (FillColWeight > 0) {
+				float freePool = proposedSize.Width - FixedColWidth - ((columnCount - 1) * CellPadding.Width);
+				if (freePool < 0) freePool = 0;         // Überbuchung (Fixed+Content > Breite): kein neg. Fill
 				for (int i = 0; i < columnCount; i++) {
 					WidgetTableColumn col = Table.Columns [i];
+					float weight = 0;
 					if (col.SizeMode == TableSizeModes.Fill || col.SizeMode == TableSizeModes.None)
-						col.Width = fillColWidth;
+						weight = 1.0f;                  // gleichverteilt
+					else if (col.SizeMode == TableSizeModes.Relative)
+						weight = col.Width;             // Gewicht = Bruchteil
+					if (weight > 0)
+						col.Width = freePool * (weight / FillColWeight);   // proportional (WinForms-SizeTypePercent)
 				}
 			}
 
@@ -693,6 +771,22 @@ namespace SummerGUI
 			Layout.Table.AddWidget (child);
 			ResetCachedLayout ();
 			return child;
+		}
+		
+		// WinForms-TableLayoutPanel-Paritaet: ein Widget nach dem AddChild in eine andere
+		// Zeile/Spalte umhaengen (ohne Doppel-Widget, ohne Overlay). Basis fuer die
+		// Legacy-TaskEditDialog-Logik: Start/StartTime rutschen neben Duration (Fixed)
+		// ODER bleiben bei End (Static), das inaktive Band kollabiert (Content-Zeile, 0).
+		public void SetRow (Widget child, int row)
+		{
+			Layout.Table.SetRow (child, row);
+			ResetCachedLayout ();
+		}
+
+		public void SetColumn (Widget child, int column)
+		{
+			Layout.Table.SetColumn (child, column);
+			ResetCachedLayout ();
 		}
 			
 		protected override void ResetCachedLayout ()

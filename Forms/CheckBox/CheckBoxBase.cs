@@ -102,11 +102,11 @@ namespace SummerGUI
 		public override SizeF PreferredSize (IGUIContext ctx, SizeF proposedSize)
 		{
 			if (CachedPreferredSize == System.Drawing.Size.Empty) {
-				if (!String.IsNullOrEmpty (Text)) {
-					SizeF sz = Font.Measure (Text);
-					float iconWidth = Font.CaptionHeight * Indent;
-					CachedPreferredSize = new SizeF (sz.Width + iconWidth + Padding.Width, Font.TextBoxHeight);
-				}
+				// Auch eine leere (reine) Checkbox muss eine sinnvolle Größe melden,
+				// sonst kollabiert sie im Layout auf 0x0 (unsichtbar).
+				float iconWidth = Font.CaptionHeight * Indent;
+				float textWidth = String.IsNullOrEmpty (Text) ? 0f : Font.Measure (Text).Width;
+				CachedPreferredSize = new SizeF (textWidth + iconWidth + Padding.Width, Font.TextBoxHeight);
 			}
 			return CachedPreferredSize;
 		}

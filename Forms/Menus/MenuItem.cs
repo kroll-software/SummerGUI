@@ -399,19 +399,39 @@ namespace SummerGUI
 			return item;
 		}
 
-		public static bool ProcessInputKey(this IGuiMenuItem item, KeyboardKeyEventArgs e)
+		/// <summary>
+		/// True if a subsequent OnClick () call would fire the Click handler,
+		/// mirroring the checks inside OnClick (same return-value semantics).
+		/// Menus use this to close *before* executing the click, because some
+		/// Click handlers open modal dialogs that block the event loop, and
+		/// closing after the execution would keep the dropdown open behind
+		/// that dialog until the dialog is dismissed.
+		/// </summary>
+		public static bool WillExecuteOnClick (this IGuiMenuItem item)
+		{
+			if (!(item.Visible && item.Enabled))
+				return false;
+			if (item.IsToggleButton)
+				return !(item.IsOptionGroup && item.Checked);
+			return !item.HasChildren;
+		}
+
+		public static bool ProcessInputKey (this IGuiMenuItem item, KeyboardKeyEventArgs e, System.Action beforeExecute = null)
 		{
 			if (!(item.Visible && item.Enabled))
 				return false;
 			if (item.ModifierKey == e.Modifiers && item.HotKey == e.Key) {
-				if (item.OnClick ()) {								
+				// close before the handler runs, it may open a modal dialog
+				if (item.WillExecuteOnClick ())
+					beforeExecute?.Invoke ();
+				if (item.OnClick ()) {
 					return true;
 				}
 			}
 			// recurse through all children
 			foreach (var child in item.Children)
-				if (child.ProcessInputKey (e))
-					return true;			
+				if (child.ProcessInputKey (e, beforeExecute))
+					return true;
 			return false;
 		}
 
