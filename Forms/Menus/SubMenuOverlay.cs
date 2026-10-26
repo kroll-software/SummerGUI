@@ -193,7 +193,14 @@ namespace SummerGUI
 				// OnClose (), so the item must be captured in a local first.
 				IGuiMenuItem mi = m_ActiveItem;
 				if (mi.WillExecuteOnClick ()) {
+					// Erfassen, bevor OnClose(): Das Parent kann das Overlay Dispose'n,
+					// danach liefert ParentWindow null (Root == null).
+					SummerGUIWindow win = ParentWindow;
 					OnClose ();
+					// Geschlossenen Zustand UNBEDINGT rendern, bevor mi.OnClick() blockiert
+					// (Native Dialoge: Wayland-Portal / GTK — sonst bliebe das offene
+					// Dropdown im letzten Frame auf dem Screen).
+					MenuSyncFrame.Flush (win);
 					mi.OnClick ();
 				}
 			}
@@ -501,7 +508,9 @@ namespace SummerGUI
 						if (mi.OnClick ())
 							Invalidate ();
 					} else if (mi.WillExecuteOnClick ()) {
+						SummerGUIWindow winSpace = ParentWindow;
 						OnClose ();
+						MenuSyncFrame.Flush (winSpace);
 						mi.OnClick ();
 					}
 					return true;
@@ -520,7 +529,9 @@ namespace SummerGUI
 				if (m_ActiveItem != null) {				
 					IGuiMenuItem mi = m_ActiveItem;
 					if (mi.WillExecuteOnClick()) {
+						SummerGUIWindow winEnter = ParentWindow;
 						OnClose ();
+						MenuSyncFrame.Flush (winEnter);
 						mi.OnClick();
 						return true;
 					}
@@ -535,11 +546,13 @@ namespace SummerGUI
 						IGuiMenuItem mi = Menu [i];
 						if (mi == null || !(mi.Visible && mi.Enabled))
 							continue;
-						if (mi.ProcessInputKey (e, OnClose))	// iterates recursive through all children
+						SummerGUIWindow winKey = ParentWindow;
+						if (mi.ProcessInputKey (e, () => { OnClose (); MenuSyncFrame.Flush (winKey); }))	// iterates recursive through all children
 							return true;					
 						if (ModifierKeys.AltPressed && keyChar == mi.Mnemonic) {					
 							if (mi.WillExecuteOnClick()) {
 								OnClose ();
+								MenuSyncFrame.Flush (winKey);
 								mi.OnClick();
 								return true;
 							}

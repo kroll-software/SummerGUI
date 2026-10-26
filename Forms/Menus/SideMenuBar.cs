@@ -230,6 +230,9 @@ namespace SummerGUI
 						var pw = ParentWindow;
 						if (pw != null) {
 							OnClose ();
+							// Handler darf den GUI-Thread blockieren (Native
+							// Dialog): geschlossenen Zustand vorher rendern.
+							MenuSyncFrame.Flush (pw);
 						}
 					}
 					mi.OnClick ();

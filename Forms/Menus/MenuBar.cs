@@ -499,7 +499,8 @@ namespace SummerGUI
 						IGuiMenuItem mi = Menu [i];
 						if (mi == null || !(mi.Visible && mi.Enabled))
 							continue;
-						if (mi.ProcessInputKey (e, CloseSubMenu))	// iterates recursive through all children
+						SummerGUIWindow winHotkey = ParentWindow;
+						if (mi.ProcessInputKey (e, () => { CloseSubMenu (); MenuSyncFrame.Flush (winHotkey); }))	// iterates recursive through all children
 							return true;
 						
 						// Alt-Key / Mnemonics for this Selected menu only
