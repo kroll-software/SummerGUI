@@ -104,11 +104,21 @@ namespace SummerGUI
             byte[] white = new byte[] { 255, 255, 255, 255 };
             whiteTextureId = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, whiteTextureId);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, white);            
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 1, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, white);           
 
+            // m_ClipOffset MUST be 0 on every platform. The GL drawable height equals the
+            // widget-space height (they are the same surface, not offset from each other):
+            //   glY = ctx.Height - (rb.Y + rb.Height) - TitleBarHeight + m_ClipOffset
+            //       = (Size.Y - TitleBarHeight) - (rb.Y+rb.Height) + m_ClipOffset
+            //       = ClientSize.Y - (rb.Y+rb.Height) + m_ClipOffset      (glY at SetClip:1102)
+            // while Viewport/UpdateSize use GlWindow.ClientSize and GlWindow => this
+            // (SummerGUIWindow.cs:105) → drawable height == ClientSize.Y. So the bottom-most
+            // widget's bottom row maps to GL-y 0 exactly when m_ClipOffset == 0.
+            // The old `if (Linux) m_ClipOffset = 1` shifted EVERY scissor up 1px, so the
+            // bottom-most widget (e.g. the dialog's dark status/button strip) never painted its
+            // bottom row (drawable y=0) → a WHITE 1px horizontal line at the window's bottom
+            // edge on every repaint burst (TaskEditDialog, VisibleColumnsDialog). 0 fixes it.
             m_ClipOffset = 0;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                m_ClipOffset = 1;
         }
 
 
@@ -1078,7 +1088,19 @@ namespace SummerGUI
             if (bounds == RectangleF.Empty)
                 rb = new Rectangle(0, 0, ctx.Width, ctx.Height);
             else
-                rb = Rectangle.Ceiling(bounds);                
+            {
+                // SommerGUI-Geometrie ist VOLL FLOAT — die pixelgenaue Scissor-Box muss die
+                // float-Region INKLUSIVE umfassen, nicht schneiden. `Rectangle.Ceiling(bounds)`
+                // ründtet die linke/obere Kante herauf (Ceiling der Min-Werte) und clippte den
+                // Sub-Pixel-Spalt am Rand weg → 1px helle Linie am Rand (TabBar/ScrollButton-Grenze).
+                // Inklusive Box: min runter (Floor), max hoch (Ceiling) → jeder überlappende
+                // Pixel bleibt erhalten, keine Lücke.
+                int x0 = (int)MathF.Floor(bounds.Left);
+                int y0 = (int)MathF.Floor(bounds.Top);
+                int x1 = (int)MathF.Ceiling(bounds.Right);
+                int y1 = (int)MathF.Ceiling(bounds.Bottom);
+                rb = new Rectangle(x0, y0, x1 - x0, y1 - y0);
+            }
 
             if (rb != currentScissor)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using KS.Foundation;
@@ -57,6 +58,18 @@ namespace SummerGUI.DataGrid.Editors
 			{
 				OnEditorValueChanged ();
 			};
+		}
+
+		/// <summary>
+		/// Editor-Kästchen in der Zelle mittig (H+V) — im Gegensatz zum
+		/// normalen CheckBox (Icon linksbündig).</summary>
+		public override void OnPaint (IGUIContext ctx, RectangleF bounds)
+		{
+			if (IconFont == null || CheckChars == null)
+				return;
+
+			char icon = CheckChars [Checked.ToInt ()];
+			ctx.DrawString (icon.ToString(), IconFont, Style.ForeColorBrush, bounds, FontFormat.DefaultIconFontFormatCenter);
 		}
 
 		public void Initialize (DataGridView grid, DataGridColumn col, CellInfo cell)

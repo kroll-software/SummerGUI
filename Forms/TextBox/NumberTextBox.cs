@@ -193,22 +193,46 @@ namespace SummerGUI
 			return c.IsNumeric ();
 		}
 
+		/// <summary>
+		/// Editor-Scoping: SetBounds selbst hat keinen Layout-Trigger (anders als der
+		/// Layout-Pass) — das Fill-Kind (TB) und die Spinner-Buttons müssen manuell
+		/// positioniert werden, sonst bleiben sie bei {0,0,0,0} und die Box rendert
+		/// leer. Gleicher Pattern wie die SetBounds-Overrides von
+		/// DateTimeCellEditor / TimeCellEditor.
+		/// </summary>
+		public override void SetBounds (float x, float y, float width, float height)
+		{
+			base.SetBounds (x, y, width, height);
+			LayoutSpinner ();
+		}
+
+		private void LayoutSpinner ()
+		{
+			if (UpButton == null || DownButton == null || TB == null || Bounds.IsEmpty)
+				return;
+
+			// Button.PreferredSize misst über IconFont/Font/Padding — braucht keinen ctx.
+			float buttonWidth = UpButton.PreferredSize (null).Width;
+			if (buttonWidth <= 0f)
+				return;
+
+			float halfHeight = Bounds.Height / 2f;
+			float buttonLeft = Bounds.Right - buttonWidth;
+
+			UpButton.SetBounds (new RectangleF (buttonLeft, Bounds.Top, buttonWidth, halfHeight));
+			DownButton.SetBounds (new RectangleF (buttonLeft, Bounds.Top + halfHeight - 1, buttonWidth, halfHeight));
+
+			// TB ist Dock=Fill → OnLayout(Fill) ≙ SetBounds (identisch inkl. Clamping).
+			TB.SetBounds (new RectangleF (Bounds.Left, Bounds.Top, Bounds.Width - buttonWidth, Bounds.Height));
+		}
+
 		public override void OnLayout (IGUIContext ctx, RectangleF bounds)
-		{			
+		{
 			if (IsLayoutSuspended)
 				return;
 
+			// Der SetBounds-Override positioniert TB und Spinner-Buttons.
 			SetBounds (bounds);
-			bounds = Bounds;
-
-			float buttonWidth = UpButton.PreferredSize (ctx).Width;
-			float halfHeight = bounds.Height / 2f;
-			float buttonLeft = bounds.Right - buttonWidth;			
-
-			UpButton.SetBounds (new RectangleF (buttonLeft, bounds.Top, buttonWidth, halfHeight));
-			DownButton.SetBounds (new RectangleF (buttonLeft, bounds.Top + halfHeight - 1, buttonWidth, halfHeight));			
-
-			TB.OnLayout(ctx, new RectangleF(bounds.Left, bounds.Top, bounds.Width - buttonWidth, bounds.Height));
 		}
 
 		/***
@@ -230,10 +254,10 @@ namespace SummerGUI
 
 			switch (e.Key) {
 			case Keys.Up:
-				DecrementValue ();
+				IncrementValue ();
 				return true;
 			case Keys.Down:
-				IncrementValue ();
+				DecrementValue ();
 				return true;
 			}
 

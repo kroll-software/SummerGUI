@@ -197,7 +197,14 @@ namespace SummerGUI
 						
 			m_FrameRate = frameRate;
 			_frameTimer = new DeltaTimer();
-			this.VSync = VSyncMode.Adaptive;
+			// VSync=Adaptive (OpenTK GameWindow.cs:324-331) raises _slowUpdates on slow frames and,
+			// once it exceeds 45, calls GLFW.SwapInterval(0)  (vsync OFF). A Mouse-Move→Invalidate
+			// burst counts as "slow", so those frames go out unthrottled and land mid scan-out:
+			// the dialog's bottom rows tear/flicker while the mouse moves (TaskEditDialog,
+			// VisibleColumnsDialog). On = SwapInterval fixed at 1 → every swap vsync'd, no edge
+			// tear. No effect on OnRender latency (< 1 ms); the cap is irrelevant for an
+			// on-demand, non-animated GUI.
+			this.VSync = VSyncMode.On;
 			this.AutoIconify = false;
 			this.CursorState = CursorState.Normal;
 

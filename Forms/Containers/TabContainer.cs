@@ -515,14 +515,21 @@ namespace SummerGUI
 			if (overFlow) {
 				ScrollLeftButton.Enabled = TabBar.CanScrollRight;
 				ScrollRightButton.Enabled = TabBar.CanScrollLeft;
+				// The tab strip is a SHORT horizontal band (sz.Height) across the full width.
+				// ★Bug: earlier laid the buttons on `bounds` (full dialog height ~482) → the
+				//   Left/Right-docked buttons take height=region (Widget.cs:1074/1080) → they
+				//   exploded to ~482px. Keep the short strip height (was `sz.Height` in the old
+				//   `rb`), and drop the -1/+2 overhang (buttons were clipped at the container edge).
 				SizeF sz = TabBar.PreferredSize (ctx, bounds.Size);
-				RectangleF rb = new RectangleF (bounds.Left - 1, bounds.Top, bounds.Width + 2, sz.Height);
-				LayoutChild (ctx, ScrollLeftButton, rb);
-				LayoutChild (ctx, ScrollRightButton, rb);
-				RectangleF centerBounds = rb;
-				centerBounds.Inflate (-ScrollLeftButton.Width, 0);
-				LayoutChild (ctx, TabBar, centerBounds);
-			} else {				
+				RectangleF bar = new RectangleF (bounds.Left, bounds.Top, bounds.Width, sz.Height);
+				LayoutChild (ctx, ScrollLeftButton, bar);
+				LayoutChild (ctx, ScrollRightButton, bar);
+				// Fill EXACTLY between the two buttons' real (post-layout) edges — zero gap
+				// regardless of their (possibly unequal) widths, no hard-coded trim.
+				float centerLeft = ScrollLeftButton.Right;
+				float centerRight = ScrollRightButton.Left;
+				LayoutChild (ctx, TabBar, new RectangleF (centerLeft, bar.Top, Math.Max (0f, centerRight - centerLeft), bar.Height));
+			} else {			
 				LayoutChild (ctx, TabBar, bounds);
 			}				
 

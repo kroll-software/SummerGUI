@@ -32,8 +32,9 @@ namespace SummerGUI
 								rb.Checked = false;
 							}
 						}
-					}	
+					}
 
+					OnCheckedChanged();
 					Invalidate ();
 				}
 			}

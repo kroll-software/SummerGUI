@@ -25,6 +25,20 @@ namespace SummerGUI
 	}
 
 	/// <summary>
+	/// Optionales Begleit-Interface zu <see cref="IOverlayWidget"/>: das Hit-Target eines
+	/// Outside-Klicks, der ein Nicht-modal-Overlay schließt, erhält den Klick selbst
+	/// (DataGridView-Single-Click-Edit: Klick auf Zelle B schließt Editor A und öffnet
+	/// im selben Klick Editor B — Legacy-WinForms-„EditOnEnter"-Äquivalent).
+	/// Ohne dieses Interface bleibt das bisherige Verhalten: der erste Outside-Klick
+	/// wird verworfen.
+	/// </summary>
+	public interface IOutsideClickTarget
+	{
+		/// <summary>True, wenn das Widget den Outside-Klick gerade entgegennehmen will.</summary>
+		bool PassThroughOutsideClick { get; }
+	}
+
+	/// <summary>
 	/// Common contract every combo-box drop-down widget implements (the plain
 	/// <see cref="ComboBoxDropDownOverlay"/> and the colour-aware
 	/// <see cref="ColorComboBoxDropDown"/> alike), so that <see cref="ComboBoxBase"/>

@@ -339,7 +339,7 @@ namespace SummerGUI
 			Widget c = this.HitTest (e.X, e.Y);
 				//if (c == null || !Overlays.Contains (c)) 
 					if (c == null || !c.IsOverlay)
-					{
+				{
 					int overlayCount = Overlays.Count;
 				if (!Overlays.OfType<IOverlayWidget> ().Any (ov => ov.OverlayMode == OverlayModes.Modal)) {
 					Overlays.OfType<IOverlayWidget> ().ToList ().ForEach (ov => ov.OnClose ());
@@ -347,7 +347,11 @@ namespace SummerGUI
 						if (FocusedWidget != null && FocusedWidget.IsOverlay)
 							FocusedWidget = null;
 						Invalidate ();
-						return;
+						// IOutsideClickTarget (z. B. DataGridView mit AllowSingleClickEdit):
+						// das Ziel-Widget erhält den Outside-Klick dennoch — es schaltet damit
+						// im selben Klick den Editor zur geklickten Zelle um (Legacy EditOnEnter).
+						if (!(c is IOutsideClickTarget t) || !t.PassThroughOutsideClick)
+							return;
 					}
 				}
 			}

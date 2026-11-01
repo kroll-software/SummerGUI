@@ -70,12 +70,23 @@ namespace SummerGUI.DataGrid.Editors
 			m_Initializing = true;
 			try
 			{
-				string s = CellEditorBase.GetInitialValue (grid, col, cell);
-				decimal d = 0;
-				if (s != null && decimal.TryParse (s, NumberStyles.Any, CultureInfo.InvariantCulture, out d))
+				// Value statt Text: rohen Zellwert holen und mit SafeDecimal umrechnen
+				// (KS.Foundation: wirft nie, null/DBNull → 0). Text-basiertes Parsen
+				// war culture/format-anfällig und unnötig.
+				object value = null;
+				if (grid != null && grid.DataProvider != null && col != null)
 				{
-					m_HasValue = true;					
+					try
+					{
+						value = grid.DataProvider.GetValue (cell.Row, col.Key);
+					}
+					catch (Exception ex)
+					{
+						ex.LogError ();
+					}
 				}
+				m_HasValue = (value != null && value != DBNull.Value);
+				decimal d = value.SafeDecimal ();
 
 				if (col != null)
 				{
@@ -84,7 +95,7 @@ namespace SummerGUI.DataGrid.Editors
 					Increment = col.Increment;
 				}
 
-				Value = m_HasValue ? d : 0;
+				Value = d;
 			}
 			finally
 			{

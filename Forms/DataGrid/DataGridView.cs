@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -21,7 +21,7 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace SummerGUI
 {
-	public class DataGridView : ScrollableContainer, IDataProviderOwner, ISupportsSelection, ISupportsFind
+	public class DataGridView : ScrollableContainer, IDataProviderOwner, ISupportsSelection, ISupportsFind, IOutsideClickTarget
 	{
 		public event EventHandler<EventArgs> HasDataChanged;
 		bool m_HasData;
@@ -819,6 +819,13 @@ namespace SummerGUI
 		protected int m_EditControlScrollY = 0;
 
 		protected int m_EditControlRowIndex = 0;
+
+			// AllowSingleClickEdit: Single/Doppelklick-Gestenbuchhaltung.
+			protected DateTime m_SclLastMouseDown = DateTime.MinValue;
+			protected float m_SclLastX = 0;
+			protected float m_SclLastY = 0;
+			protected DateTime m_SingleClickEditOpenedAt = DateTime.MinValue;
+			protected bool m_PendingSingleClickEdit = false;
 		protected Rectangle m_EditControlTextBounds = Rectangle.Empty;
 		protected int m_EditControlIndent = 0;        
 
@@ -857,6 +864,20 @@ namespace SummerGUI
 		}
 
 		public bool AllowEdit { get; set; }
+
+		/// <summary>
+		/// „AllowSingleClickEdit": Wenn true, öffnet ein einzelner Linksklick auf
+		/// eine Zelle den Zell-Editor (BeginEdit). Standard: false — der Editor
+		/// öffnet sich nur per Doppelklick (und F2), also das bisherige Verhalten;
+		/// GanttDataGrid bleibt unverändert.
+		/// </summary>
+		public bool AllowSingleClickEdit { get; set; }
+		
+		// IOutsideClickTarget: mit AllowSingleClickEdit erhält das Grid den Outside-Klick,
+		// der seinen Editor schließt — es öffnet damit im selben Klick den Editor der
+		// geklickten Zelle (RootContainer schließt den Editor, würde den Klick sonst
+		// verschlucken; Legacy-Äquivalent: WinForms EditOnEnter).
+		bool IOutsideClickTarget.PassThroughOutsideClick { get { return AllowSingleClickEdit; } }
 		protected bool m_AllowNew = false;
 
 		/// <summary>
@@ -1072,11 +1093,19 @@ namespace SummerGUI
 
 			CellInfo cell = new CellInfo (row, ColumnIndex);
 
-			// Klick auf bereits editierte Zelle = Commit und schließen (Legacy-Verhalten)
+			// Klick auf bereits editierte Zelle = Commit und schließen (Legacy-Verhalten).
+			// Ausnahme AllowSingleClickEdit: folgt unmittelbar nach dem SingleClick-
+			// öffnen derselben Zelle die Doppelklick-Geste (zweiter Klick), darf
+			// nicht committiert/geschlossen werden — der Editor bleibt geöffnet
+			// (Doppelklick bleibt primärer Edit-Trigger).
 			if (m_EditControl != null)
 			{
 				bool sameCell = m_EditingCell == cell;
-				EndEdit (true);
+				bool freshSingleClick = sameCell && m_SingleClickEditOpenedAt != DateTime.MinValue
+					&& (DateTime.Now - m_SingleClickEditOpenedAt).TotalMilliseconds < 600;
+				if (!freshSingleClick)
+					EndEdit (true);
+				m_PendingSingleClickEdit = false;
 				if (sameCell)
 					return true;
 			}
@@ -1086,9 +1115,11 @@ namespace SummerGUI
 				return false;
 			}
 
-			// New-Row hat keinen Datensatz: Initialwert bleibt null (Editor zeigt leerer Start).
+			// New-Row hat keinen Datensatz: Wert bleibt null.
+		// RAW VALUE (Key) liefern — der formatierte Text (z.B. Task-Name) ist
+		// für Vergleiche ungeeignet; es können auch 2 Tasks gleichen Namens geben.
 		object curValue = (DataProvider != null && row < RowManager.RowCount)
-			? DataProvider.GetFormattedValue (row, col.Key)
+			? DataProvider.GetValue (row, col.Key)
 			: null;
 			CellEditEventArgs args = new CellEditEventArgs (cell, col, curValue);
 			if (CellEdit != null)
@@ -1151,6 +1182,9 @@ namespace SummerGUI
 			OnUpdateEditMenu ();
 			ew.Focus ();
 			Invalidate ();
+			if (m_PendingSingleClickEdit)
+				m_SingleClickEditOpenedAt = DateTime.Now;
+			m_PendingSingleClickEdit = false;
 			return true;
 		}
 
@@ -1252,7 +1286,10 @@ namespace SummerGUI
 				case EditTypes.NumericUpDown:
 					return new NumberCellEditor ();
 				case EditTypes.DropDownList:
+					// Read-only: ComboListBox-Editor (keine Texteingabe).
+					return new ComboListBoxCellEditor ();
 				case EditTypes.DropDownCombo:
+					// Editierbar: ComboBox-Editor mit Texteingabe.
 					return new ComboCellEditor ();
 				case EditTypes.Date:
 					return new DateTimeCellEditor ();
@@ -1260,6 +1297,10 @@ namespace SummerGUI
 					return new TimeCellEditor ();
 				case EditTypes.CheckBox:
 					return new CheckCellEditor ();
+				case EditTypes.CheckList:
+					// Mehrfach-Auswahl (List der Item-Values); ★129: CheckedListBox öffnet
+					// SOFORT in der Zellfläche (1:1 Legacy ucTaskWorks BeginEdit).
+					return new CheckedListEditor ();
 				case EditTypes.Duration:
 					// Basis Phase 1: kein Editor; Gantt override mit Duration-Logik (Konzeption §2.3).
 					return null;
@@ -1748,6 +1789,24 @@ namespace SummerGUI
 				col.m_DesiredWidth = Math.Max(col.m_DesiredWidth, TextIndent + 8 + stringWidth);
 		}
 
+		/// <summary>
+		/// CheckBox-Zelle: FontAwesome-Kästchen-Symbol (fa_check_square_o / fa_square_o,
+		/// identisch zum CheckBox-Widget) in der Zellenmitte — Zentrierung H+V.
+		/// Abgeleitete Grids dürfen das mit dem gewünschten Erscheinungsbild überschreiben.</summary>
+		protected virtual void DrawCheckCell(IGUIContext ctx, DataGridColumn col, RectangleF RText, bool isChecked, bool bHighLight)
+		{
+			if (RText.Right < Bounds.Left || RText.Left > Bounds.Right)
+				return;
+
+			IGUIFont iconFont = FontManager.Manager.SmallIcons;
+			if (iconFont == null)
+				return;
+
+			char glyph = isChecked ? (char)FontAwesomeIcons.fa_check_square_o : (char)FontAwesomeIcons.fa_square_o;
+			Brush brush = bHighLight ? Theme.Brushes.White : Theme.Brushes.Base02;
+			ctx.DrawString (glyph.ToString (), iconFont, brush, RText, FontFormat.DefaultIconFontFormatCenter);
+		}
+
 		private bool m_PrintingFlag = false;
 
 		public int FirstRowOnScreen
@@ -1911,7 +1970,17 @@ namespace SummerGUI
 				}
 
 				if (VerticalLines) {
-					Pen invertedPen = new Pen(BackColor);
+					// "Invertierte" Devider (in BackColor): nur sinnvoll ueber Zeilen, die
+					// WIRKLICH mit der Selection-Highlight hinterlegt sind (Blau/Grau) — dann
+					// wird die weiße Devider dagegen sichtbar.
+					// In allen anderen Faellen (HighlightSelection=aus, HideSelection ohne Fokus,
+					// waehrend Edit, beim Drucken) behaelt die Zeile ihre normale
+					// Hintergrundfarbe: Da reichen die normalen Grid-Linien (m_RowBorderPen),
+					// die oben in voller Hoehe bereits ueber sie gezeichnet wurden — kein
+					// Nachzeichnen. In BackColor (Weiss) zu uebermalen wuerde sie
+					// ausradieren → weiße Linien auf Weiss = unsichtbar.
+					bool invertSelectedDividers = HighlightSelection && !m_PrintingFlag && !m_IsEditing && (IsFocused || !HideSelection);
+					Pen invertedPen = invertSelectedDividers ? new Pen (BackColor) : null;
 
 					RectangleF clientRectangle = ScrollBounds;
 					float LastBottomline = RowManager.LastRowBottom + (NewRowAvailable ? RowManager.RowHeight : 0) + VerticalScrollOffset;					
@@ -1925,8 +1994,10 @@ namespace SummerGUI
 								ctx.DrawLine (this.m_RowBorderPen, columnDeviderX, Top + HeadHeight, columnDeviderX, LastBottomline);
 							}
 
-							// Selected rows
-							if (IsFocused || !HideSelection)
+							// Selected rows — nur, wenn die Selection-Highlight dort
+							// WIRKLICH gezeichnet wurde; andernfalls gelten die normalen
+							// Grid-Linien wie bei allen anderen Zeilen.
+							if (invertSelectedDividers)
 							{
 								foreach (var rowindex in SelectedRowIndices)
 								{
@@ -2012,7 +2083,10 @@ namespace SummerGUI
 								text = DataProvider.GetFormattedValue (rowIndex, col.Key);
 							if (columnDeviderX > Left) {
 								RectangleF RText = new RectangleF (iColStartX + CellPadding.Left, R.Top, colWidth - CellPadding.Left - CellPadding.Right, R.Height);
-								DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
+								if (col.EditType == EditTypes.CheckBox && !IsNewRow (rowIndex))
+									DrawCheckCell (ctx, col, RText.Floor(), DataProvider.GetValue (rowIndex, col.Key) is bool checkedValue && checkedValue, bHighLightRow);
+								else
+									DrawTextCell (ctx, col, RText.Floor(), text, bHighLightRow);
 							}
 
 							if (AutoColumnWidth && col.SizeMode == DataGridColumn.SizeModes.Fixed)
@@ -2294,9 +2368,30 @@ namespace SummerGUI
 				}
 
 				bProcess = true;
+					break;
+
+			case Keys.Tab:
+				// Tab/Shift+Tab = nächste/vorige Zelle — nur im Cell-Modus.
+				// Row-Modus bleibt unberührt (Tab wandert unverändert weiter).
+				if (SelectionManager != null && SelectionManager.SelectionMode == DataGridSelectionModes.Cell && RowManager != null)
+				{
+					if (e.Shift)
+						SelectPreviousCell ();
+					else
+						SelectNextCell ();
+
+					// Einfache Einzel-Zellen-Selektion (Shift hier = Richtung, keine Reihen-Auswahl).
+					SelectionManager.SelectNone ();
+					SelectionManager.SelectRow (RowIndex);
+					m_LastShiftDownPosition = -1;
+					bEnsureVisible = true;
+					bSeekColumn = true;
+					bProcess = true;
+					bHandled = true;
+				}
 				break;
 
-			case Keys.Home:
+				case Keys.Home:
 				bHandled = true;
 				if (e.Control) {
 					if (m_LastShiftDownPosition < 0)
@@ -2427,10 +2522,11 @@ namespace SummerGUI
 			{
 				RowIndex = rowIndex;
 
-				// Fenster-X -> Content-X: x - Left - ScrollOffsetX.
-				// (PP3000: Left = 0; Spalten-Null beginnt bei der ersten Spalten-Kante —
-				//  Spaltenauflösung live-verifiziert 2026-10-21.)
-				ColumnIndex = Math.Min (m_MaxColumnIndex, ColumnManager.ColumnIndexFromPoint (x - Left - ScrollOffsetX));
+				// Fenster-X -> Content-X: x - Left - RowHeaderWidth - ScrollOffsetX.
+				// (PP3000: Left = 0; Spalten-Null beginnt bei der ersten Spalten-KANTE —
+				//  die bei Left + RowHeaderWidth liegt; Spaltenauflösung live-verifiziert 2026-10-21.
+				//  Mit RowHeadern die um RowHeaderWidth zu große Selektion → RowHeaderWidth subtrahieren.)
+				ColumnIndex = Math.Min (m_MaxColumnIndex, ColumnManager.ColumnIndexFromPoint (x - Left - RowHeaderWidth - ScrollOffsetX));
 			}
 		}
 
@@ -2511,7 +2607,29 @@ namespace SummerGUI
 					SelectionManager.SelectRow (RowIndex);
 				}
 			}
-				
+
+			// AllowSingleClickEdit (neue Option, Standard false): ein einzelner
+			// Linksklick auf eine Zelle öffnet den Zell-Editor. Der zweite Klick
+			// einer Doppelklick-Geste bleibt OnDoubleClick überlassen (der frisch
+			// per SingleClick geöffnete Editor deshalb nicht schließen).
+			if (AllowSingleClickEdit && AllowEdit && !IsAllowEditSuspended &&
+				SelectionManager != null &&
+				SelectionManager.SelectionMode == DataGridSelectionModes.Cell)
+			{
+				bool secondOfDouble = m_SclLastMouseDown != DateTime.MinValue
+					&& (DateTime.Now - m_SclLastMouseDown).TotalMilliseconds < 350
+					&& Math.Sqrt (Math.Pow (e.X - m_SclLastX, 2) + Math.Pow (e.Y - m_SclLastY, 2)) < 4;
+				m_SclLastMouseDown = DateTime.Now;
+				m_SclLastX = e.X;
+				m_SclLastY = e.Y;
+
+				if (!secondOfDouble)
+				{
+					m_PendingSingleClickEdit = true;
+					BeginEdit (e.X, e.Y);
+				}
+			}
+
 			Invalidate ();
 		}			
 
@@ -2700,8 +2818,8 @@ namespace SummerGUI
 				return CellInfo.Empty;
 
 			// p ist in Fensterkoordinaten; ColumnIndexFromPoint erwartet Content-Koordinaten
-			// (ColumnOffsets ab 0) -> Fenster-X - Left - ScrollOffsetX.
-			return new CellInfo (RowManager.RowIndexFromPoint(p.Y), ColumnManager.ColumnIndexFromPoint(p.X - Left - ScrollOffsetX));
+			// (ColumnOffsets ab 0) -> Fenster-X - Left - RowHeaderWidth - ScrollOffsetX.
+			return new CellInfo (RowManager.RowIndexFromPoint(p.Y), ColumnManager.ColumnIndexFromPoint(p.X - Left - RowHeaderWidth - ScrollOffsetX));
 		}
 
 		public override void OnClick (MouseButtonEventArgs e)

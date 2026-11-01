@@ -17,6 +17,7 @@ namespace SummerGUI.DataGrid
 		DropDownList,
 		DropDownCombo,
 		CheckBox,
+		CheckList,
 		NumericUpDown,
 		Duration,
 		MultilineText
@@ -895,7 +896,22 @@ namespace SummerGUI.DataGrid
 		public void AddValueListItem(string Text, object Value)
 		{
 			m_ValueList.Add(new ValueListItem(Text, Value));
-		}			
+		}		
+
+		/// <summary>
+		/// Optionale Zeilen-Filterung der <see cref="ValueList"/> für Editors
+		/// (z.B. <see cref="EditTypes.CheckList"/>): liefert die Item-Menge einer
+		/// bestimmten Zeile (Parameter = Zeilenindex). <c>null</c> (Default) →
+		/// alle <see cref="ValueList"/>-Items werden benutzt; Fehler/Exception →
+		/// Editor fällt auf die Spalten-<see cref="ValueList"/> zurück.
+		/// ★127: Skill-Kaskade der Legacy-TaskWorkControl (Resource-Popup wird
+		/// pro Zeile auf die Ressourcen des gewählten Skills gefiltert).</summary>
+		public Func<int, List<ValueListItem>> RowItemList
+		{
+			get { return m_RowItemList; }
+			set { m_RowItemList = value; }
+		}
+		Func<int, List<ValueListItem>> m_RowItemList = null;	
 
 		// TOOK ME 8 HOURS TO FIND OUT THAT THIS CRAPPY DATABINDING DOES NOT WORK
 		// WHEN ToString() WAS OVERRIDDEN.        

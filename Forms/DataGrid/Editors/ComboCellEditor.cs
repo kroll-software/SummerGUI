@@ -82,24 +82,41 @@ namespace SummerGUI.DataGrid.Editors
 				if (col != null && col.ValueList != null)
 					foreach (ValueListItem item in col.ValueList)
 						if (item != null)
-							Items.Add (item.Text, item.Value);
+							Items.AddUnsorted (item.Text, item.Value);
 
-				string cur = CellEditorBase.GetInitialValue (grid, col, cell);
-				int match = -1;
-				for (int i = 0; i < Items.Count; i++)
+				// Matching auf dem ROHEN WERT (Key) per Value.Equals — der formatierte
+				// Text dient NUR der Anzeige (2 Tasks können denselben Namen tragen;
+				// ToString bei Zahlen/TimeSpans ist culture-abhängig und kam deshalb
+				// nie für das Matching in Frage).
+				object cur = null;
+				if (grid != null && grid.DataProvider != null && col != null)
 				{
-					ComboBoxItem it = Items [i];
-					if (it != null && CellEditorBase.ValueMatches (it.Value, cur))
+					try
 					{
-						match = i;
-						break;
+						cur = grid.DataProvider.GetValue (cell.Row, col.Key);
+					}
+					catch (Exception ex)
+					{
+						ex.LogError ();
 					}
 				}
 
-				if (match >= 0)
-					SelectIndex (match);
-				else
-					Text = cur ?? "";
+				bool matched = false;
+				if (cur != null)
+				{
+					for (int i = 0; i < Items.Count; i++)
+					{
+						ComboBoxItem it = Items [i];
+						if (it != null && it.Value != null && it.Value.Equals (cur))
+						{
+							SelectedIndex = i;
+							matched = true;
+							break;
+						}
+					}
+				}
+				if (!matched)
+					Text = CellEditorBase.GetInitialValue (grid, col, cell) ?? "";
 			}
 			finally
 			{
@@ -177,9 +194,13 @@ namespace SummerGUI.DataGrid.Editors
 		{
 			EnsureButtonBounds ();
 			if (Button != null && Button.Visible && Button.Bounds.Contains (e.X, e.Y))
+			{
 				Button.InvokeMouseDown (e);
+			}
 			else
+			{
 				base.InvokeMouseDown (e);
+			}
 		}
 
 		internal override void InvokeMouseUp (MouseButtonEventArgs e)
