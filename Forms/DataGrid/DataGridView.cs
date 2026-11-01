@@ -2067,7 +2067,11 @@ namespace SummerGUI
 					float top = info.RowTop + VerticalScrollOffset;
 					RectangleF R = new RectangleF (Bounds.X, top, Bounds.Width, info.RowHeight);
 
-					bool bHighLightRow = HighlightSelection && (!HideSelection || IsFocused) && SelectionManager.IsRowSelected(rowIndex);
+					// !m_IsEditing: während des Zell-Editings bleibt die Zeile im
+				// Normal-Stil — OnPaintBackground füllt den Selection-Hintergrund
+				// in diesem Zustand ebenfalls nicht (L1931-Guard)! Ohne Guard
+				// wäre der Zeilen-Text weiß auf weißem Grund (User-Bug-Report).
+				bool bHighLightRow = HighlightSelection && (!HideSelection || IsFocused) && !m_IsEditing && SelectionManager.IsRowSelected(rowIndex);
 
 					float iColStartX = ColumnStartX ();
 					int iCol = 0;
