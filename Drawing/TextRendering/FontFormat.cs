@@ -114,7 +114,7 @@ namespace SummerGUI
 				break;
 
 			case Alignment.Far:
-				x = rBoundingBox.Width - rContent.Width;
+				x = MathF.Max(0f, rBoundingBox.Width - rContent.Width);
 				break;
 			}
 

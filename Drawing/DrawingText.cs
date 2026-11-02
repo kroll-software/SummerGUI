@@ -80,7 +80,7 @@ namespace SummerGUI
 									width = font.MeasureMnemonicString(text).Width;
 								else								
 									width = font.Measure(text).Width;
-								x = (bounds.Width - width) / 2f;
+								x = MathF.Max(0f, (bounds.Width - width) / 2f);
 							}
 							break;
 						
@@ -91,7 +91,7 @@ namespace SummerGUI
 									width = font.MeasureMnemonicString(text).Width;
 								else								
 									width = font.Measure(text).Width;
-								x = bounds.Width - width;
+								x = MathF.Max(0f, bounds.Width - width);
 							}
 							break;
 					}
